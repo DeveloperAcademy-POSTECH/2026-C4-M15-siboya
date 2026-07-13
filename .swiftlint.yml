@@ -42,4 +42,7 @@ type_name:
     warning: 40
     error: 50
 
+force_cast:
+  severity: warning
+
 reporter: "xcode"
