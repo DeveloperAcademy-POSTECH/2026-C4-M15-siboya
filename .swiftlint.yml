@@ -26,16 +26,16 @@ excluded:
   - "*.xcodeproj"
 
 function_body_length:
-  warning: 120
-  error: 400
+  warning: 50
+  error: 100
 
 type_body_length:
-  warning: 500
-  error: 1200
+  warning: 250
+  error: 350
 
 file_length:
-  warning: 900
-  error: 1600
+  warning: 400
+  error: 1000
 
 type_name:
   min_length: 3
