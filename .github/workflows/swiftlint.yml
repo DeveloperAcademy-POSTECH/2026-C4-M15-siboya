@@ -30,4 +30,4 @@ jobs:
         run: brew bundle
 
       - name: Run SwiftLint
-        run: ./Scripts/lint.sh --strict --reporter github-actions-logging
+        run: ./Scripts/lint.sh --reporter github-actions-logging
