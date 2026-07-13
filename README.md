@@ -1,6 +1,5 @@
 # Siboya
 
-> 고산, 바라, 제이, 에린, 노을, 예티
 
 [![Swift](https://img.shields.io/badge/Swift-5-orange.svg)]()
 [![Xcode](https://img.shields.io/badge/Xcode-26.6-blue.svg)]()
