@@ -42,3 +42,20 @@ SiboyaUITests/                    # UI 테스트
 - 영속 데이터는 SwiftData를 사용하고 `Persistence`에서 관리합니다.
 - 네트워크 계층은 만들지 않습니다.
 - 단위 테스트의 디렉터리는 앱 소스 구조를 가능한 한 동일하게 따릅니다.
+
+## SwiftLint
+
+SwiftLint 설정은 저장소 루트의 [`.swiftlint.yml`](.swiftlint.yml)을 사용합니다.
+
+```bash
+# 최초 1회 또는 Brewfile 변경 후
+brew bundle
+
+# 로컬 검사
+./Scripts/lint.sh
+
+# CI와 동일하게 warning도 실패 처리
+./Scripts/lint.sh --strict
+```
+
+현재 설정은 SwiftLint `0.63.3`에서 검증합니다. Xcode 프로젝트를 생성한 뒤에는 앱·단위 테스트·UI 테스트 타깃에 `SwiftLintBuildToolPlugin`을 연결합니다. 프로젝트가 생기기 전까지는 로컬 스크립트와 GitHub Actions가 검사를 담당합니다.
