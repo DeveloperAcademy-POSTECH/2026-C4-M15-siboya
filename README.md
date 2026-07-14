@@ -144,7 +144,7 @@ brew bundle
 ./Scripts/lint.sh --strict
 ```
 
-현재 설정은 SwiftLint `0.63.3`에서 검증합니다. GitHub Actions는 warning을 표시하되 error만 실패로 처리합니다. Xcode 프로젝트를 생성한 뒤에는 앱·단위 테스트·UI 테스트 타깃에 `SwiftLintBuildToolPlugin`을 연결합니다. 프로젝트가 생기기 전까지는 로컬 스크립트와 GitHub Actions가 검사를 담당합니다.
+현재 설정은 SwiftLint `0.63.3`에서 검증합니다. GitHub Actions는 warning을 표시하되 error만 실패로 처리합니다. 현재는 로컬 스크립트와 GitHub Actions가 검사를 담당하며, 필요해지면 앱·단위 테스트·UI 테스트 타깃에 `SwiftLintBuildToolPlugin`을 연결합니다.
 
 ## ✅ 실행 및 테스트 방법
 
