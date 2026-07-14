@@ -112,11 +112,22 @@ SiboyaUITests/                    # UI 테스트
 
 ## 🔖 브랜치 전략
 
+모든 기능 및 버그 수정은 프로젝트 이슈를 생성한 뒤 해당 이슈 키를 브랜치 이름에 포함합니다.
+
 - `main`: 배포 가능한 안정 버전
 - `develop`: 통합 개발 브랜치
-- `feat/*`: 기능 개발 브랜치
-- `bugfix/*`: 버그 수정 브랜치
-- `hotfix/*`: 긴급 수정 브랜치
+- `feature/{이슈키}-{기능명}`: 새로운 기능 개발
+- `bugfix/{이슈키}-{기능명}`: 버그 수정
+- `hotfix/{이슈키}-{기능명}`: 긴급 수정
+
+### 예시
+
+```text
+feature/SCRUM-15-taedam-record
+feature/SCRUM-18-home-ui
+bugfix/SCRUM-22-audio-session
+hotfix/SCRUM-31-crash-on-launch
+```
 
 ## 🌀 커밋 메시지 컨벤션
 
