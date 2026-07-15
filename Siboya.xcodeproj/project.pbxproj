@@ -39,7 +39,6 @@
 				Core/Utilities/.gitkeep,
 				Features/Report/.gitkeep,
 				Features/Taedam/.gitkeep,
-				Persistence/Container/.gitkeep,
 				Persistence/Stores/.gitkeep,
 				Resources/Fonts/.gitkeep,
 				SupportingFiles/.gitkeep,
