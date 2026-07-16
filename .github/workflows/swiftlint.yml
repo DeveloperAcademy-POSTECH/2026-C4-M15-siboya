@@ -47,5 +47,3 @@ jobs:
           level: warning
           fail_on_error: true
           swiftlint_flags: "--strict"
-
-이게 괜찮다는 거지?
