@@ -39,11 +39,13 @@ jobs:
         run: brew bundle
 
       - name: Install reviewdog
-        uses: reviewdog/action-setup@v1
+        if: github.event_name == 'pull_request'
+        uses: reviewdog/action-setup@v1.5.0
         with:
-          reviewdog_version: latest
+          reviewdog_version: v0.21.0
 
       - name: Run SwiftLint with reviewdog
+        if: github.event_name == 'pull_request'
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -52,4 +54,8 @@ jobs:
                 -f=checkstyle \
                 -name="SwiftLint" \
                 -reporter=github-pr-review \
-                -fail-level=warning
+                -fail-level=error
+
+      - name: Run SwiftLint with GitHub Actions logging
+        if: github.event_name != 'pull_request'
+        run: ./Scripts/lint.sh --reporter github-actions-logging
