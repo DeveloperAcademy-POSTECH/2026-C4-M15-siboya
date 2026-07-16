@@ -2,21 +2,31 @@ name: SwiftLint
 
 on:
   pull_request:
+    branches:
+      - main
+      - develop
     paths:
       - "**/*.swift"
       - ".swiftlint.yml"
       - "Brewfile"
       - "Scripts/lint.sh"
       - ".github/workflows/swiftlint.yml"
+
   push:
     branches:
       - main
+      - develop
     paths:
       - "**/*.swift"
       - ".swiftlint.yml"
       - "Brewfile"
       - "Scripts/lint.sh"
       - ".github/workflows/swiftlint.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
 
 jobs:
   lint:
@@ -29,5 +39,13 @@ jobs:
       - name: Install SwiftLint
         run: brew bundle
 
-      - name: Run SwiftLint
-        run: ./Scripts/lint.sh --reporter github-actions-logging
+      - name: Run SwiftLint with reviewdog
+        uses: reviewdog/action-swiftlint@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          fail_on_error: true
+          swiftlint_flags: "--strict"
+
+이게 괜찮다는 거지?
