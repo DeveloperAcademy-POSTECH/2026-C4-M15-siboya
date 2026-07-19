@@ -2,39 +2,12 @@
 
 - **상태**: review
 - **작성일**: 2026-07-19
-- **적용 범위**: 홈 → 대본 미리보기 → 대본 자동 진행 → 마지막 버킷리스트 STT → 사용자 수정 → 저장
+- **적용 범위**: 태담 탭 → 대본 미리보기 → 대본 자동 진행 → 마지막 버킷리스트 STT → 사용자 수정 → 저장
 
 > 이 문서는 태담 기능을 함께 개발할 때 사용하는 데이터 계약의 단일 기준이다.
 > 정적 대본은 번들 JSON에 두고, 사용자가 최종 확인한 버킷리스트와 아기 프로필만 SwiftData에 저장한다.
 
-## 1. 이번 변경의 핵심
-
-태담 중 마이크 입력은 **즉석에서만 사용하고 폐기한다.** 앱은 태담 음성을 녹음 파일이나 SwiftData 기록으로 남기지 않는다.
-
-| 데이터 | 사용·저장 위치 | 생명주기 |
-|---|---|---|
-| 대본 종류·메타데이터·문장 | 앱 번들 JSON | 앱과 함께 배포되는 읽기 전용 콘텐츠 |
-| 현재 태명·임신 주차 | SwiftData `BabyProfile` | 사용자가 수정할 때까지 유지 |
-| 대본 구간의 마이크 입력 | 메모리의 오디오 버퍼 | 배경 모션 계산 직후 폐기 |
-| 버킷리스트 구간의 부분 전사 | 메모리 | STT 진행 중에만 유지 |
-| 사용자가 수정·확정한 버킷리스트 | SwiftData `BucketListItem` | 사용자가 삭제할 때까지 유지 |
-
-다음 데이터와 기능은 현재 범위에서 제거한다.
-
-- 전체 태담 및 문장별 녹음 파일
-- `TaedamRecord`, `TaedamRecording`
-- 오디오 상대 경로, 녹음 길이, 합본 파일
-- 발화 속도, 평균 음량, 주파수 이력과 같은 사후 피드백 데이터
-- 녹음 일시 정지·재개 및 과거 녹음 재생
-
-마이크 입력은 다음 두 목적으로만 사용한다.
-
-1. **대본 구간**: 현재 사용자가 말하고 있음을 배경 모션으로 즉시 피드백한다.
-2. **마지막 버킷리스트 구간**: Speech STT로 문장을 만들고 편집 화면에 전달한다.
-
----
-
-## 2. 대본 JSON
+## 1. 대본 JSON
 
 ### 저장 위치
 
@@ -49,7 +22,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
 - 일반 대본은 읽는 순서대로 구성된 `sentences: [String]`에 둔다.
 - 버킷리스트 발화 문장은 일반 대본과 섞지 않고 `bucketListPrompt` 한 개로 둔다.
 - `bucketListPrompt`는 화면에서 항상 전체 대본의 마지막 한 줄로 배치한다.
-- 일반 대본은 자동으로 진행하지만 `bucketListPrompt` 직전에서는 자동 진행을 멈춘다.
+- 마지막 일반 대본이 끝나면 `bucketListPrompt`로 자동 전환하고 STT를 시작한다.
 
 ### JSON 예시
 
@@ -58,7 +31,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
   "schemaVersion": 1,
   "scripts": [
     {
-      "id": "baby-love-imagination-22w",
+      "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
       "version": 1,
       "category": "아기사랑",
       "title": "상상력을 자극하는 이야기",
@@ -86,7 +59,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
 |---|---|---:|---|
 | `schemaVersion` | `Int` | O | JSON 문서 구조 버전 |
 | `scripts` | `[Object]` | O | 앱에 포함된 대본 목록 |
-| `scripts[].id` | `String` | O | 대본 식별자 |
+| `scripts[].id` | `String` (UUID) | O | 대본 UUID 식별자 |
 | `scripts[].version` | `Int` | O | 대본 내용 개정 버전 |
 | `scripts[].category` | `String` | O | 대본 카테고리 |
 | `scripts[].title` | `String` | O | 대본 제목 |
@@ -108,7 +81,7 @@ struct TaedamScriptDocument: Decodable, Sendable {
 }
 
 struct TaedamScriptContent: Decodable, Sendable {
-    let id: String
+    let id: UUID
     let version: Int
     let category: String
     let title: String
@@ -128,30 +101,33 @@ struct ScriptMetadataContent: Decodable, Sendable {
 ### JSON 검증 규칙
 
 1. 지원하지 않는 `schemaVersion`이면 로딩을 실패시킨다.
-2. `script.id + version` 조합은 중복될 수 없다.
-3. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
-4. 각 문장과 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
-5. `bucketListPrompt`는 별도 필드이므로 `sentences`에 중복해서 넣지 않는다.
-6. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
-7. 지원하지 않는 템플릿 변수가 있으면 테스트를 실패시킨다.
+2. `script.id`는 유효한 UUID 문자열이어야 한다.
+3. `script.id + version` 조합은 중복될 수 없다.
+4. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
+5. 각 문장과 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
+6. `bucketListPrompt`는 별도 필드이므로 `sentences`에 중복해서 넣지 않는다.
+7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
+8. 지원하지 않는 템플릿 변수가 있으면 테스트를 실패시킨다.
 
 ---
 
-## 3. 화면과 데이터 흐름
+## 2. 화면과 데이터 흐름
 
 ```mermaid
 flowchart LR
     JSON[번들 대본 JSON] --> Repo[ScriptRepository]
-    Profile[(BabyProfile)] --> Preview[대본 미리보기]
-    Repo --> Preview
+    Repo --> Tab[태담 탭]
+    Tab -->|ScriptSelectionDTO| Preview[대본 미리보기]
     Preview -->|TaedamSessionInputDTO| Session[태담 대본 진행]
     Mic[마이크 입력] -->|휘발성 버퍼| Motion[음성 반응 계산]
     Motion -->|VoiceMotionSampleDTO| Session
-    Session -->|마지막 줄 선택·재선택| STT[제한 시간 Speech STT]
+    Session -->|마지막 대본 완료| STT[제한 시간 Speech STT]
     Mic -->|휘발성 버퍼| STT
     STT -->|BucketListDraftDTO| Edit[버킷리스트 수정]
     Edit -->|SaveBucketListCommandDTO| Store[BucketListStore]
     Store --> Bucket[(BucketListItem)]
+    Store -->|SavedBucketListDTO| Complete[버킷리스트 저장 완료]
+    Bucket -->|@Query by bucketListItemID| Complete
 ```
 
 마이크 버퍼에서 SwiftData나 파일 시스템으로 향하는 경로는 존재하지 않는다.
@@ -160,7 +136,7 @@ flowchart LR
 
 ```swift
 struct ScriptSelectionDTO: Sendable {
-    let scriptID: String
+    let scriptID: UUID
     let scriptVersion: Int
 }
 
@@ -185,7 +161,7 @@ struct TaedamLineDTO: Identifiable, Equatable, Sendable {
 }
 
 struct ScriptPreviewDTO: Sendable {
-    let scriptID: String
+    let scriptID: UUID
     let scriptVersion: Int
     let category: String
     let title: String
@@ -210,24 +186,53 @@ struct TaedamSessionInputDTO: Sendable {
 
 | 화면 | 받는 데이터 | 사용하는 데이터 | 다음으로 보내는 데이터 |
 |---|---|---|---|
-| 홈 | 없음 | `BabyProfileDTO`, 대본 카드 목록 | `ScriptSelectionDTO` |
+| 태담 탭 | 없음 | `BabyProfileDTO`, 대본 카드 목록 | `ScriptSelectionDTO` |
 | 대본 미리보기 | `ScriptSelectionDTO` | `ScriptPreviewDTO`, 권한 상태 | `TaedamSessionInputDTO` |
-| 태담 대본 진행 | `TaedamSessionInputDTO` | 현재 `TaedamLineDTO`, 자동 진행 상태, 휘발성 음성 반응값 | 마지막 줄 선택 이벤트 |
+| 태담 대본 진행 | `TaedamSessionInputDTO` | 카운트다운, 현재 `TaedamLineDTO`, 문장 채우기 진행률, 휘발성 음성 반응값 | 버킷리스트 STT 자동 전환 |
 | 버킷리스트 STT | `.bucketList` 줄과 마이크 입력 | 제한 시간, 부분·최종 전사문, 시도 횟수 | `BucketListDraftDTO` |
-| 버킷리스트 수정 | `BucketListDraftDTO` | 편집 중인 문자열 | `SaveBucketListCommandDTO` |
-| 완료·기록 | `SavedBucketListDTO` | 저장된 버킷리스트 | 상위 화면 완료 이벤트 |
+| 버킷리스트 수정 | `BucketListDraftDTO` | 편집 중인 문자열, `TaedamSessionInputDTO.script.category` | `SaveBucketListCommandDTO` |
+| 버킷리스트 저장 완료 | `SavedBucketListDTO` | `@Query`로 관찰하는 `BucketListItem` | 상위 화면 완료 이벤트 |
+
+### 최종 화면 표시 계약
+
+```swift
+@Query private var bucketListItems: [BucketListItem]
+
+init(bucketListItemID: UUID) {
+    let id = bucketListItemID
+    _bucketListItems = Query(
+        filter: #Predicate<BucketListItem> { item in
+            item.id == id
+        }
+    )
+}
+```
+
+- 최종 화면은 방금 저장한 `bucketListItemID`로 `@Query`를 구성해 해당 `BucketListItem`을 관찰하고 버킷리스트 셀만 보여준다.
+- `@Query`가 빈 배열을 반환하면 저장된 항목을 찾을 수 없는 상태로 처리한다.
+- 셀에는 대본 카테고리, 버킷리스트 내용과 수행 상태처럼 `BucketListItem`에서 직접 가져온 정보만 표시한다.
+- 태담 점수, 발화 평가, 그래프, 주파수·음량 수치, 녹음 시간과 오디오 재생 UI는 표시하지 않는다.
+- 대본을 완료했다는 사실로 별도의 태담 피드백 데이터나 요약 모델을 생성하지 않는다.
 
 ---
 
-## 4. 태담 진행 계약
+## 3. 태담 진행 계약
+
+### 권한 확인
+
+- 대본 미리보기에서 사용자가 태담 시작을 선택하면, 태담 대본 화면으로 진입하기 직전에 마이크와 Speech 인식 권한을 확인한다.
+- 권한 상태는 태담 진입을 시도할 때마다 다시 확인한다.
+- `.notDetermined`이면 시스템 권한 요청을 표시하고, 필요한 권한이 모두 허용된 뒤에만 태담 대본 화면으로 진입한다.
+- `.denied` 또는 `.restricted`이면 반복해서 시스템 팝업을 요청하지 않고, 권한이 필요한 이유와 설정 이동 안내를 보여준다.
+- 권한이 확정되기 전에는 3초 카운트다운을 시작하지 않는다.
 
 ### 상태
 
 ```swift
 enum TaedamPhaseDTO: Equatable, Sendable {
     case ready
+    case countingDown(remainingSeconds: Int)
     case readingScript(index: Int)
-    case awaitingBucketListTransition
     case transcribingBucketList(attempt: Int, remainingSeconds: Int)
     case reviewingBucketListDraft(attempt: Int)
     case editingBucketList
@@ -239,12 +244,13 @@ enum TaedamPhaseDTO: Equatable, Sendable {
 struct TaedamSessionStateDTO: Equatable, Sendable {
     let phase: TaedamPhaseDTO
     let currentLine: TaedamLineDTO?
+    let currentLineProgress: Double
     let liveBucketListTranscript: String
     let normalizedVoiceMotion: Double
 }
 ```
 
-`normalizedVoiceMotion`은 `0...1` 범위의 화면용 값이다. 메모리에서만 전달하며 DTO 배열이나 SwiftData에 누적하지 않는다.
+`currentLineProgress`와 `normalizedVoiceMotion`은 `0...1` 범위의 화면용 값이다. 메모리에서만 전달하며 DTO 배열이나 SwiftData에 누적하지 않는다.
 
 ### 자동 대본 진행
 
@@ -260,16 +266,16 @@ protocol TaedamScriptProgressing: Sendable {
 }
 ```
 
-- 일반 대본은 확정된 간격에 따라 한 문장씩 자동으로 이동한다.
-- 사용자가 놓친 문장이 있으면 스와이프하거나 문장을 직접 탭해 원하는 문장으로 돌아갈 수 있다.
-- 일반 문장을 수동으로 선택하면 자동 진행은 선택된 문장부터 이어진다.
-- 마지막 일반 대본 다음에 시각적 경계와 `bucketListPrompt`를 둔다.
-- 자동 진행은 마지막 일반 대본에서 멈추며 버킷리스트 STT를 자동 시작하지 않는다.
-- 사용자가 경계를 지나 마지막 줄로 스와이프하거나 마지막 줄을 탭하면 음성 반응 모니터링을 먼저 종료한다.
-- 현재 선택한 `TaedamLineDTO.kind`가 `.bucketList`이면 별도 시작 버튼 없이 제한 시간 STT를 자동 시작한다.
-- STT가 이미 진행 중일 때 같은 줄을 다시 선택해도 중복 세션을 만들지 않는다.
-- STT 제한 시간이 끝난 뒤 같은 `.bucketList` 줄을 다시 탭하면 새 STT 시도를 시작한다.
-- 같은 인덱스 재탭은 선택값 변화가 아니므로 `selectedIndex`의 `onChange`에만 의존하지 않고 별도의 `selectLine(at:)` 이벤트로 전달한다.
+- 태담 대본 화면에 진입하면 `3`, `2`, `1`을 표시하는 3초 카운트다운을 자동 시작한다.
+- 카운트다운이 끝나면 첫 번째 일반 대본의 `currentLineProgress`를 `0`으로 두고 대본 스트림을 시작한다.
+- 문장 진행 시간은 공백을 제외한 `Character` 수를 기준으로 `clamp(문자 수 / 4.0, 2.5, 10.0)`초로 계산한다. `4.0`, `2.5`, `10.0`은 UI 테스트 후 조정할 수 있는 타이밍 정책값이다.
+- 화면은 전체 문장을 기본 색으로 미리 배치하고 `currentLineProgress`에 따라 전경색 텍스트를 마스크해 노래방 가사처럼 채운다. 진행 중에 텍스트 레이아웃은 바뀌지 않는다.
+- 현재 문장의 진행률이 `1`이 되면 다음 일반 문장을 자동으로 시작한다.
+- 문장 이동을 위한 스와이프는 제공하지 않는다.
+- 사용자가 이미 지나간 일반 문장을 탭하면 현재 진행 Task를 취소하고, 선택한 문장의 진행률을 `0`으로 초기화한 후 그 문장부터 즉시 자동 진행을 재개한다. 3초 카운트다운은 반복하지 않는다.
+- 미래 문장과 `.bucketList` 줄은 수동으로 선택하지 않는다.
+- 마지막 일반 문장의 진행률이 `1`이 되면 `bucketListPrompt`로 자동 전환하고 STT를 시작한다. 별도의 스와이프, 탭, 시작 버튼은 필요하지 않다.
+- 자동 진행 Task는 한 번에 하나만 유지하며, 문장 재선택·화면 종료·STT 전환 시 기존 Task를 취소한다.
 
 ### 실시간 음성 반응
 
@@ -287,13 +293,15 @@ protocol VoiceMotionMonitoring: Sendable {
 }
 ```
 
-- 대본을 읽는 동안 마이크 신호의 진동수 특성을 실시간으로 분석한다.
-- 무음의 불안정한 주파수 값으로 화면이 튀지 않도록 음성 활성 여부를 먼저 판정한다.
-- 화면은 정규화된 값만 받아 배경의 위치·진폭 모션에 사용한다.
+- 음성 반응 모션은 사용자가 현재 말하고 있음을 즉시 피드백하는 보조 UI이며, 발화 품질을 평가하지 않는다.
+- 대본을 읽는 동안 마이크 버퍼의 RMS를 dB로 변환하고 `target = clamp((rmsDB + 55) / 40, 0, 1)`로 정규화한다. `-55 dB`와 `-15 dB`는 실기기 테스트 후 조정할 수 있는 초기 기준이다.
+- 모션은 빠르게 반응하고 천천히 가라앉도록 `smoothed = previous + alpha * (target - previous)`를 사용한다. `target > previous`이면 `alpha = 0.35`, 그 외에는 `alpha = 0.12`를 초기값으로 사용한다.
+- 음성 활성 판정은 히스테리시스를 두어 정규화값이 `0.15` 이상이면 활성화하고, `0.08` 이하가 250밀리초 이상 유지될 때 비활성화한다.
+- 화면은 `eased = smoothed * smoothed * (3 - 2 * smoothed)`를 사용해 `scale = 1 + 0.08 * eased`, `shapeDeformation = 0.12 * eased`로 배경 View의 크기와 모양을 변화시킨다.
 - 입력 버퍼와 분석값은 화면 반영 직후 폐기한다.
-- 앱은 원시 PCM, 주파수 샘플, 평균값을 파일이나 SwiftData에 저장하지 않는다.
+- 앱은 원시 PCM, RMS·dB 샘플, 평균값을 파일이나 SwiftData에 저장하지 않는다.
 
-> 음성이 있는지를 판정할 때는 신호 세기(RMS)를 보조값으로 사용할 수 있지만, 이 값도 저장하지 않는다.
+> RMS, dB, 활성 여부와 모션값은 모두 휘발성으로 사용하고 저장하지 않는다.
 
 ### 마지막 버킷리스트 STT
 
@@ -314,20 +322,23 @@ protocol BucketListTranscribing: Sendable {
 }
 ```
 
-- Speech STT는 현재 선택된 줄의 `kind == .bucketList`일 때만 자동으로 시작한다.
+- Speech STT는 마지막 일반 대본이 완료되어 현재 줄이 `.bucketList`로 전환될 때 자동으로 시작한다.
 - 일반 대본을 읽는 동안에는 STT를 실행하지 않는다.
-- STT 시작 전 `VoiceMotionMonitoring.stopMonitoring()`으로 기존 오디오 tap을 제거한다. 두 서비스가 마이크 입력을 동시에 점유하지 않는다.
+- STT로 전환하기 전에 음성 반응 모니터의 `stopMonitoring()`을 완료해 기존 input tap을 제거한 후, STT용 input tap을 설치한다.
+- 한 번의 STT 최대 입력 시간은 20초로 한다.
+- STT 진행 중에는 정지 버튼을 항상 표시한다. 사용자가 20초 전에 정지하면 `finish()`로 현재 인식 작업을 종료하고 결과를 확정한다.
 - 부분 전사문은 화면 표시용이며 저장하지 않는다.
-- 확정된 제한 시간이 끝나면 STT를 자동 종료하고 최종 전사문을 `BucketListDraftDTO`로 만든다.
+- 20초 제한 시간이 끝나면 STT를 자동 종료하고 최종 전사문을 `BucketListDraftDTO`로 만든다.
 - STT가 끝난 뒤에는 `.reviewingBucketListDraft` 상태에서 결과를 보여준다.
-- 사용자가 같은 `.bucketList` 줄을 다시 선택하면 새 STT 시도를 시작하고, 새 최종 결과로 저장 전 초안을 교체한다.
+- `.reviewingBucketListDraft`에서는 **다시 말하기**와 **텍스트 수정** 버튼을 모두 제공한다.
+- 다시 말하기를 선택하면 새 STT 시도를 시작하되 이전 `BucketListDraftDTO`를 비우지 않는다. 새 발화가 끝나 최종 전사문이 확정되면 이전 초안을 새 초안으로 전체 교체한다.
+- 텍스트 수정을 선택하면 현재 초안을 `editedText`로 사용하는 편집 단계로 이동한다. 전사문이 비어 있거나 인식에 실패해도 빈 편집 화면에서 직접 입력할 수 있다.
 - 재시도 시에도 오디오 파일은 만들지 않으며 한 번에 하나의 Speech task만 실행한다.
-- 사용자가 전사 결과를 확인하면 `confirmBucketListDraft()`를 통해 편집 단계로 이동한다.
 - STT가 끝나면 마이크 입력과 인식 작업을 모두 종료한다.
 
 ---
 
-## 5. SwiftData 스키마
+## 4. SwiftData 스키마
 
 ```mermaid
 erDiagram
@@ -335,16 +346,14 @@ erDiagram
         UUID id PK
         String nickname
         Int gestationalWeek
-        Date createdAt
-        Date updatedAt
     }
 
     BUCKET_LIST_ITEM {
         UUID id PK
+        String category
         String content
         Bool isCompleted
         Date createdAt
-        Date updatedAt
     }
 ```
 
@@ -355,20 +364,18 @@ erDiagram
 | `id` | `UUID` | unique |
 | `nickname` | `String` | trim 후 빈 문자열 금지 |
 | `gestationalWeek` | `Int` | 현재 임신 주차 |
-| `createdAt` | `Date` | 생성 시각 |
-| `updatedAt` | `Date` | 태명 또는 임신 주차 수정 시각 |
 
 ### `BucketListItem`
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | `id` | `UUID` | unique |
+| `category` | `String` | 버킷리스트가 생성된 대본의 카테고리 |
 | `content` | `String` | 사용자가 수정·확정한 버킷리스트 문장 |
 | `isCompleted` | `Bool` | 수행 여부, 생성 시 `false` |
 | `createdAt` | `Date` | 생성 시각 |
-| `updatedAt` | `Date` | 내용 또는 수행 상태 수정 시각 |
 
-`BucketListItem`은 태담 녹음 기록과 연결되지 않는다. 현재 범위에는 녹음 기록 자체가 존재하지 않기 때문이다.
+`category`는 버킷리스트 저장 시점의 대본 카테고리를 그대로 보존하는 스냅샷이다. `BucketListItem`은 태담 녹음 기록과 연결되지 않는다. 현재 범위에는 녹음 기록 자체가 존재하지 않기 때문이다.
 
 ### SwiftData 모델 초안
 
@@ -381,44 +388,38 @@ final class BabyProfile {
     @Attribute(.unique) var id: UUID
     var nickname: String
     var gestationalWeek: Int
-    var createdAt: Date
-    var updatedAt: Date
 
     init(
         id: UUID = UUID(),
         nickname: String,
-        gestationalWeek: Int,
-        createdAt: Date = .now,
-        updatedAt: Date = .now
+        gestationalWeek: Int
     ) {
         self.id = id
         self.nickname = nickname
         self.gestationalWeek = gestationalWeek
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 }
 
 @Model
 final class BucketListItem {
     @Attribute(.unique) var id: UUID
+    var category: String
     var content: String
     var isCompleted: Bool
     var createdAt: Date
-    var updatedAt: Date
 
     init(
         id: UUID = UUID(),
+        category: String,
         content: String,
         isCompleted: Bool = false,
-        createdAt: Date = .now,
-        updatedAt: Date = .now
+        createdAt: Date = .now
     ) {
         self.id = id
+        self.category = category
         self.content = content
         self.isCompleted = isCompleted
         self.createdAt = createdAt
-        self.updatedAt = updatedAt
     }
 }
 ```
@@ -427,6 +428,7 @@ final class BucketListItem {
 
 ```swift
 struct SaveBucketListCommandDTO: Sendable {
+    let category: String
     let content: String
 }
 
@@ -449,62 +451,96 @@ protocol BucketListStore: Sendable {
 
 저장 불변 조건은 다음과 같다.
 
-1. `content`는 trim 후 비어 있을 수 없다.
-2. STT 원문이 아니라 사용자가 수정·확정한 문장을 저장한다.
-3. 새 항목은 `isCompleted == false`로 저장한다.
-4. 부분 전사문과 오디오 데이터는 저장 명령에 포함하지 않는다.
+1. `category`는 `TaedamSessionInputDTO.script.category`에서 가져오며 trim 후 비어 있을 수 없다.
+2. `content`는 trim 후 비어 있을 수 없다.
+3. STT 원문이 아니라 사용자가 수정·확정한 문장을 저장한다.
+4. 새 항목은 `isCompleted == false`로 저장한다.
+5. 부분 전사문과 오디오 데이터는 저장 명령에 포함하지 않는다.
 
 ---
 
-## 6. 런타임 시퀀스
+## 5. 런타임 시퀀스
 
 ```mermaid
 sequenceDiagram
     actor User as 사용자
+    participant Preview as 대본 미리보기
+    participant Permission as 마이크·Speech 권한
     participant Screen as 태담 화면
     participant Progress as 대본 진행
     participant Motion as 음성 반응 계산
     participant Speech as Speech STT
     participant Edit as 버킷리스트 수정
     participant Store as BucketListStore
+    participant Data as SwiftData
+    participant Complete as 버킷리스트 저장 완료
 
-    Screen->>Progress: 일반 대본 자동 진행 시작
-    Screen->>Motion: 마이크 모니터링 시작
+    User->>Preview: 태담 시작
+    Preview->>Permission: 권한 상태 확인·요청
+    alt 필요한 권한 모두 허용
+        Permission-->>Preview: granted
+        Preview->>Screen: 태담 대본 화면 진입
+        Screen->>Progress: 3초 카운트다운 시작
+        Progress-->>Screen: 3, 2, 1
+        Screen->>Motion: 음성 반응 모니터링 시작
 
-    loop 일반 대본
-        Motion-->>Screen: 정규화된 모션값
-        Progress-->>Screen: 다음 문장 자동 선택
+        loop 문장 길이 기반 일반 대본
+            Progress-->>Screen: currentLineProgress
+            Motion-->>Screen: 정규화된 모션값
+            opt 지나간 문장 탭
+                User->>Screen: 이전 문장 선택
+                Screen->>Progress: 현재 Task 취소 후 선택 문장부터 재개
+            end
+        end
+
+        Progress-->>Screen: 마지막 문장 완료 + bucketListPrompt
+        Screen->>Motion: 음성 반응 모니터링 종료
+        Screen->>Speech: 20초 STT 자동 시작
+        Speech-->>Screen: 부분 전사문
+        alt 20초 전 사용자가 정지
+            User->>Screen: 정지 버튼
+            Screen->>Speech: finish()
+        else 20초 경과
+            Speech-->>Screen: 자동 종료
+        end
+        Speech-->>Screen: BucketListDraftDTO
+        alt 다시 말하기
+            User->>Screen: 다시 말하기 버튼
+            Screen->>Speech: 이전 초안을 유지하고 새 STT 시작
+            Speech-->>Screen: 새 최종 결과로 초안 교체
+        else 텍스트 수정
+            User->>Screen: 텍스트 수정 버튼
+            Screen->>Edit: BucketListDraftDTO
+        end
+        User->>Edit: 문장 수정 후 저장
+        Edit->>Store: SaveBucketListCommandDTO
+        Store->>Data: BucketListItem insert
+        Store-->>Edit: SavedBucketListDTO
+        Edit->>Complete: bucketListItemID
+        Complete->>Data: @Query(bucketListItemID)
+        Data-->>Complete: BucketListItem 변경 반영
+    else 권한 거부·제한
+        Permission-->>Preview: denied or restricted
+        Preview-->>User: 권한 설명과 설정 이동 안내
     end
-
-    Progress-->>Screen: 마지막 일반 문장에서 정지
-    User->>Screen: 마지막 줄로 스와이프 또는 탭
-    Screen->>Motion: 마이크 모니터링 종료
-    Screen->>Speech: 제한 시간 STT 자동 시작
-    Speech-->>Screen: 부분 전사문
-    Speech-->>Screen: 시간 종료 + BucketListDraftDTO
-    alt 사용자가 같은 마지막 줄 재선택
-        Screen->>Speech: 새 제한 시간 STT 시작
-        Speech-->>Screen: 최신 BucketListDraftDTO로 교체
-    else 전사 결과 확인
-        User->>Screen: 전사 결과 확인
-        Screen->>Edit: BucketListDraftDTO
-    end
-    User->>Edit: 문장 수정 후 저장
-    Edit->>Store: SaveBucketListCommandDTO
-    Store-->>Edit: SavedBucketListDTO
 ```
 
 ---
 
-## 7. 구현 전 확정이 필요한 항목
+## 6. 구현 결정 및 추가 합의 항목
 
-1. **자동 진행 시작 시점**: 화면 진입 즉시 시작할지, 별도 시작 입력 또는 짧은 준비 시간을 둘지.
-2. **문장별 자동 진행 간격**: 모든 문장을 같은 간격으로 넘길지, 문장 길이에 따라 달라질지.
-3. **수동 이동 후 재개**: 일반 문장을 스와이프하거나 탭한 즉시 자동 진행을 재개할지, 별도 재개 입력을 받을지.
-4. **진동수-모션 변환식**: 분석할 주파수 범위, 음성 활성 임계값, smoothing과 최대 모션 범위.
-5. **버킷리스트 STT 제한 시간**: 한 번의 시도를 몇 초로 할지.
-6. **재시도 화면 처리**: 새 시도를 시작하는 동안 이전 전사문을 유지할지 즉시 비울지.
-7. **STT 실패 정책**: 빈 편집 화면에서 직접 입력하게 할지, 다시 말하기를 우선 제공할지.
-8. **마이크 권한 책임**: 미리보기 화면과 태담 화면 중 어디서 권한 안내·요청을 담당할지.
+### 확정 사항
 
-위 항목은 확정 전까지 임의의 상수나 동작으로 구현하지 않는다.
+1. **자동 진행 시작 시점**: 태담 대본 화면 진입 후 3초 카운트다운을 실행하고 첫 문장부터 자동 진행한다.
+2. **문장별 자동 진행 간격**: 문장의 공백을 제외한 `Character` 수에 따라 진행 시간을 계산하고, `0...1` 진행률로 노래방 가사처럼 텍스트를 채우는 UI를 사용한다.
+3. **수동 이동 후 재개**: 스와이프 이동은 제공하지 않는다. 지나간 문장을 탭하면 그 문장의 처음부터 자동 진행을 즉시 재개한다. 마지막 일반 문장이 끝나면 사용자 입력 없이 버킷리스트 STT로 전환한다.
+4. **음성-모션 변환식**: RMS dB를 `0...1`로 정규화하고 attack·release smoothing과 easing을 적용한다. 결과값은 `scale = 1 + 0.08 * eased`, `shapeDeformation = 0.12 * eased`로 배경 View의 크기·모양 변화에만 사용한다.
+5. **버킷리스트 STT 제한 시간**: 기본 최대 시간은 20초로 하며, 사용자가 이보다 먼저 끝낼 수 있는 정지 버튼을 제공한다.
+6. **재시도 화면 처리**: 다시 말하기 중에는 이전 초안을 유지하고, 새 최종 전사문이 나오면 이전 초안을 전체 교체한다.
+7. **STT 실패·후속 행동**: 결과 화면에 다시 말하기와 텍스트 수정 버튼을 함께 제공한다. 전사 결과가 비어 있어도 편집 화면에서 직접 입력할 수 있다.
+8. **마이크 권한 책임**: 대본 미리보기에서 태담 시작을 선택한 시점에 권한을 확인·요청하고, 필요한 권한이 모두 허용된 후 대본 화면으로 진입한다.
+
+### 추가 팀 합의 필요
+
+- **무음 기반 STT 자동 종료**: 사용자의 발화 시작을 한 번 탐지한 뒤 연속 무음이 일정 시간 유지되면 STT를 자동 종료하는 방식은 팀 합의 후 적용한다. 후보 정책은 `최소 2초 입력 + 발화 탐지 후 1.5초 연속 무음`이며, 20초 하드 제한과 수동 정지 버튼은 항상 유지한다.
+- 팀 합의 전까지는 무음으로 STT를 자동 종료하지 않고, 20초 타임아웃과 사용자의 정지 입력만 사용한다.
