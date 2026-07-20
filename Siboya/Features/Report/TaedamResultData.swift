@@ -7,15 +7,15 @@
 
 import Foundation
 
+struct TaedamActionItem: Identifiable, Equatable {
+    let id: UUID
+    let title: String
+}
+
 struct TaedamResultData: Equatable {
     let week: Int
     let theme: String
     let summary: String
-    let actionItems: [TaedamActionItem]
+    let promise: TaedamActionItem
     let imageName: String
-}
-
-struct TaedamActionItem: Identifiable, Equatable {
-    let id: UUID
-    let title: String
 }

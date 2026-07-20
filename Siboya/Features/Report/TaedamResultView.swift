@@ -36,16 +36,15 @@ struct TaedamResultView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     ResultHeaderView(
-                        // viewModel.result.week/question/imageName으로 수정하기
                         week: viewModel.result.week,
                         theme: viewModel.result.theme,
                         imageName: viewModel.result.imageName
                     )
                     
-                    SavedActionListCard(
-                        summary: viewModel.result.summary,
-                        actionItems: viewModel.result.actionItems
-                    )
+//                    SavedPromiseCard(
+//                        summary: viewModel.result.summary,
+//                        promise: viewModel.result.promise
+//                    )
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 36)
@@ -59,9 +58,9 @@ struct TaedamResultView: View {
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
                     }
-                    .task {
-                        await viewModel.showSavedToastIfNeeded()
-                    }
+//                    .task {
+//                        await viewModel.showSavedToastIfNeeded()
+//                    }
         }
     }
 }
@@ -72,16 +71,11 @@ struct TaedamResultView: View {
                     week: 22,
                     theme: "일요일 아침",
                     summary: "방금 전 태담 속 아이와 함께하고 싶은 일을 담았어요.",
-                    actionItems: [
+                    promise:
                         TaedamActionItem(
                             id: UUID(),
                             title: "메론빵 만들어주기"
                         ),
-                        TaedamActionItem(
-                            id: UUID(),
-                            title: "함께 축구 경기 보러 가기"
-                        )
-                    ],
                     imageName: "TitleImage"
                 ),
                 onComplete: {}
