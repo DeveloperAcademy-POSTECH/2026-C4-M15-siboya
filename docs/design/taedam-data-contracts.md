@@ -129,7 +129,7 @@ flowchart LR
     Store -->|SavedBucketListDTO| Complete[버킷리스트 저장 완료]
     Bucket -->|@Query by bucketListItemID| Complete
     Bucket -->|@Query 전체 목록| Promise[약속 탭]
-    Promise -->|updateContent/updateCompletion/delete| Store
+    Promise -->|updateContent/toggleCompletion/delete| Store
 ```
 
 마이크 버퍼에서 SwiftData나 파일 시스템으로 향하는 경로는 존재하지 않는다.
@@ -193,7 +193,7 @@ struct TaedamSessionInputDTO: Sendable {
 | 버킷리스트 STT | `.bucketList` 줄과 마이크 입력 | 제한 시간, 부분·최종 전사문, 시도 횟수 | `BucketListDraftDTO` |
 | 버킷리스트 수정 | `BucketListDraftDTO` | 편집 중인 문자열, `TaedamSessionInputDTO.script.category` | `SaveBucketListCommandDTO` |
 | 버킷리스트 저장 완료 | `SavedBucketListDTO` | `@Query`로 관찰하는 `BucketListItem` | `onComplete: () -> Void` |
-| 약속 탭 | 없음 | `@Query`로 관찰하는 전체 `BucketListItem` | `TaedamRepository.updateContent`/`updateCompletion`/`delete` 호출 |
+| 약속 탭 | 없음 | `@Query`로 관찰하는 전체 `BucketListItem` | `TaedamRepository.updateContent`/`toggleCompletion`/`delete` 호출 |
 
 ### 최종 화면 표시 계약
 
@@ -444,11 +444,6 @@ struct UpdateBucketListContentCommandDTO: Sendable {
     let content: String
 }
 
-struct UpdateBucketListCompletionCommandDTO: Sendable {
-    let bucketListItemID: UUID
-    let isCompleted: Bool
-}
-
 protocol TaedamRepository: Sendable {
     func fetchBabyProfile() throws -> BabyProfile?
 
@@ -456,14 +451,14 @@ protocol TaedamRepository: Sendable {
     func updateContent(
         command: UpdateBucketListContentCommandDTO
     ) async throws
-    func updateCompletion(
-        command: UpdateBucketListCompletionCommandDTO
-    ) async throws
+    func toggleCompletion(bucketListItemID: UUID) async throws
     func delete(bucketListItemID: UUID) async throws
 }
 ```
 
 `TaedamRepository`는 태담 세션 흐름과 약속 탭이 함께 쓰는 기반 레이어다. 화면이 목록을 관찰할 때는 `@Query`를 직접 쓰고, 데이터를 변경할 때만 이 프로토콜을 거친다.
+
+`toggleCompletion`은 `isCompleted` 값을 화면에서 계산해 보내지 않고 `bucketListItemID`만 받아 저장된 현재값을 뒤집는다. 화면이 `@Query`로 읽은 값과 실제 갱신 시점 사이에 간극이 있어(`async throws` 호출), 값을 계산해서 보내면 연속 탭 시 최신 상태를 놓치고 같은 값을 중복 전송할 수 있기 때문이다.
 
 저장·수정 불변 조건은 다음과 같다.
 
