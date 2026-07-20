@@ -9,8 +9,13 @@ import Foundation
 
 struct TaedamResultData: Equatable {
     let week: Int
-    let question: String
+    let theme: String
     let summary: String
-    let actionItems: [String]
+    let actionItems: [TaedamActionItem]
     let imageName: String
+}
+
+struct TaedamActionItem: Identifiable, Equatable {
+    let id: UUID
+    let title: String
 }
