@@ -2,7 +2,7 @@
 
 - **상태**: review
 - **작성일**: 2026-07-19
-- **적용 범위**: 태담 탭 → 대본 미리보기 → 대본 자동 진행 → 마지막 버킷리스트 STT → 사용자 수정 → 저장
+- **적용 범위**: 태담 탭 → 대본 미리보기 → 대본 자동 진행 → 마지막 버킷리스트 STT → 사용자 수정 → 저장 → 약속 탭(전체 조회·문장 수정·상태 변경·삭제)
 
 > 이 문서는 태담 기능을 함께 개발할 때 사용하는 데이터 계약의 단일 기준이다.
 > 정적 대본은 번들 JSON에 두고, 사용자가 최종 확인한 버킷리스트와 아기 프로필만 SwiftData에 저장한다.
@@ -37,7 +37,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
       "title": "상상력을 자극하는 이야기",
       "subtitle": "아빠의 목소리로 상상하는 첫 여행",
       "metadata": {
-        "gestationalWeek": 22,
+        "targetGestationalWeek": 22,
         "artworkAssetName": "script_baby_love_imagination_22w",
         "estimatedDurationSeconds": 180
       },
@@ -64,13 +64,13 @@ Siboya/Resources/Scripts/taedam-scripts.json
 | `scripts[].category` | `String` | O | 대본 카테고리 |
 | `scripts[].title` | `String` | O | 대본 제목 |
 | `scripts[].subtitle` | `String` | O | 대본 한 줄 설명 |
-| `scripts[].metadata.gestationalWeek` | `Int` | O | 대본 대상 임신 주차 |
+| `scripts[].metadata.targetGestationalWeek` | `Int` | O | 대본 대상 임신 주차 |
 | `scripts[].metadata.artworkAssetName` | `String` | O | Assets 이미지 이름 |
-| `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 예상 소요 시간 표시값 |
+| `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 대본 미리보기에 표시하는 예상 소요 시간 |
 | `scripts[].sentences` | `[String]` | O | 자동 진행할 일반 대본 문장 |
 | `scripts[].bucketListPrompt` | `String` | O | 마지막에 한 번만 표시할 자유 발화 안내 |
 
-`{{babyNickname}}`은 `BabyProfile.nickname`으로 치환한다. JSON 원본은 수정하지 않는다.
+`{{babyNickname}}`은 `BabyProfile.nickname`으로 치환한다. JSON 원본은 수정하지 않는다. 치환은 `TaedamSessionInputDTO`가 만들어질 때 한 번 수행하며, 이후 진행 시간 계산과 화면 표시는 모두 치환된 텍스트를 사용한다.
 
 ### Swift 디코딩 모델
 
@@ -92,7 +92,7 @@ struct TaedamScriptContent: Decodable, Sendable {
 }
 
 struct ScriptMetadataContent: Decodable, Sendable {
-    let gestationalWeek: Int
+    let targetGestationalWeek: Int
     let artworkAssetName: String
     let estimatedDurationSeconds: Int?
 }
@@ -107,7 +107,7 @@ struct ScriptMetadataContent: Decodable, Sendable {
 5. 각 문장과 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
 6. `bucketListPrompt`는 별도 필드이므로 `sentences`에 중복해서 넣지 않는다.
 7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
-8. 지원하지 않는 템플릿 변수가 있으면 테스트를 실패시킨다.
+8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재는 `babyNickname` 하나)에 없는 변수가 있으면 로딩을 실패시킨다. 유닛테스트는 번들 JSON에 대해 이 규칙을 사전에 검증한다.
 
 ---
 
@@ -124,10 +124,12 @@ flowchart LR
     Session -->|마지막 대본 완료| STT[제한 시간 Speech STT]
     Mic -->|휘발성 버퍼| STT
     STT -->|BucketListDraftDTO| Edit[버킷리스트 수정]
-    Edit -->|SaveBucketListCommandDTO| Store[BucketListStore]
+    Edit -->|SaveBucketListCommandDTO| Store[TaedamRepository]
     Store --> Bucket[(BucketListItem)]
     Store -->|SavedBucketListDTO| Complete[버킷리스트 저장 완료]
     Bucket -->|@Query by bucketListItemID| Complete
+    Bucket -->|@Query 전체 목록| Promise[약속 탭]
+    Promise -->|updateContent/updateCompletion/delete| Store
 ```
 
 마이크 버퍼에서 SwiftData나 파일 시스템으로 향하는 경로는 존재하지 않는다.
@@ -166,7 +168,7 @@ struct ScriptPreviewDTO: Sendable {
     let category: String
     let title: String
     let subtitle: String
-    let gestationalWeek: Int
+    let targetGestationalWeek: Int
     let artworkAssetName: String
     let estimatedDurationSeconds: Int?
     let sentences: [ScriptSentenceDTO]
@@ -176,7 +178,6 @@ struct ScriptPreviewDTO: Sendable {
 struct TaedamSessionInputDTO: Sendable {
     let script: ScriptPreviewDTO
     let babyNickname: String
-    let babyGestationalWeek: Int
 }
 ```
 
@@ -191,7 +192,8 @@ struct TaedamSessionInputDTO: Sendable {
 | 태담 대본 진행 | `TaedamSessionInputDTO` | 카운트다운, 현재 `TaedamLineDTO`, 문장 채우기 진행률, 휘발성 음성 반응값 | 버킷리스트 STT 자동 전환 |
 | 버킷리스트 STT | `.bucketList` 줄과 마이크 입력 | 제한 시간, 부분·최종 전사문, 시도 횟수 | `BucketListDraftDTO` |
 | 버킷리스트 수정 | `BucketListDraftDTO` | 편집 중인 문자열, `TaedamSessionInputDTO.script.category` | `SaveBucketListCommandDTO` |
-| 버킷리스트 저장 완료 | `SavedBucketListDTO` | `@Query`로 관찰하는 `BucketListItem` | 상위 화면 완료 이벤트 |
+| 버킷리스트 저장 완료 | `SavedBucketListDTO` | `@Query`로 관찰하는 `BucketListItem` | `onComplete: () -> Void` |
+| 약속 탭 | 없음 | `@Query`로 관찰하는 전체 `BucketListItem` | `TaedamRepository.updateContent`/`updateCompletion`/`delete` 호출 |
 
 ### 최종 화면 표시 계약
 
@@ -213,6 +215,7 @@ init(bucketListItemID: UUID) {
 - 셀에는 대본 카테고리, 버킷리스트 내용과 수행 상태처럼 `BucketListItem`에서 직접 가져온 정보만 표시한다.
 - 태담 점수, 발화 평가, 그래프, 주파수·음량 수치, 녹음 시간과 오디오 재생 UI는 표시하지 않는다.
 - 대본을 완료했다는 사실로 별도의 태담 피드백 데이터나 요약 모델을 생성하지 않는다.
+- 상위 화면으로는 데이터 없는 완료 콜백만 전달한다: `var onComplete: () -> Void`. 상위 화면은 이 콜백을 받으면 현재 화면을 닫기만 하며, 저장된 `bucketListItemID`를 이용해 다른 화면으로 이동하거나 강조 표시하지 않는다.
 
 ---
 
@@ -268,7 +271,7 @@ protocol TaedamScriptProgressing: Sendable {
 
 - 태담 대본 화면에 진입하면 `3`, `2`, `1`을 표시하는 3초 카운트다운을 자동 시작한다.
 - 카운트다운이 끝나면 첫 번째 일반 대본의 `currentLineProgress`를 `0`으로 두고 대본 스트림을 시작한다.
-- 문장 진행 시간은 공백을 제외한 `Character` 수를 기준으로 `clamp(문자 수 / 4.0, 2.5, 10.0)`초로 계산한다. `4.0`, `2.5`, `10.0`은 UI 테스트 후 조정할 수 있는 타이밍 정책값이다.
+- `{{babyNickname}}`이 치환된 표시 텍스트 기준으로, 공백을 제외한 `Character` 수를 기준으로 `clamp(문자 수 / 4.0, 2.5, 10.0)`초로 계산한다. `4.0`, `2.5`, `10.0`은 UI 테스트 후 조정할 수 있는 타이밍 정책값이다.
 - 화면은 전체 문장을 기본 색으로 미리 배치하고 `currentLineProgress`에 따라 전경색 텍스트를 마스크해 노래방 가사처럼 채운다. 진행 중에 텍스트 레이아웃은 바뀌지 않는다.
 - 현재 문장의 진행률이 `1`이 되면 다음 일반 문장을 자동으로 시작한다.
 - 문장 이동을 위한 스와이프는 제공하지 않는다.
@@ -436,24 +439,37 @@ struct SavedBucketListDTO: Sendable {
     let bucketListItemID: UUID
 }
 
+struct UpdateBucketListContentCommandDTO: Sendable {
+    let bucketListItemID: UUID
+    let content: String
+}
+
 struct UpdateBucketListCompletionCommandDTO: Sendable {
     let bucketListItemID: UUID
     let isCompleted: Bool
 }
 
-protocol BucketListStore: Sendable {
+protocol TaedamRepository: Sendable {
+    func fetchBabyProfile() throws -> BabyProfile?
+
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
+    func updateContent(
+        command: UpdateBucketListContentCommandDTO
+    ) async throws
     func updateCompletion(
         command: UpdateBucketListCompletionCommandDTO
     ) async throws
+    func delete(bucketListItemID: UUID) async throws
 }
 ```
 
-저장 불변 조건은 다음과 같다.
+`TaedamRepository`는 태담 세션 흐름과 약속 탭이 함께 쓰는 기반 레이어다. 화면이 목록을 관찰할 때는 `@Query`를 직접 쓰고, 데이터를 변경할 때만 이 프로토콜을 거친다.
 
-1. `category`는 `TaedamSessionInputDTO.script.category`에서 가져오며 trim 후 비어 있을 수 없다.
-2. `content`는 trim 후 비어 있을 수 없다.
-3. STT 원문이 아니라 사용자가 수정·확정한 문장을 저장한다.
+저장·수정 불변 조건은 다음과 같다.
+
+1. `category`는 `TaedamSessionInputDTO.script.category`에서 가져오며 trim 후 비어 있을 수 없다. 생성 이후에는 어떤 화면에서도 수정하지 않는다.
+2. `content`는 `save`와 `updateContent` 모두에서 trim 후 비어 있을 수 없다.
+3. `save`는 STT 원문이 아니라 사용자가 수정·확정한 문장을 저장한다.
 4. 새 항목은 `isCompleted == false`로 저장한다.
 5. 부분 전사문과 오디오 데이터는 저장 명령에 포함하지 않는다.
 
@@ -471,7 +487,7 @@ sequenceDiagram
     participant Motion as 음성 반응 계산
     participant Speech as Speech STT
     participant Edit as 버킷리스트 수정
-    participant Store as BucketListStore
+    participant Store as TaedamRepository
     participant Data as SwiftData
     participant Complete as 버킷리스트 저장 완료
 
