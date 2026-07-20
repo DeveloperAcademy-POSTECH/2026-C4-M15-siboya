@@ -16,4 +16,10 @@ if [[ -z "$(find Siboya SiboyaTests SiboyaUITests -type f -name '*.swift' -print
     exit 0
 fi
 
+if [[ "${SWIFTLINT_AUTOFIX:-0}" == "1" ]]; then
+    echo "SwiftLint 자동 교정을 실행합니다."
+    swiftlint --fix \
+        --config "$REPOSITORY_ROOT/.swiftlint.yml"
+fi
+
 swiftlint lint --config "$REPOSITORY_ROOT/.swiftlint.yml" "$@"
