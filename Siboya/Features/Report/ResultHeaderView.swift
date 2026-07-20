@@ -16,7 +16,7 @@ struct ResultHeaderView: View {
         // HeaderContents
         // Image
         VStack(spacing: 12) {
-            Image("TitleImage")
+            Image(imageName)
                 .resizable()
                 .scaledToFill()
                 .frame(width: 144, height: 144)

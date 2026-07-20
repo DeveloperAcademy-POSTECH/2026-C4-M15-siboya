@@ -24,7 +24,7 @@ struct TaedamResultView: View {
                 .opacity(0.38)
             
             ScrollView {
-                VStack(spacing:0) {
+                VStack(spacing: 0) {
                     ResultHeaderView(
                         // viewModel.result.week/question/imageName으로 수정하기
                         week: 22,
