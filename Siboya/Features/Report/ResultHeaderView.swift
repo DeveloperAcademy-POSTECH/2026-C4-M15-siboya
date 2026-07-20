@@ -9,12 +9,10 @@ import SwiftUI
 
 struct ResultHeaderView: View {
     let week: Int
-    let question: String
+    let theme: String
     let imageName: String
     
     var body: some View {
-        // HeaderContents
-        // Image
         VStack(spacing: 12) {
             Image(imageName)
                 .resizable()
@@ -27,6 +25,7 @@ struct ResultHeaderView: View {
                     )
                 )
                 .accessibilityHidden(true)
+            
             // 주차별
             Text("\(week)주차")
                 .font(.title3)
@@ -34,8 +33,9 @@ struct ResultHeaderView: View {
                     // Color(red: 1.0, green: 0.39, blue: 0.37)
                     Color(.systemRed)
                 )
+            
             // 태담제목
-            Text(question)
+            Text(theme)
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.primary)
@@ -45,5 +45,5 @@ struct ResultHeaderView: View {
 }
 
 #Preview {
-    ResultHeaderView(week: 22, question: "일요일 아침", imageName: "TitleImage")
+    ResultHeaderView(week: 22, theme: "일요일 아침", imageName: "TitleImage")
 }

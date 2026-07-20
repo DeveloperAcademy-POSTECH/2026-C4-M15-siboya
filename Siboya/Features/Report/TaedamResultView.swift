@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TaedamResultView: View {
     let week: Int
-    let question: String
+    let theme: String
     let imageName: String
     
     var body: some View {
@@ -40,7 +40,7 @@ struct TaedamResultView: View {
 #Preview {
     TaedamResultView(
         week: 22,
-        question: "일요일 아침",
+        theme: "일요일 아침",
         imageName: "TitleImage"
     )
 }
