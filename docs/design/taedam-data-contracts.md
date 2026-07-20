@@ -28,7 +28,6 @@ Siboya/Resources/Scripts/taedam-scripts.json
 
 ```json
 {
-  "schemaVersion": 1,
   "scripts": [
     {
       "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
@@ -57,7 +56,6 @@ Siboya/Resources/Scripts/taedam-scripts.json
 
 | 경로 | 타입 | 필수 | 설명 |
 |---|---|---:|---|
-| `schemaVersion` | `Int` | O | JSON 문서 구조 버전 |
 | `scripts` | `[Object]` | O | 앱에 포함된 대본 목록 |
 | `scripts[].id` | `String` (UUID) | O | 대본 UUID 식별자 |
 | `scripts[].version` | `Int` | O | 대본 내용 개정 버전 |
@@ -76,7 +74,6 @@ Siboya/Resources/Scripts/taedam-scripts.json
 
 ```swift
 struct TaedamScriptDocument: Decodable, Sendable {
-    let schemaVersion: Int
     let scripts: [TaedamScriptContent]
 }
 
@@ -100,14 +97,13 @@ struct ScriptMetadataContent: Decodable, Sendable {
 
 ### JSON 검증 규칙
 
-1. 지원하지 않는 `schemaVersion`이면 로딩을 실패시킨다.
-2. `script.id`는 유효한 UUID 문자열이어야 한다.
-3. `script.id + version` 조합은 중복될 수 없다.
-4. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
-5. 각 문장과 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
-6. `bucketListPrompt`는 별도 필드이므로 `sentences`에 중복해서 넣지 않는다.
-7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
-8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재는 `babyNickname` 하나)에 없는 변수가 있으면 로딩을 실패시킨다. 유닛테스트는 번들 JSON에 대해 이 규칙을 사전에 검증한다.
+1. `script.id`는 유효한 UUID 문자열이어야 한다.
+2. `script.id + version` 조합은 중복될 수 없다.
+3. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
+4. 각 문장과 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
+5. `bucketListPrompt`는 별도 필드이므로 `sentences`에 중복해서 넣지 않는다.
+6. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
+7. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재는 `babyNickname` 하나)에 없는 변수가 있으면 로딩을 실패시킨다. 유닛테스트는 번들 JSON에 대해 이 규칙을 사전에 검증한다.
 
 ---
 
