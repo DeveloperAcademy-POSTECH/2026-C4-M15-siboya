@@ -28,7 +28,7 @@ struct PrimaryButton: View {
         .frame(minHeight: 56)
         .foregroundStyle(.white)
         .background(
-            isEnabled ? Color.red.opacity(0.7) : Color.gray.opacity(0.4),
+            isEnabled ? Color.primaryRed : Color.gray.opacity(0.4),
             in: Capsule()
         )
         .disabled(!isEnabled || isLoading)
