@@ -31,7 +31,7 @@ struct ResultHeaderView: View {
             Text("\(week)주차")
                 .font(.title3)
                 .foregroundStyle(
-                    //Color(red: 1.0, green: 0.39, blue: 0.37)
+                    // Color(red: 1.0, green: 0.39, blue: 0.37)
                     Color(.systemRed)
                 )
             // 태담제목
