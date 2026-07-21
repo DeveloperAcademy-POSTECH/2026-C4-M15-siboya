@@ -63,7 +63,23 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 4. `target > previous`이면 `alpha = 0.35`, 그 외에는 `alpha = 0.12`를 초기값으로 사용한다.
 5. `target >= 0.15`이면 음성 활성, `target <= 0.08`이 250밀리초 유지되면 비활성으로 판정한다.
 6. `eased = smoothed * smoothed * (3 - 2 * smoothed)`를 계산한다.
-7. 배경 View에 `scale = 1 + 0.08 * eased`, `shapeDeformation = 0.12 * eased`를 적용한다.
+7. 화면 표시 단계에서 `visualLevel = clamp(eased * 1.7, 0, 1)`로 반응 폭을 증폭한다.
+8. 흰색 표면에 `domeHeight = 118 * visualLevel`을 적용하고, 화면 중앙을 기준으로 하나의 넓고
+   둥근 곡면이 아래에서 올라왔다가 내려가도록 그린다.
+
+- 화면 하단의 분홍색·파란색·보라색 그라디언트 중심점은 발화 여부와 관계없이 좌우로 계속 이동한다.
+- `visualLevel`이 커질수록 분홍색·파란색 그라디언트의 중심 이동 거리, 반경과 화면 확장률을 함께
+  증가시켜 음량에 따라 컬러 영역이 넓게 출렁이도록 한다.
+- 분홍색과 파란색 빛 덩어리는 서로 다른 주기로 위아래를 왕복한다. `visualLevel`이 커질수록
+  왕복 범위를 최대 62pt까지 늘리고 전체 중심을 최대 34pt 위로 올려 Siri와 같은 상승 반응을 만든다.
+- 하단의 흰색 표면은 평상시 화면 아래에 머물고, `eased` 값이 커지면 중앙에서 단일 돔 형태로
+  올라온 뒤 음량이 작아질수록 부드럽게 내려간다.
+- `VoiceMotionMonitoring`은 대본을 읽는 동안에만 input tap을 유지한다. 버킷리스트 STT로 전환할 때
+  `stopMonitoring()`으로 tap과 오디오 세션을 정리한 후 `BucketListTranscribing.start(duration:)`을 호출한다.
+- 버킷리스트 발화 중에는 STT가 사용하는 동일한 PCM 버퍼에서 `voiceMotionSamples`를 만들어
+  흰색 표면의 음성 반응을 끊김 없이 유지한다.
+- 사용자가 버킷리스트에서 이전 대본문장을 선택하면 STT를 정리한 후 음성 모션 모니터를 다시 시작한다.
+- 시스템의 동작 줄이기 설정이 활성화되면 컬러 그라디언트의 지속 이동은 멈추되 음량 피드백은 유지한다.
 
 `-55 dB`, `-15 dB`, smoothing 계수와 모션 크기는 실기기 UI 테스트 후 조정할 수 있다. 입력 버퍼와 분석값은 화면 반영 직후 폐기한다.
 

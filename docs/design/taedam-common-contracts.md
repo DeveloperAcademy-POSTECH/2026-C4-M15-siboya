@@ -374,6 +374,7 @@ enum BucketListTranscriptionEndReason: Equatable, Sendable {
 protocol BucketListTranscribing: Sendable {
     var partialTranscripts: AsyncStream<String> { get }
     var automaticEndEvents: AsyncStream<BucketListTranscriptionEndReason> { get }
+    var voiceMotionSamples: AsyncStream<VoiceMotionSampleDTO> { get }
 
     func start(duration: Duration) async throws
     func finish() async throws -> BucketListDraftDTO
