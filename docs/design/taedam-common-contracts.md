@@ -2,7 +2,7 @@
 
 - **상태**: review
 - **작성일**: 2026-07-19
-- **최종 수정일**: 2026-07-21
+- **최종 수정일**: 2026-07-22
 - **적용 범위**: 태담, 태담 종류, 태담 진행, 소원 탭이 공통으로 사용하는 데이터와 경계
 
 > 이 문서는 공통 스키마, DTO, 프로토콜과 전체 데이터 흐름의 단일 기준이다. 화면별 동작은 [태담 스펙 인덱스](./taedam-data-contracts.md)에서 해당 기능 문서를 참조한다.
@@ -13,7 +13,7 @@
 - 아기 프로필과 사용자가 최종 확정한 버킷리스트만 SwiftData에 저장한다.
 - 태담 중 오디오 버퍼, 부분 전사문, RMS·dB 샘플과 모션값은 휘발성으로만 사용하고 저장하지 않는다.
 - 하나의 완료된 태담 세션은 `BucketListItem`을 정확히 하나만 생성한다.
-- 태담 요약 화면은 방금 생성한 버킷리스트 하나만 표시한다.
+- 태담 요약 화면은 선택한 태담 정보와 최종 확정한 문장을 직접 받아 방금 생성한 버킷리스트 하나만 표시한다.
 - 태담 종류 화면은 카테고리가 같은 버킷리스트를, 소원 탭은 전체 버킷리스트를 `@Query`로 관찰한다.
 
 ## 2. 전체 플로우
@@ -32,8 +32,8 @@ flowchart LR
     STT -->|BucketListDraftDTO| Keyboard[키보드 텍스트 수정]
     Keyboard -->|SaveBucketListCommandDTO| Repository[TaedamRepository]
     Repository --> Bucket[(BucketListItem)]
-    Repository -->|SavedBucketListDTO| Summary[태담 요약<br/>버킷리스트 1개]
-    Bucket -->|@Query by id| Summary
+    Repository -->|SavedBucketListDTO| Keyboard
+    Keyboard -->|태담 정보 + editedText| Summary[태담 요약<br/>버킷리스트 1개]
     Bucket -->|@Query by category| Category
     Bucket -->|@Query 전체| Wish[소원 탭]
     Wish -->|updateContent/toggleCompletion/delete| Repository

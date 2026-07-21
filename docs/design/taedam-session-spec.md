@@ -17,7 +17,7 @@
 | 카운트다운·대본 진행 | `TaedamSessionInputDTO` | 3초 카운트다운, 문장 채우기, 음성 반응 모션 | 버킷리스트 STT 자동 전환 |
 | 버킷리스트 STT | `.bucketList` 줄 | 최대 20초 전사, 수동 정지 | `BucketListDraftDTO` |
 | 버킷리스트 텍스트 수정 | `BucketListDraftDTO` | 키보드 수정·확정 | `SaveBucketListCommandDTO` |
-| 태담 요약 | `SavedBucketListDTO` | 방금 저장한 `BucketListItem` 하나 표시 | `onComplete: () -> Void` |
+| 태담 요약 | 선택한 태담 정보와 최종 `editedText` | 방금 만든 약속 하나 표시 | `onComplete: () -> Void` |
 
 ## 3. 권한 확인
 
@@ -98,12 +98,23 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - `SaveBucketListCommandDTO.content`는 사용자가 키보드로 최종 확정한 문장이다.
 - 세션은 `save` 성공 후 즉시 `.completed(bucketListItemID:)`로 전환한다.
 - 한 세션에서 저장을 두 번 이상 요청하지 않는다.
-- 요약 화면은 `SavedBucketListDTO.bucketListItemID`를 이용해 `@Query`를 구성한다.
-- 요약 화면은 쿼리 결과 중 해당 ID의 `BucketListItem` 하나만 표시한다. 목록, 최근 항목 또는 같은 카테고리의 다른 항목을 함께 표시하지 않는다.
-- 요약 셀에는 카테고리, 버킷리스트 내용과 수행 상태만 표시한다.
+- 저장 성공 후 요약 화면에는 `TaedamSessionInputDTO.script`의 `targetGestationalWeek`, `title`,
+  `artworkAssetName`과 사용자가 확정한 `editedText`를 직접 전달한다.
+- 요약 화면은 일회성 화면이므로 SwiftData 또는 Repository를 다시 조회하지 않는다.
+- 요약 셀에는 해당 세션에서 최종 확정한 약속 하나만 표시한다.
+- `artworkAssetName`과 일치하는 에셋이 아직 없으면 기본 `TitleImage`를 표시한다.
 - 태담 점수, 발화 평가, 그래프, 주파수·음량 수치, 녹음 시간과 오디오 재생 UI는 표시하지 않는다.
-- `@Query`가 빈 배열을 반환하면 저장된 항목을 찾을 수 없는 상태로 처리한다.
 - 상위 화면에는 `onComplete: () -> Void`만 전달한다. 상위 화면은 완료 시 현재 화면을 닫고 별도 항목을 강조하거나 추가 이동하지 않는다.
+
+```swift
+TaedamResultView(
+    targetGestationalWeek: sessionInput.script.targetGestationalWeek,
+    title: sessionInput.script.title,
+    artworkAssetName: sessionInput.script.artworkAssetName,
+    bucketListContent: editedText,
+    onComplete: onComplete
+)
+```
 
 ## 8. 런타임 시퀀스
 
@@ -153,9 +164,8 @@ sequenceDiagram
         Keyboard->>Repository: SaveBucketListCommandDTO
         Repository->>Data: BucketListItem 하나 insert
         Repository-->>Keyboard: SavedBucketListDTO
-        Keyboard->>Summary: bucketListItemID
-        Summary->>Data: @Query by id
-        Data-->>Summary: BucketListItem 하나
+        Keyboard->>Summary: 주차, 제목, 이미지 이름, editedText
+        Summary-->>User: 방금 만든 약속 하나
     else 권한 거부·제한
         Permission-->>Preview: denied or restricted
         Preview-->>User: 권한 설명·설정 이동 안내
