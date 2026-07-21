@@ -59,7 +59,6 @@ Siboya/Resources/Scripts/taedam-scripts.json
       "version": 1,
       "category": "아기사랑",
       "title": "상상력을 자극하는 이야기",
-      "subtitle": "아빠의 목소리로 상상하는 첫 여행",
       "metadata": {
         "targetGestationalWeek": 22,
         "artworkAssetName": "script_baby_love_imagination_22w",
@@ -71,7 +70,8 @@ Siboya/Resources/Scripts/taedam-scripts.json
         "구름 아래에는 반짝이는 바다와 초록 숲이 보여.",
         "언젠가 우리 셋이 함께 이 풍경을 보러 가자."
       ],
-      "bucketListPrompt": "{{babyNickname}}와 함께하고 싶은 일을 자유롭게 이야기해 주세요."
+      "bucketListPrompt": "{{babyNickname}}와 함께 꼭 […]하고 싶어.",
+      "bucketListGuide": "아이와 함께하고 싶은 소박한 일상을 자유롭게 말해보세요."
     }
   ]
 }
@@ -86,16 +86,19 @@ Siboya/Resources/Scripts/taedam-scripts.json
 | `scripts[].version` | `Int` | O | 대본 내용 개정 버전 |
 | `scripts[].category` | `String` | O | 대본 카테고리 |
 | `scripts[].title` | `String` | O | 개별 대본 제목 |
-| `scripts[].subtitle` | `String` | O | 대본 한 줄 설명 |
 | `scripts[].metadata.targetGestationalWeek` | `Int` | O | 대본 대상 임신 주차 |
 | `scripts[].metadata.artworkAssetName` | `String` | O | Assets 이미지 이름 |
 | `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 대본 미리보기에 표시할 예상 소요 시간 |
 | `scripts[].sentences` | `[String]` | O | 자동 진행할 일반 대본 문장 |
-| `scripts[].bucketListPrompt` | `String` | O | 대본 마지막에 한 번만 사용할 자유 발화 안내 |
+| `scripts[].bucketListPrompt` | `String` | O | STT 입력 전 표시할 플레이스홀더 문장 |
+| `scripts[].bucketListGuide` | `String` | O | STT 플레이스홀더 직전에 표시할 발화 주제 안내 |
 
 - `category`는 여러 대본을 묶는 상위 분류다.
 - 일반 대본은 읽는 순서대로 `sentences`에 둔다.
 - `bucketListPrompt`는 `sentences`와 섞지 않고 정확히 하나만 둔다.
+- `bucketListPrompt`는 STT 전사 결과가 생기기 전까지만 입력 영역의 플레이스홀더로 표시하며 전사문이나 저장 문장에 포함하지 않는다.
+- `bucketListGuide`에는 예시 답변이나 태담 종료 인사를 넣지 않는다.
+- 플레이스홀더 문장 뒤에 이어지는 인사말은 앱 대본에 포함하지 않는다.
 - `{{babyNickname}}`은 `TaedamSessionInputDTO`를 만들 때 `BabyProfile.nickname`으로 한 번 치환한다. JSON 원본은 수정하지 않는다.
 
 ### 디코딩 모델
@@ -110,10 +113,10 @@ struct TaedamScriptContent: Decodable, Sendable {
     let version: Int
     let category: String
     let title: String
-    let subtitle: String
     let metadata: ScriptMetadataContent
     let sentences: [String]
     let bucketListPrompt: String
+    let bucketListGuide: String
 }
 
 struct ScriptMetadataContent: Decodable, Sendable {
@@ -128,10 +131,11 @@ struct ScriptMetadataContent: Decodable, Sendable {
 1. `script.id`는 유효한 UUID 문자열이어야 한다.
 2. `script.id + version` 조합은 중복될 수 없다.
 3. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
-4. 각 문장, `category`와 `bucketListPrompt`는 trim 후 비어 있을 수 없다.
+4. 각 문장, `category`, `bucketListPrompt`와 `bucketListGuide`는 trim 후 비어 있을 수 없다.
 5. `bucketListPrompt`는 `sentences`에 중복해서 넣지 않는다.
-6. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
-7. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
+6. `bucketListGuide`에는 `예:` 또는 예시 답변을 포함하지 않는다.
+7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
+8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
 
 ## 4. 공통 DTO
 
@@ -159,12 +163,12 @@ struct ScriptPreviewDTO: Sendable {
     let scriptVersion: Int
     let category: String
     let title: String
-    let subtitle: String
     let targetGestationalWeek: Int
     let artworkAssetName: String
     let estimatedDurationSeconds: Int?
     let sentences: [ScriptSentenceDTO]
     let bucketListPrompt: String
+    let bucketListGuide: String
 }
 
 struct BabyProfileDTO: Identifiable, Equatable, Sendable {
@@ -226,9 +230,10 @@ struct BucketListDraftDTO: Equatable, Sendable {
 }
 ```
 
-- `TaedamSessionInputDTO.script`의 문장과 `bucketListPrompt`는 `babyNickname`이 치환된 값이다.
+- `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`와 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
 - 세션은 일반 문장 뒤에 `.bucketList` 줄을 정확히 하나만 추가한다.
-- `.bucketList` 줄의 입력 텍스트는 처음에 빈 문자열이며, `bucketListPrompt`는 안내 문구로만 사용한다.
+- `.bucketList` 줄의 STT 입력 텍스트는 처음에 빈 문자열이며, `bucketListPrompt`는 전사 결과가 생기기 전의 플레이스홀더로만 사용한다.
+- 부분 전사문이 들어오면 `bucketListPrompt`를 덮어쓰고, 이후 화면에는 전사문만 표시한다.
 - `currentLineProgress`와 `normalizedVoiceMotion`은 `0...1` 범위의 휘발성 화면 값이다.
 - 재발화 시도를 제공하지 않으므로 STT `attempt`는 상태에 포함하지 않는다.
 
