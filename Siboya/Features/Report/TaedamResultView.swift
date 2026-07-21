@@ -129,10 +129,23 @@ struct TaedamResultView: View {
     }
     
     private var snackbarTransition: AnyTransition {
-            reduceMotion
-                ? .opacity
-                : .move(edge: .bottom)
-                    .combined(with: .opacity)
+        if reduceMotion {
+                return .opacity
+            }
+
+            return .asymmetric(
+                insertion: .opacity
+                    .combined(
+                        with: .offset(y: 8)
+                    ),
+                removal: .opacity
+                    .combined(
+                        with: .scale(
+                            scale: 0.98,
+                            anchor: .center
+                        )
+                    )
+            )
         }
     
     @MainActor

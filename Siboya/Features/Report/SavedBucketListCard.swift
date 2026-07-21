@@ -22,6 +22,8 @@ struct SavedBucketListCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             
             Divider()
+    
+            // completionStatus
             
             // STT 이후 사용자가 키보드로 최종 확인한 문장
             Text(item.content)
@@ -32,8 +34,6 @@ struct SavedBucketListCard: View {
                 )
                 .accessibilityLabel("저장된 약속")
                 .accessibilityValue(item.content)
-        
-            completionStatus
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -62,15 +62,15 @@ struct SavedBucketListCard: View {
         .foregroundStyle(Color(.systemRed))
     }
     
-    private var completionStatus: some View {
-        Label(
-            item.isCompleted ? "완료한 약속" : "진행 전",
-            systemImage: item.isCompleted
-            ? "checkmark.circle.fill" : "circle"
-        )
-        .font(.subheadline)
-        .foregroundStyle(item.isCompleted ? Color.blue : Color.secondary)
-    }
+//    private var completionStatus: some View {
+//        Label(
+//            item.isCompleted ? "완료한 약속" : "진행 전",
+//            systemImage: item.isCompleted
+//            ? "checkmark.circle.fill" : "circle"
+//        )
+//        .font(.subheadline)
+//        .foregroundStyle(item.isCompleted ? Color.blue : Color.secondary)
+//    }
 }
 
 #Preview {
