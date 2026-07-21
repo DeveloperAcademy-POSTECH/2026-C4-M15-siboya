@@ -5,6 +5,10 @@
 - **적용 범위**: 선택한 태담 카테고리의 대본과 버킷리스트를 보여주는 화면
 - **공통 계약**: [태담 공통 데이터 계약](./taedam-common-contracts.md)
 
+> **Figma 확인 사항**: 현재 Home 디자인에서는 추천 카드나 대본 행을 선택하면 대본·생각힌트 미리보기로 직접 이동한다. 이 카테고리 상세 화면으로 들어오는 경로는 확인되지 않았으므로 화면 유지 여부와 진입 경로를 팀에서 재검토해야 한다.
+
+> **코드 확인 사항**: 이 화면과 `TaedamCategorySelectionDTO`, `ScriptRepository`는 현재 원격 코드에 구현되어 있지 않다. 번들 대본은 `SCRUM-23` 브랜치의 `BundledTaedamScriptLoader`가 읽고 있으며, 화면 유지 여부가 확정되기 전에는 별도 View 구현을 시작하지 않는다.
+
 ## 1. 목적
 
 사용자가 선택한 카테고리의 태담 대본을 살펴보고, 해당 카테고리의 태담에서 만든 버킷리스트를 함께 확인하게 한다.
@@ -40,7 +44,7 @@ init(selection: TaedamCategorySelectionDTO) {
 | 구분 | 데이터 |
 |---|---|
 | 입력 | `TaedamCategorySelectionDTO` |
-| 대본 조회 | `ScriptRepository.fetchScripts()` 결과 중 같은 `category` |
+| 대본 조회 | 현재 `BundledTaedamScriptLoader.load().scripts` 결과 중 같은 `category`; 추후 Repository 경계로 교체 가능 |
 | 버킷리스트 조회 | 카테고리 필터가 적용된 `@Query` |
 | 대본 선택 결과 | `ScriptSelectionDTO` |
 

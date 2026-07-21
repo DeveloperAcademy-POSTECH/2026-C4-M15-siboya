@@ -3,13 +3,17 @@
 - **상태**: review
 - **작성일**: 2026-07-19
 - **최종 수정일**: 2026-07-21
-- **적용 범위**: 태담, 태담 종류, 태담 진행, 소원 탭이 공통으로 사용하는 데이터와 경계
+- **적용 범위**: Home, 대본·생각힌트 미리보기, 태담 진행, 소원 탭이 공통으로 사용하는 데이터와 경계
 
 > 이 문서는 공통 스키마, DTO, 프로토콜과 전체 데이터 흐름의 단일 기준이다. 화면별 동작은 [태담 스펙 인덱스](./taedam-data-contracts.md)에서 해당 기능 문서를 참조한다.
 
+> **코드 확인 기준**: SwiftData 모델과 `TaedamRepository`는 `origin/develop`에 병합되어 있다. 번들 대본과 `TaedamScreen`은 아직 병합 전인 `origin/feature/SCRUM-23-taedam-screen-flow`를 기준으로 확인했다. Home, 대본 미리보기와 준비자세 모달 구현은 아직 원격 코드에 없다. 따라서 Figma는 화면 표현 기준으로, 아래 GitHub 코드는 데이터 필드와 기능 경계 기준으로 사용한다.
+
+> **디자인·콘텐츠 우선순위**: 화면의 레이아웃, 스타일과 컴포넌트 배치는 Figma를 기준으로 한다. 실제 문구, 임신 주차, 소요 시간, 카테고리와 대본 목록은 번들 JSON을 기준으로 하며 Figma와 충돌하면 JSON 값을 표시한다. Home 추천 설명은 주차별 JSON 필드가 추가되기 전까지 현재 확정 문구를 임시 하드코딩한다.
+
 ## 1. 전체 데이터 원칙
 
-- 정적 대본은 앱 번들 JSON에 두고 `ScriptRepository`로 읽는다.
+- 정적 대본은 앱 번들 JSON에 두고 현재 구현된 `BundledTaedamScriptLoader.load()`로 읽는다.
 - 아기 프로필과 사용자가 최종 확정한 버킷리스트만 SwiftData에 저장한다.
 - 태담 중 오디오 버퍼, 부분 전사문, RMS·dB 샘플과 모션값은 휘발성으로만 사용하고 저장하지 않는다.
 - 하나의 완료된 태담 세션은 `BucketListItem`을 정확히 하나만 생성한다.
@@ -20,11 +24,13 @@
 
 ```mermaid
 flowchart LR
-    JSON[번들 대본 JSON] --> Scripts[ScriptRepository]
-    Scripts --> Taedam[태담<br/>카테고리별 모아보기]
-    Taedam -->|TaedamCategorySelectionDTO| Category[태담 종류]
-    Category -->|ScriptSelectionDTO| Preview[대본 미리보기]
-    Preview -->|TaedamSessionInputDTO| Session[태담 진행]
+    JSON[번들 대본 JSON] --> Scripts[BundledTaedamScriptLoader]
+    Profile[(BabyProfile)] --> Home[Home<br/>추천·카테고리별 대본]
+    Scripts --> Home
+    Home -->|ScriptSelectionDTO| Preview[대본·생각힌트 미리보기]
+    Preview -->|준비하기| Preparation[준비자세 모달]
+    Preparation -->|시작하기| Permission[마이크·Speech 권한]
+    Permission -->|granted + TaedamSessionInputDTO| Session[태담 진행<br/>3초 카운트다운]
     Mic[마이크 입력] -->|PCM 버퍼| Motion[음성 반응]
     Motion -->|VoiceMotionSampleDTO| Session
     Session -->|마지막 대본 완료| STT[20초 Speech STT]
@@ -34,7 +40,7 @@ flowchart LR
     Repository --> Bucket[(BucketListItem)]
     Repository -->|SavedBucketListDTO| Summary[태담 요약<br/>버킷리스트 1개]
     Bucket -->|@Query by id| Summary
-    Bucket -->|@Query by category| Category
+    Bucket -->|@Query by category| Category[태담 종류<br/>진입 경로 재검토]
     Bucket -->|@Query 전체| Wish[소원 탭]
     Wish -->|updateContent/toggleCompletion/delete| Repository
 ```
@@ -57,21 +63,20 @@ Siboya/Resources/Scripts/taedam-scripts.json
     {
       "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
       "version": 1,
-      "category": "아기사랑",
-      "title": "상상력을 자극하는 이야기",
+      "category": "집에서 소소하게",
+      "title": "일요일 아침 냄새",
       "metadata": {
-        "targetGestationalWeek": 22,
-        "artworkAssetName": "script_baby_love_imagination_22w",
-        "estimatedDurationSeconds": 180
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_home_sunday_morning_20w",
+        "estimatedDurationSeconds": 35
       },
       "sentences": [
-        "{{babyNickname}}아, 오늘도 엄마와 너를 생각했어.",
-        "아빠와 함께 푹신한 구름 위로 올라가 보자.",
-        "구름 아래에는 반짝이는 바다와 초록 숲이 보여.",
-        "언젠가 우리 셋이 함께 이 풍경을 보러 가자."
+        "안녕, {{babyNickname}}아.",
+        "아빠야. 오늘 하루도 잘 보냈지?",
+        "아빠는 오늘 문득 우리가 함께 맞이할 일요일 아침을 상상해 봤어."
       ],
-      "bucketListPrompt": "{{babyNickname}}와 함께 꼭 […]하고 싶어.",
-      "bucketListGuide": "아이와 함께하고 싶은 소박한 일상을 자유롭게 말해보세요."
+      "bucketListPrompt": "{{babyNickname}}아, 아빠는 너를 위해 […] 해주고 싶어.",
+      "bucketListGuide": "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
     }
   ]
 }
@@ -90,13 +95,15 @@ Siboya/Resources/Scripts/taedam-scripts.json
 | `scripts[].metadata.artworkAssetName` | `String` | O | Assets 이미지 이름 |
 | `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 대본 미리보기에 표시할 예상 소요 시간 |
 | `scripts[].sentences` | `[String]` | O | 자동 진행할 일반 대본 문장 |
-| `scripts[].bucketListPrompt` | `String` | O | STT 입력 전 표시할 플레이스홀더 문장 |
-| `scripts[].bucketListGuide` | `String` | O | STT 플레이스홀더 직전에 표시할 발화 주제 안내 |
+| `scripts[].bucketListPrompt` | `String` | O | 미리보기의 마지막 빈칸 문장이자 STT 전 플레이스홀더 |
+| `scripts[].bucketListGuide` | `String` | O | 미리보기 생각힌트이자 STT 플레이스홀더 직전의 발화 주제 안내 |
 
 - `category`는 여러 대본을 묶는 상위 분류다.
 - 일반 대본은 읽는 순서대로 `sentences`에 둔다.
 - `bucketListPrompt`는 `sentences`와 섞지 않고 정확히 하나만 둔다.
-- `bucketListPrompt`는 STT 전사 결과가 생기기 전까지만 입력 영역의 플레이스홀더로 표시하며 전사문이나 저장 문장에 포함하지 않는다.
+- 미리보기에서는 `sentences`, `bucketListPrompt`, `bucketListGuide` 순서로 표시한다. `bucketListGuide`만 전구 아이콘을 사용하는 생각힌트 스타일로 표시한다.
+- 태담 진행에서는 `bucketListGuide`를 보조 안내 카드로, `bucketListPrompt`를 STT 전 플레이스홀더 문장으로 사용한다.
+- 첫 부분 전사문이 들어오면 `bucketListPrompt`를 화면에서 제거하고 전사문으로 대체한다. 두 값 모두 저장 문장에 자동으로 포함하지 않는다.
 - `bucketListGuide`에는 예시 답변이나 태담 종료 인사를 넣지 않는다.
 - 플레이스홀더 문장 뒤에 이어지는 인사말은 앱 대본에 포함하지 않는다.
 - `{{babyNickname}}`은 `TaedamSessionInputDTO`를 만들 때 `BabyProfile.nickname`으로 한 번 치환한다. JSON 원본은 수정하지 않는다.
@@ -136,6 +143,7 @@ struct ScriptMetadataContent: Decodable, Sendable {
 6. `bucketListGuide`에는 `예:` 또는 예시 답변을 포함하지 않는다.
 7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
 8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
+현재 `BundledTaedamScriptLoader`는 JSON 디코딩만 수행한다. 위 1~8 검증을 모두 강제하는 로직은 아직 구현되지 않았으므로 후속 통합 작업에서 보완해야 한다.
 
 ## 4. 공통 DTO
 
@@ -158,7 +166,7 @@ struct ScriptSentenceDTO: Identifiable, Equatable, Sendable {
     var id: Int { index }
 }
 
-struct ScriptPreviewDTO: Sendable {
+struct ScriptPreviewDTO: Equatable, Sendable {
     let scriptID: UUID
     let scriptVersion: Int
     let category: String
@@ -178,6 +186,10 @@ struct BabyProfileDTO: Identifiable, Equatable, Sendable {
 }
 ```
 
+- `ScriptPreviewDTO`는 `SCRUM-23` 브랜치에 구현되어 있다.
+- `TaedamCategorySelectionDTO`, `ScriptSelectionDTO`와 `BabyProfileDTO`는 아직 원격 코드에 없다. 현재 `TaedamRepository.fetchBabyProfile()`은 SwiftData의 `BabyProfile?`을 직접 반환한다.
+- View 통합 시 상위 ViewModel·Coordinator가 현재 모델을 표시용 값으로 변환하고, View가 SwiftData 모델을 수정하지 않게 한다.
+
 ### 태담 진행
 
 ```swift
@@ -194,15 +206,35 @@ struct TaedamLineDTO: Identifiable, Equatable, Sendable {
     var id: Int { index }
 }
 
-struct TaedamSessionInputDTO: Sendable {
+struct TaedamSessionInputDTO: Equatable, Sendable {
     let script: ScriptPreviewDTO
     let babyNickname: String
 }
 
-enum TaedamPhaseDTO: Equatable, Sendable {
+enum TaedamScreenPhase: Equatable, Sendable {
     case ready
     case countingDown(remainingSeconds: Int)
     case readingScript(index: Int)
+    case bucketList
+}
+```
+
+- `TaedamSessionInputDTO.lines`는 `sentences` 뒤에 `bucketListPrompt`를 사용하는 `.bucketList` 줄을 정확히 하나 추가하는 계산 프로퍼티다.
+- `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`와 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
+- `TaedamScreenPhase`는 현재 `SCRUM-23` 코드에 구현된 대본 진행 범위다.
+- `bucketListGuide`는 `.bucketList` 줄 앞의 안내 카드에 표시하고 `bucketListPrompt`는 해당 줄의 플레이스홀더로 표시한다.
+- `currentLineProgress`는 `0...1` 범위의 휘발성 화면 값이다.
+
+### 후속 음성·저장 통합 DTO
+
+아래 타입은 SSD에 합의된 후속 기능 경계이며 아직 원격 코드에 구현되지 않았다. View 코드에서 현재 존재하는 타입처럼 참조하지 않는다.
+
+```swift
+enum TaedamSessionPhaseDTO: Equatable, Sendable {
+    case ready
+    case countingDown(remainingSeconds: Int)
+    case readingScript(index: Int)
+    case bucketList
     case transcribingBucketList(remainingSeconds: Int)
     case reviewingBucketListDraft
     case editingBucketList
@@ -212,7 +244,7 @@ enum TaedamPhaseDTO: Equatable, Sendable {
 }
 
 struct TaedamSessionStateDTO: Equatable, Sendable {
-    let phase: TaedamPhaseDTO
+    let phase: TaedamSessionPhaseDTO
     let currentLine: TaedamLineDTO?
     let currentLineProgress: Double
     let liveBucketListTranscript: String
@@ -294,7 +326,7 @@ erDiagram
 
 `BucketListItem`은 녹음 기록과 연결되지 않는다. `category`는 생성 후 수정하지 않는다.
 
-### SwiftData 모델 초안
+### 현재 SwiftData 모델
 
 ```swift
 import Foundation
@@ -320,9 +352,9 @@ final class BabyProfile {
 @Model
 final class BucketListItem {
     @Attribute(.unique) var id: UUID
-    var category: String
-    var content: String
-    var isCompleted: Bool
+    private(set) var category: String
+    private(set) var content: String
+    private(set) var isCompleted: Bool
     var createdAt: Date
 
     init(
@@ -338,10 +370,22 @@ final class BucketListItem {
         self.isCompleted = isCompleted
         self.createdAt = createdAt
     }
+
+    func updateContent(_ newContent: String) {
+        content = newContent
+    }
+
+    func toggleCompletion() {
+        isCompleted.toggle()
+    }
 }
 ```
 
+앱 루트의 `SiboyaApp`이 `PersistenceContainer.shared`를 `.modelContainer(...)`로 주입한다. `SwiftDataTaedamRepository`는 전달받은 `ModelContext`를 사용하며 메인 액터에서 호출해야 한다.
+
 ## 6. 공통 프로토콜
+
+`TaedamRepository`는 `origin/develop`에 구현되어 있다. 나머지 프로토콜은 음성·STT 및 화면 통합을 위한 설계 계약이며 아직 원격 코드에 구현되지 않았다. 번들 대본은 현재 `BundledTaedamScriptLoader` 정적 메서드가 직접 로드한다.
 
 ```swift
 protocol ScriptRepository: Sendable {
@@ -385,8 +429,9 @@ protocol TaedamRepository: Sendable {
 }
 ```
 
-- `ScriptRepository`는 번들 JSON을 로드·검증하지만 JSON 원본을 수정하지 않는다.
-- `TaedamRepository`는 SwiftData 변경을 담당한다. 화면의 반응형 조회는 `@Query`를 직접 사용한다.
+- `ScriptRepository`는 Home·미리보기 통합 시 도입할 예정인 경계다. 현재 View에서 이 타입을 참조하면 컴파일되지 않는다.
+- `TaedamRepository`는 SwiftData 변경을 담당한다. `fetchBabyProfile()`은 현재 `BabyProfile?`을 직접 반환한다.
+- View는 SwiftData 저장 모델을 직접 수정하지 않는다. 표시용 조회는 `@Query`를 사용할 수 있지만, 저장·수정·완료 토글·삭제는 ViewModel 또는 상위 조정자가 `TaedamRepository`를 호출한다.
 - `toggleCompletion`은 화면이 계산한 값을 받지 않고, 저장된 최신 `isCompleted`를 Repository 내부에서 뒤집는다.
 
 ## 7. 저장·수정 불변 조건
