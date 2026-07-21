@@ -15,13 +15,13 @@
 | [Home(태담 탭) 기능 스펙](./taedam-browse-spec.md) | 현재 임신 주차 추천과 카테고리별 대본 표시, 대본 선택 |
 | [태담 종류 화면 스펙](./taedam-category-spec.md) | 선택한 카테고리의 대본과 버킷리스트 표시. 현재 Figma Home에서의 진입 경로는 재검토 필요 |
 | [태담 시작·진행 기능 스펙](./taedam-session-spec.md) | 대본·생각힌트 미리보기, 준비자세 모달, 권한, 카운트다운, 대본 진행, STT, 키보드 수정·저장, 태담 요약 |
-| [소원 탭 기능 스펙](./wish-tab-spec.md) | 전체 버킷리스트 조회, 문장 수정, 완료 상태 toggle, 삭제 |
+| [약속 탭 기능 스펙](./wish-tab-spec.md) | 전체 버킷리스트 조회, 문장 수정, 완료 상태 toggle, 삭제 |
 
 ## Home·미리보기·준비자세 View 구현 경계
 
 | View | 전달받아 표시할 값 | 밖으로 전달할 이벤트 | View에서 하지 않는 일 |
 |---|---|---|---|
-| Home | 태명, 추천 설명·대본, 카테고리별 대본 목록 | 대본 선택, `약속` 탭 선택 | `ModelContext` 생성, JSON 디코딩, SwiftData 쓰기 |
+| Home | 태명, 추천 설명·대본, 카테고리별 대본 목록 | 대본 선택 | `ModelContext` 생성, JSON 디코딩, SwiftData 쓰기, 앱 전역 탭 전환 |
 | 대본·생각힌트 미리보기 | `ScriptPreviewDTO`의 주차·제목·이미지·시간·문장·`bucketListPrompt`·`bucketListGuide` | 뒤로가기, `준비하기` | 대본 조회, 태명 치환, 권한 요청 |
 | 준비자세 모달 | 태명, 시작 처리 중 여부 | 닫기, `시작하기` | 마이크·Speech 권한 API 호출, 카운트다운 시작 |
 

@@ -80,7 +80,6 @@ Figma에는 `loaded` 상태만 정의되어 있다. `profileMissing`, `empty`, `
 1. 추천 카드 또는 대본 행을 탭하면 View는 해당 대본의 `scriptID`와 `scriptVersion`을 선택 callback으로 전달한다.
 2. 상위 ViewModel·Coordinator가 `ScriptSelectionDTO`를 만들고 대본·생각힌트 미리보기 화면을 push한다. 공통 타입이 추가되기 전에는 callback의 두 원시 값을 사용할 수 있다.
 3. 같은 항목을 연속 탭해도 미리보기 화면을 중복으로 열지 않는다.
-4. `약속` 탭을 선택하면 소원 탭으로 전환한다.
 
 ## 8. Figma와 현재 데이터 차이
 

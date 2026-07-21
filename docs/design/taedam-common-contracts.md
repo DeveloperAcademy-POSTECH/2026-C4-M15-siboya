@@ -3,7 +3,7 @@
 - **상태**: review
 - **작성일**: 2026-07-19
 - **최종 수정일**: 2026-07-21
-- **적용 범위**: Home, 대본·생각힌트 미리보기, 태담 진행, 소원 탭이 공통으로 사용하는 데이터와 경계
+- **적용 범위**: Home, 대본·생각힌트 미리보기, 태담 진행, 약속 탭이 공통으로 사용하는 데이터와 경계
 
 > 이 문서는 공통 스키마, DTO, 프로토콜과 전체 데이터 흐름의 단일 기준이다. 화면별 동작은 [태담 스펙 인덱스](./taedam-data-contracts.md)에서 해당 기능 문서를 참조한다.
 
@@ -19,7 +19,7 @@
 - 태담 중 오디오 버퍼, 부분 전사문, RMS·dB 샘플과 모션값은 휘발성으로만 사용하고 저장하지 않는다.
 - 하나의 완료된 태담 세션은 `BucketListItem`을 정확히 하나만 생성한다.
 - 태담 요약 화면은 방금 생성한 버킷리스트 하나만 표시한다.
-- 태담 종류 화면은 카테고리가 같은 버킷리스트를, 소원 탭은 전체 버킷리스트를 `@Query`로 관찰한다.
+- 태담 종류 화면은 카테고리가 같은 버킷리스트를, 약속 탭은 전체 버킷리스트를 `@Query`로 관찰한다.
 
 ## 2. 전체 플로우
 
@@ -44,7 +44,7 @@ flowchart LR
     Repository -->|SavedBucketListDTO| Summary[태담 요약<br/>버킷리스트 1개]
     Bucket -->|@Query by id| Summary
     Bucket -->|@Query by category| Category[태담 종류<br/>진입 경로 재검토]
-    Bucket -->|@Query 전체| Wish[소원 탭]
+    Bucket -->|@Query 전체| Wish[약속 탭]
     Wish -->|updateContent/toggleCompletion/delete| Repository
 ```
 
