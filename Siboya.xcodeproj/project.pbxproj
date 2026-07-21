@@ -280,7 +280,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nexport PATH=\"$PATH:/opt/homebrew/bin\"\nif command -v swiftlint >/dev/null 2>&1\nthen\n    swiftlint\nelse\n    echo \"warning: SwiftLint not installed\"\nfi\n";
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\n\nif [ -f \"${SRCROOT}/Scripts/lint.sh\" ]; then\n    \"${SRCROOT}/Scripts/lint.sh\"\nelse\n    echo \"warning: Scripts/lint.sh not found\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
