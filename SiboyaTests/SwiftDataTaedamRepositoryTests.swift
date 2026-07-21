@@ -60,7 +60,7 @@ struct SwiftDataTaedamRepositoryTests {
 
         try await repository.ensureBabyProfile(nickname: "다른이름", gestationalWeek: 10)
 
-        let profile = try await repository.fetchBabyProfile()
+let profile = try repository.fetchBabyProfile()
         #expect(profile?.nickname == "콩콩이")
         #expect(profile?.gestationalWeek == 22)
     }
