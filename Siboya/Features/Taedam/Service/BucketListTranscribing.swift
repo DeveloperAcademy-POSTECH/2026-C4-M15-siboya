@@ -16,6 +16,11 @@ protocol BucketListTranscribing: Sendable {
     /// `start(duration:)` 호출 전에 구독할 수 있으며, 새 결과가 생길 때마다 문자열 전체를 전달합니다.
     var partialTranscripts: AsyncStream<String> { get }
 
+    /// 제한 시간, 무음 또는 Speech의 자체 종료처럼 자동으로 입력이 끝난 이유를 전달합니다.
+    ///
+    /// 화면은 이벤트를 받으면 `finish()`를 호출해 최종 전사문을 확정해야 합니다.
+    var automaticEndEvents: AsyncStream<BucketListTranscriptionEndReason> { get }
+
     /// 마이크 입력과 실시간 음성 인식을 시작합니다.
     ///
     /// - Parameter duration: 마이크를 열어둘 최대 시간입니다. 태담에서는 `.seconds(20)`을 사용합니다.
@@ -30,6 +35,21 @@ protocol BucketListTranscribing: Sendable {
 
     /// 현재 입력과 인식 작업을 즉시 취소하고 수집한 전사문을 폐기합니다.
     func cancel() async
+}
+
+/// 사용자 입력 없이 STT가 자동으로 끝난 이유입니다.
+enum BucketListTranscriptionEndReason: Equatable, Sendable {
+    /// 최초 발화 이후 설정된 시간 동안 무음이 이어졌습니다.
+    case silence
+
+    /// 한 번의 STT에 허용된 최대 입력 시간이 지났습니다.
+    case maximumDuration
+
+    /// Speech가 스스로 최종 인식 결과를 반환했습니다.
+    case recognitionFinalized
+
+    /// Speech 인식 작업에서 오류가 발생했습니다.
+    case recognitionFailed
 }
 
 /// 버킷리스트 STT를 시작하거나 종료할 수 없는 원인을 나타냅니다.

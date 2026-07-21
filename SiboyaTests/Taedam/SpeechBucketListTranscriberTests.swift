@@ -54,4 +54,69 @@ struct SpeechBucketListTranscriberTests {
             try await transcriber.finish()
         }
     }
+
+    @Test func silenceBeforeFirstSpeechDoesNotEndInput() {
+        var detector = BucketListSilenceDetector(
+            policy: BucketListSilenceDetectionPolicy(
+                minimumInputDuration: 2,
+                trailingSilenceDuration: 1.5
+            )
+        )
+
+        let didEnd = detector.process(rmsDecibels: -60, duration: 3)
+
+        #expect(!didEnd)
+    }
+
+    @Test func silenceAfterSpeechEndsInputAtConfiguredDuration() {
+        var detector = BucketListSilenceDetector(
+            policy: BucketListSilenceDetectionPolicy(
+                minimumInputDuration: 2,
+                trailingSilenceDuration: 1.5
+            )
+        )
+
+        let didEndWhileSpeaking = detector.process(
+            rmsDecibels: -35,
+            duration: 0.5
+        )
+        let didEndBeforeLimit = detector.process(
+            rmsDecibels: -50,
+            duration: 1.4
+        )
+        let didEndAtLimit = detector.process(
+            rmsDecibels: -50,
+            duration: 0.1
+        )
+        let didEndAgain = detector.process(
+            rmsDecibels: -50,
+            duration: 1
+        )
+
+        #expect(!didEndWhileSpeaking)
+        #expect(!didEndBeforeLimit)
+        #expect(didEndAtLimit)
+        #expect(!didEndAgain)
+    }
+
+    @Test func resumedSpeechResetsTrailingSilenceDuration() {
+        var detector = BucketListSilenceDetector(
+            policy: BucketListSilenceDetectionPolicy(
+                minimumInputDuration: 0,
+                trailingSilenceDuration: 1.5
+            )
+        )
+
+        let firstSpeech = detector.process(rmsDecibels: -35, duration: 0.2)
+        let firstSilence = detector.process(rmsDecibels: -50, duration: 1)
+        let resumedSpeech = detector.process(rmsDecibels: -35, duration: 0.2)
+        let secondSilence = detector.process(rmsDecibels: -50, duration: 1)
+        let completedSilence = detector.process(rmsDecibels: -50, duration: 0.5)
+
+        #expect(!firstSpeech)
+        #expect(!firstSilence)
+        #expect(!resumedSpeech)
+        #expect(!secondSilence)
+        #expect(completedSilence)
+    }
 }
