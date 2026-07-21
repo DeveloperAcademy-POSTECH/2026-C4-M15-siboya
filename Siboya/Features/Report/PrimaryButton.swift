@@ -12,12 +12,13 @@ struct PrimaryButton: View {
     var isEnabled: Bool = true
     var isLoading: Bool = false
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Group {
                 if isLoading {
                     ProgressView()
+                        .accessibilityHidden(true)
                 } else {
                     Text(title)
                         .font(.headline)
@@ -32,13 +33,15 @@ struct PrimaryButton: View {
             in: Capsule()
         )
         .disabled(!isEnabled || isLoading)
+        .accessibilityLabel(title)
+        .accessibilityValue(isLoading ? "처리 중" : "")
     }
 }
 
 #Preview {
     PrimaryButton(
         title: "완료",
-                action: {}
-            )
-            .padding()
+        action: {}
+    )
+    .padding()
 }

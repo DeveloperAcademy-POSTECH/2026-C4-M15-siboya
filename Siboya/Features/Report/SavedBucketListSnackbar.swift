@@ -9,14 +9,14 @@ import SwiftUI
 
 struct SavedBucketListSnackbar: View {
     let message: String
-    
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.blue)
                 .accessibilityHidden(true)
-            
+
             Text(message)
                 .font(.headline)
                 .foregroundStyle(.blue)
@@ -39,6 +39,7 @@ struct SavedBucketListSnackbar: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(message)
+        .accessibilityIdentifier("taedam-result-snackbar")
     }
 }
 

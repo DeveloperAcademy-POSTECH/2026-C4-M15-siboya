@@ -1,5 +1,5 @@
 //
-//  SavedPromiseCard.swift
+//  SavedBucketListCard.swift
 //  Siboya
 //
 //  Created by Erin Yaebin Kim on 7/21/26.
@@ -7,33 +7,28 @@
 
 import SwiftUI
 
+/// 태담 직후 사용자가 최종 확정한 약속 하나를 표시합니다.
 struct SavedBucketListCard: View {
-    // SwiftData에 저장된 실제 약속 모델, 값을 수정하지 않고 읽기만 한다.
-    let item: BucketListItem
-    
+    let content: String
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             cardTitle
-            
-            // 약속이 만들어진 태담의 카데고리
-            Text(item.category)
-                .font(.headline)
-                .foregroundStyle(.primary)
+
+            Text("방금 전 태담에서 아이와 함께하고 싶은 일을 담았어요")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            
+
             Divider()
-    
-            // completionStatus
-            
-            // STT 이후 사용자가 키보드로 최종 확인한 문장
-            Text(item.content)
+
+            Text(content)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .fixedSize(
-                    horizontal: false, vertical: true
-                )
+                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel("저장된 약속")
-                .accessibilityValue(item.content)
+                .accessibilityValue(content)
+                .accessibilityIdentifier("taedam-result-bucket-list")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -50,7 +45,7 @@ struct SavedBucketListCard: View {
             y: 6
         )
     }
-    
+
     private var cardTitle: some View {
         Label {
             Text("저장된 약속")
@@ -59,30 +54,17 @@ struct SavedBucketListCard: View {
                 .accessibilityHidden(true)
         }
         .font(.subheadline)
-        .foregroundStyle(Color(.systemRed))
+        .foregroundStyle(Color.primaryRed)
     }
-    
-//    private var completionStatus: some View {
-//        Label(
-//            item.isCompleted ? "완료한 약속" : "진행 전",
-//            systemImage: item.isCompleted
-//            ? "checkmark.circle.fill" : "circle"
-//        )
-//        .font(.subheadline)
-//        .foregroundStyle(item.isCompleted ? Color.blue : Color.secondary)
-//    }
 }
 
-#Preview {
+#Preview("Long Promise") {
     ZStack {
         Color(.systemGray6)
             .ignoresSafeArea()
 
         SavedBucketListCard(
-            item: BucketListItem(
-                category: "아기사랑",
-                content: "메론빵 만들어주기"
-            )
+            content: "일요일 아침마다 아빠가 직접 부드러운 계란말이와 따뜻한 빵을 준비해서 온 가족이 함께 천천히 아침을 먹고 싶어."
         )
         .padding(24)
     }
