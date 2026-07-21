@@ -7,13 +7,14 @@
 
 > 이 문서는 공통 스키마, DTO, 프로토콜과 전체 데이터 흐름의 단일 기준이다. 화면별 동작은 [태담 스펙 인덱스](./taedam-data-contracts.md)에서 해당 기능 문서를 참조한다.
 
-> **코드 확인 기준**: SwiftData 모델과 `TaedamRepository`는 `origin/develop`에 병합되어 있다. 번들 대본과 `TaedamScreen`은 아직 병합 전인 `origin/feature/SCRUM-23-taedam-screen-flow`를 기준으로 확인했다. Home, 대본 미리보기와 준비자세 모달 구현은 아직 원격 코드에 없다. 따라서 Figma는 화면 표현 기준으로, 아래 GitHub 코드는 데이터 필드와 기능 경계 기준으로 사용한다.
+> **코드 확인 기준**: SwiftData 모델, `TaedamRepository`, 번들 대본 로더와 `TaedamScreen`은 PR #8을 통해 `origin/develop`에 병합되어 있다. Home, 대본 미리보기와 준비자세 모달 구현은 아직 원격 코드에 없다. 따라서 Figma는 화면 표현 기준으로, 아래 GitHub 코드는 데이터 필드와 기능 경계 기준으로 사용한다.
 
-> **디자인·콘텐츠 우선순위**: 화면의 레이아웃, 스타일과 컴포넌트 배치는 Figma를 기준으로 한다. 실제 문구, 임신 주차, 소요 시간, 카테고리와 대본 목록은 번들 JSON을 기준으로 하며 Figma와 충돌하면 JSON 값을 표시한다. Home 추천 설명은 주차별 JSON 필드가 추가되기 전까지 현재 확정 문구를 임시 하드코딩한다.
+> **디자인·콘텐츠 우선순위**: 화면의 레이아웃, 스타일과 컴포넌트 배치는 Figma를 기준으로 한다. 실제 문구, 임신 주차, 소요 시간, 카테고리와 대본 목록은 번들 JSON을 기준으로 하며 Figma와 충돌하면 JSON 값을 표시한다. Home 추천 설명과 추천 대본 연결은 별도의 주차별 Home JSON을 단일 기준으로 사용한다.
 
 ## 1. 전체 데이터 원칙
 
 - 정적 대본은 앱 번들 JSON에 두고 현재 구현된 `BundledTaedamScriptLoader.load()`로 읽는다.
+- 주차별 Home 헤드라인과 추천 대본 ID는 `home-weekly-content.json`에 두며, 대본 본문을 중복 저장하지 않는다.
 - 아기 프로필과 사용자가 최종 확정한 버킷리스트만 SwiftData에 저장한다.
 - 태담 중 오디오 버퍼, 부분 전사문, RMS·dB 샘플과 모션값은 휘발성으로만 사용하고 저장하지 않는다.
 - 하나의 완료된 태담 세션은 `BucketListItem`을 정확히 하나만 생성한다.
@@ -24,8 +25,10 @@
 
 ```mermaid
 flowchart LR
-    JSON[번들 대본 JSON] --> Scripts[BundledTaedamScriptLoader]
+    HomeJSON[주차별 Home JSON] --> HomeContent[HomeWeeklyContentLoader]
+    ScriptJSON[번들 대본 JSON] --> Scripts[BundledTaedamScriptLoader]
     Profile[(BabyProfile)] --> Home[Home<br/>추천·카테고리별 대본]
+    HomeContent --> Home
     Scripts --> Home
     Home -->|ScriptSelectionDTO| Preview[대본·생각힌트 미리보기]
     Preview -->|준비하기| Preparation[준비자세 모달]
@@ -47,7 +50,66 @@ flowchart LR
 
 마이크 입력에서 SwiftData나 파일 시스템으로 향하는 경로는 존재하지 않는다. STT 결과는 반드시 키보드 편집 단계를 거쳐 사용자가 확정한 문장만 저장한다.
 
-## 3. 대본 JSON 계약
+## 3. 주차별 Home JSON 계약
+
+### 저장 위치
+
+```text
+Siboya/Resources/Home/home-weekly-content.json
+```
+
+### JSON 예시
+
+```json
+{
+  "weeks": [
+    {
+      "gestationalWeek": 20,
+      "headline": "아빠의 낮은 목소리가 잘 들리는 시기",
+      "recommendedScriptID": null
+    }
+  ]
+}
+```
+
+### 필드 정의
+
+| 경로 | 타입 | 필수 | 설명 |
+|---|---|---:|---|
+| `weeks` | `[Object]` | O | 20~40주차 Home 콘텐츠 목록 |
+| `weeks[].gestationalWeek` | `Int` | O | Home 콘텐츠를 선택할 임신 주차 |
+| `weeks[].headline` | `String` | O | 해당 주차의 추천 헤드라인 |
+| `weeks[].recommendedScriptID` | `String` (UUID) 또는 `null` | O | 추천 카드가 참조할 `scripts[].id`; 추천 대본 확정 전에는 `null` |
+
+- 20~40주차의 헤드라인은 [기획 Notion의 주차별 홈 화면 추천 헤드라인](https://app.notion.com/p/39ffbac165f1804ea1b4ea014eac08f9?source=copy_link)을 원문 기준으로 저장한다.
+- `recommendedScriptID`는 대본이 추가되고 해당 주차의 추천 대본이 확정될 때 채운다. 임의의 대본 ID를 연결하지 않는다.
+- Home JSON은 대본 제목, 이미지 이름이나 본문을 복제하지 않는다. ID가 있으면 `taedam-scripts.json`에서 해당 대본을 조회한다.
+- `recommendedScriptID == null`이면 헤드라인은 표시할 수 있지만 추천 대본 카드로 이동하지 않는다.
+- 값이 `null`이 아닌데 대응하는 대본이 없으면 데이터 연결 오류로 처리하고 해당 추천 카드는 표시하지 않는다.
+
+### 디코딩 모델
+
+```swift
+struct HomeWeeklyContentDocument: Decodable, Sendable {
+    let weeks: [HomeWeeklyContent]
+}
+
+struct HomeWeeklyContent: Decodable, Sendable {
+    let gestationalWeek: Int
+    let headline: String
+    let recommendedScriptID: UUID?
+}
+```
+
+### 검증 규칙
+
+1. `gestationalWeek`는 `20...40` 범위이며 중복될 수 없다.
+2. `headline`은 trim 후 비어 있을 수 없다.
+3. `recommendedScriptID`가 문자열이면 유효한 UUID여야 한다.
+4. `recommendedScriptID`가 `null`인 항목은 정상적인 미연결 데이터로 허용한다.
+5. `recommendedScriptID`가 값이 있으면 `taedam-scripts.json`에 같은 `scripts[].id`가 정확히 하나 있어야 한다.
+
+## 4. 대본 JSON 계약
 
 ### 저장 위치
 
@@ -145,7 +207,7 @@ struct ScriptMetadataContent: Decodable, Sendable {
 8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
 현재 `BundledTaedamScriptLoader`는 JSON 디코딩만 수행한다. 위 1~8 검증을 모두 강제하는 로직은 아직 구현되지 않았으므로 후속 통합 작업에서 보완해야 한다.
 
-## 4. 공통 DTO
+## 5. 공통 DTO
 
 ### 탐색·대본 선택
 
@@ -186,7 +248,7 @@ struct BabyProfileDTO: Identifiable, Equatable, Sendable {
 }
 ```
 
-- `ScriptPreviewDTO`는 `SCRUM-23` 브랜치에 구현되어 있다.
+- `ScriptPreviewDTO`는 PR #8을 통해 `develop`에 구현되어 있다.
 - `TaedamCategorySelectionDTO`, `ScriptSelectionDTO`와 `BabyProfileDTO`는 아직 원격 코드에 없다. 현재 `TaedamRepository.fetchBabyProfile()`은 SwiftData의 `BabyProfile?`을 직접 반환한다.
 - View 통합 시 상위 ViewModel·Coordinator가 현재 모델을 표시용 값으로 변환하고, View가 SwiftData 모델을 수정하지 않게 한다.
 
@@ -221,7 +283,7 @@ enum TaedamScreenPhase: Equatable, Sendable {
 
 - `TaedamSessionInputDTO.lines`는 `sentences` 뒤에 `bucketListPrompt`를 사용하는 `.bucketList` 줄을 정확히 하나 추가하는 계산 프로퍼티다.
 - `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`와 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
-- `TaedamScreenPhase`는 현재 `SCRUM-23` 코드에 구현된 대본 진행 범위다.
+- `TaedamScreenPhase`는 현재 `develop` 코드에 구현된 대본 진행 범위다.
 - `bucketListGuide`는 `.bucketList` 줄 앞의 안내 카드에 표시하고 `bucketListPrompt`는 해당 줄의 플레이스홀더로 표시한다.
 - `currentLineProgress`는 `0...1` 범위의 휘발성 화면 값이다.
 
@@ -287,7 +349,7 @@ struct UpdateBucketListContentCommandDTO: Sendable {
 }
 ```
 
-## 5. SwiftData 스키마
+## 6. SwiftData 스키마
 
 ```mermaid
 erDiagram
@@ -383,7 +445,7 @@ final class BucketListItem {
 
 앱 루트의 `SiboyaApp`이 `PersistenceContainer.shared`를 `.modelContainer(...)`로 주입한다. `SwiftDataTaedamRepository`는 전달받은 `ModelContext`를 사용하며 메인 액터에서 호출해야 한다.
 
-## 6. 공통 프로토콜
+## 7. 공통 프로토콜
 
 `TaedamRepository`는 `origin/develop`에 구현되어 있다. 나머지 프로토콜은 음성·STT 및 화면 통합을 위한 설계 계약이며 아직 원격 코드에 구현되지 않았다. 번들 대본은 현재 `BundledTaedamScriptLoader` 정적 메서드가 직접 로드한다.
 
@@ -434,7 +496,7 @@ protocol TaedamRepository: Sendable {
 - View는 SwiftData 저장 모델을 직접 수정하지 않는다. 표시용 조회는 `@Query`를 사용할 수 있지만, 저장·수정·완료 토글·삭제는 ViewModel 또는 상위 조정자가 `TaedamRepository`를 호출한다.
 - `toggleCompletion`은 화면이 계산한 값을 받지 않고, 저장된 최신 `isCompleted`를 Repository 내부에서 뒤집는다.
 
-## 7. 저장·수정 불변 조건
+## 8. 저장·수정 불변 조건
 
 1. `category`는 `TaedamSessionInputDTO.script.category`에서 가져오며 trim 후 비어 있을 수 없다.
 2. `category`는 `BucketListItem` 생성 후 수정하지 않는다.

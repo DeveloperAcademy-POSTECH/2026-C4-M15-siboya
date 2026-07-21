@@ -15,12 +15,13 @@
 
 ## 2. 현재 코드와 View 담당 경계
 
-- `origin/develop`의 `ContentView`는 아직 `Text("Siboya")`만 표시하므로 Home 구현은 시작 전 상태다.
+- 최신 `develop`의 `ContentView`는 아직 `Text("Siboya")`만 표시하므로 Home 구현은 시작 전 상태다.
 - 아기 프로필 조회는 병합된 `TaedamRepository.fetchBabyProfile()`을 사용한다.
-- 번들 대본은 아직 병합 전인 `SCRUM-23` 브랜치의 `BundledTaedamScriptLoader.load()`와 `TaedamScriptContent`를 기준으로 한다.
+- 번들 대본은 PR #8로 병합된 `BundledTaedamScriptLoader.load()`와 `TaedamScriptContent`를 기준으로 한다.
+- 주차별 추천 헤드라인과 추천 대본 ID는 `home-weekly-content.json`을 기준으로 한다.
 - `ScriptRepository`와 `ScriptSelectionDTO`는 SSD에 정의된 통합 경계지만 현재 원격 코드에는 없다. 연결 담당자가 공통 타입을 추가하기 전까지 View에서 존재하는 타입처럼 참조하지 않는다.
 - Home View는 전달받은 화면 상태를 그리고 탭 이벤트를 상위 ViewModel·Coordinator에 알리는 역할만 담당한다. `ModelContext` 생성, JSON 디코딩, SwiftData 저장·수정은 View 안에서 처리하지 않는다.
-- Home ViewModel 또는 상위 조정자가 `BabyProfile`과 번들 대본을 읽어 표시용 상태를 만든다. View는 태명, 추천 설명, 대본 목록과 선택 callback만 받도록 구성한다.
+- Home ViewModel 또는 상위 조정자가 `BabyProfile`, 주차별 Home 콘텐츠와 번들 대본을 읽어 표시용 상태를 만든다. View는 태명, 추천 설명, 대본 목록과 선택 callback만 받도록 구성한다.
 
 ## 3. 화면 구성과 책임
 
@@ -29,8 +30,9 @@
 - `BabyProfile.nickname`을 화면의 Large Title로 표시한다.
 - `BabyProfile.gestationalWeek`와 `BundledTaedamScriptLoader.load().scripts` 결과를 이용해 이번 주 추천 대본을 결정한다.
 - 추천 영역에는 `이번주 추천`, 현재 주차에 대한 추천 설명, 대본 대표 이미지와 대본 제목을 표시한다.
-- 추천 설명은 현재 JSON에 대응 필드가 없으므로 `아빠의 낮은 목소리가 잘 들리는 시기`를 임시 하드코딩한다.
-- 추후 주차별 추천 설명 JSON 필드가 추가되면 `BabyProfile.gestationalWeek`에 맞는 값을 읽어 표시하고 임시 하드코딩을 제거한다. View 레이아웃과 나머지 표시 계약은 변경하지 않는다.
+- 추천 설명은 `home-weekly-content.json`에서 `BabyProfile.gestationalWeek`가 같은 항목의 `headline`을 표시한다.
+- `recommendedScriptID`가 값이 있으면 같은 `scripts[].id`를 가진 대본을 추천 카드에 표시한다.
+- `recommendedScriptID == null`이면 헤드라인은 표시하되 추천 대본 카드는 표시하거나 선택할 수 없다. 대본이 추가되고 추천 대본이 확정될 때 ID를 채운다.
 - 추천 카드를 선택하면 해당 대본의 `ScriptSelectionDTO`를 대본·생각힌트 미리보기에 전달한다.
 
 ### 카테고리별 대본 영역
@@ -44,12 +46,11 @@
 
 ## 4. 추천 대본 선정 정책
 
-1. `targetGestationalWeek == BabyProfile.gestationalWeek`인 대본을 추천 후보로 삼는다.
-2. 후보가 여러 개이면 번들 JSON에서 먼저 등장한 대본 하나를 추천 카드에 표시한다.
-3. 정확히 일치하는 대본이 없으면 추천 영역을 숨기고 카테고리별 대본 목록은 그대로 표시한다.
-4. 추천 대본도 아래 카테고리 목록에서 제외하지 않는다.
-
-> **검토 필요**: Figma에는 추천 영역의 형태만 있고, 같은 주차 후보가 여러 개이거나 일치 후보가 없을 때의 정책은 연결돼 있지 않다. 위 정책은 구현 가능한 기본값이며 팀 합의 후 확정한다.
+1. `BabyProfile.gestationalWeek`와 같은 Home 주차 항목을 정확히 하나 선택한다.
+2. 해당 항목의 `recommendedScriptID`가 값이 있으면 같은 `scripts[].id`를 가진 대본을 추천 카드에 표시한다.
+3. `recommendedScriptID == null`이면 임의의 같은 주차 대본으로 대체하지 않는다.
+4. 값이 있는 ID에 대응하는 대본이 없으면 연결 오류로 처리하고 추천 카드는 숨긴다.
+5. 추천 대본도 아래 카테고리 목록에서 제외하지 않는다.
 
 ## 5. 화면 입출력
 
@@ -57,17 +58,20 @@
 |---|---|
 | 입력 | 없음 |
 | 사용자 조회 | `TaedamRepository.fetchBabyProfile()` |
-| 대본 조회 | 현재 `BundledTaedamScriptLoader.load().scripts`; 추후 `ScriptRepository.fetchScripts()`로 감쌀 수 있음 |
+| Home 콘텐츠 조회 | `HomeWeeklyContentLoader.load().weeks` |
+| 대본 조회 | `BundledTaedamScriptLoader.load().scripts`; 추후 `ScriptRepository.fetchScripts()`로 감쌀 수 있음 |
 | 표시 | 태명, 이번 주 추천, 카테고리 이름, 대본 이미지·제목·대상 주차 |
 | 선택 결과 | 목표 계약은 `ScriptSelectionDTO`; 현재 공통 코드에 타입 추가 필요 |
 
 ## 6. 표시 상태
 
-- **loading**: 아기 프로필과 번들 JSON을 로드·검증한다.
-- **loaded**: 태명, 추천 가능한 대본과 카테고리별 대본 목록을 표시한다.
+- **loading**: 아기 프로필, 주차별 Home JSON과 번들 대본 JSON을 로드·검증한다.
+- **loaded**: 태명, 주차별 헤드라인, 연결된 경우 추천 대본과 카테고리별 대본 목록을 표시한다.
 - **profileMissing**: 아기 프로필을 찾지 못했음을 안내하고 온보딩 진입 수단을 제공한다.
 - **empty**: 유효한 대본이 하나도 없음을 안내한다.
 - **failed**: 프로필 조회 또는 JSON 디코딩·검증 실패를 사용자용 메시지로 변환해 표시한다.
+
+현재 프로필 주차와 같은 Home 콘텐츠가 없으면 `failed`로 처리한다. `recommendedScriptID == null`은 실패가 아니며 추천 카드만 표시하지 않는 정상 `loaded` 상태다.
 
 Figma에는 `loaded` 상태만 정의되어 있다. `profileMissing`, `empty`, `failed` 상태의 문구와 시각 표현은 추가 디자인 확인이 필요하다.
 
@@ -80,10 +84,11 @@ Figma에는 `loaded` 상태만 정의되어 있다. `profileMissing`, `empty`, `
 
 ## 8. Figma와 현재 데이터 차이
 
-| 항목 | Figma Home | `SCRUM-23` 번들 JSON·Assets | 구현 원칙 |
+| 항목 | Figma Home | 현재 번들 JSON·Assets | 구현 원칙 |
 |---|---|---|---|
 | 임신 주차 | 카드와 행에 `22주차` | 6개 대본 모두 `20주차`이며 테스트도 20주차를 기대 | JSON 값을 표시하므로 현재는 `20주차`를 표시한다 |
-| 추천 설명 | `아빠의 낮은 목소리가 잘 들리는 시기` | 대응 필드 없음 | 현재 문구를 임시 하드코딩하고, 추후 주차별 JSON 필드로 교체한다 |
+| 추천 설명 | `아빠의 낮은 목소리가 잘 들리는 시기` | 주차별 Home JSON의 20주차 `headline` | 현재 프로필 주차와 같은 JSON 값을 표시한다 |
+| 추천 대본 연결 | 추천 카드 존재 | `recommendedScriptID`는 대본 확정 전 `null` | 임의 대본을 선택하지 않고 ID가 채워질 때 추천 카드를 연결한다 |
 | 카테고리·대본 | `멀리멀리 대모험` 아래 `오후의 동네 산책`, `조용한 도서관 구석에서`, `시끌시끌 공원` | 두 제목은 `밖으로 한 걸음`이며 `시끌시끌 공원`은 없음 | JSON의 카테고리와 대본 목록을 그대로 표시한다 |
 | 대표 이미지 | Figma 이미지 존재 | JSON에 asset 이름은 있으나 해당 imageset은 브랜치에 없음 | 에셋 제공 전 placeholder 또는 실패 상태 필요 |
 

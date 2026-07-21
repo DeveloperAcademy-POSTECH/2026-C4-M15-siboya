@@ -7,7 +7,7 @@
 
 > **Figma 확인 사항**: 현재 Home 디자인에서는 추천 카드나 대본 행을 선택하면 대본·생각힌트 미리보기로 직접 이동한다. 이 카테고리 상세 화면으로 들어오는 경로는 확인되지 않았으므로 화면 유지 여부와 진입 경로를 팀에서 재검토해야 한다.
 
-> **코드 확인 사항**: 이 화면과 `TaedamCategorySelectionDTO`, `ScriptRepository`는 현재 원격 코드에 구현되어 있지 않다. 번들 대본은 `SCRUM-23` 브랜치의 `BundledTaedamScriptLoader`가 읽고 있으며, 화면 유지 여부가 확정되기 전에는 별도 View 구현을 시작하지 않는다.
+> **코드 확인 사항**: 이 화면과 `TaedamCategorySelectionDTO`, `ScriptRepository`는 현재 원격 코드에 구현되어 있지 않다. 번들 대본은 `develop`에 병합된 `BundledTaedamScriptLoader`가 읽고 있으며, 화면 유지 여부가 확정되기 전에는 별도 View 구현을 시작하지 않는다.
 
 ## 1. 목적
 

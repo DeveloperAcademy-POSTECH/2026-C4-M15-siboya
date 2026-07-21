@@ -13,12 +13,12 @@
 
 ## 현재 코드 기준과 View 담당 경계
 
-- `origin/feature/SCRUM-23-taedam-screen-flow`에는 `TaedamScreen`, `TaedamScreenModel`, 번들 JSON 로더와 대본 DTO가 구현되어 있다. 이 브랜치는 아직 `develop`에 병합되지 않았다.
+- `TaedamScreen`, `TaedamScreenModel`, 번들 JSON 로더와 대본 DTO는 PR #8을 통해 `develop`에 병합되어 있다.
 - Home, 대본·생각힌트 미리보기, 준비자세 모달, 권한 요청 화면은 원격 코드에 아직 없다.
 - 미리보기 View는 `ScriptPreviewDTO`의 표시와 `준비하기` callback만 담당한다. JSON 조회와 `BabyProfile` 조회·치환은 ViewModel 또는 상위 조정자가 담당한다.
 - 준비자세 View는 `babyNickname`, 시작 중 상태와 `닫기`·`시작하기` callback을 받는다. 마이크·Speech 권한 API를 View 내부에서 직접 호출하지 않는다.
 - 두 View는 `ModelContext`, `@Query`, `SwiftDataTaedamRepository`를 직접 알 필요가 없다. SwiftData는 Home에 표시할 프로필을 상위 계층이 읽거나, 세션 후 저장을 담당할 때만 연결된다.
-- `SCRUM-23`에서 현재 구현된 범위는 JSON 로드·태명 치환·3초 카운트다운·대본 자동 진행·일반 문장 재선택·버킷리스트 도달 callback이다. 음성 반응, STT, 키보드 수정과 저장 연결은 아직 구현되지 않았다.
+- 현재 구현된 범위는 JSON 로드·태명 치환·3초 카운트다운·대본 자동 진행·일반 문장 재선택·버킷리스트 도달 callback이다. 음성 반응, STT, 키보드 수정과 저장 연결은 아직 구현되지 않았다.
 
 ## 2. 화면 구성과 책임
 
@@ -60,7 +60,7 @@
 
 ### Figma와 현재 대본 데이터 차이
 
-| 항목 | Figma 미리보기 | `SCRUM-23`의 `일요일 아침 냄새` | 구현 원칙 |
+| 항목 | Figma 미리보기 | 현재 JSON의 `일요일 아침 냄새` | 구현 원칙 |
 |---|---|---|---|
 | 대상 주차 | `22주차` | `20주차` | JSON 값을 표시하므로 현재는 `20주차`를 표시한다 |
 | 소요 시간 | `약 2분` | `estimatedDurationSeconds == 35`이므로 분 올림 시 `약 1분` | JSON 값을 변환해 현재는 `약 1분`을 표시한다 |
