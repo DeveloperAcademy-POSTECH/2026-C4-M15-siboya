@@ -1,214 +1,73 @@
 # Home Weekly Content Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+**Goal:** 번들에 포함된 20~40주 Home 헤드라인을 기존 태담 대본 6개와 순환 연결하고, View 구현 전에 타입 안전한 모델·로더·테스트를 준비한다.
 
-**Goal:** Add bundled 20–40 week Home headlines with an optional recommended Taedam script UUID, plus a typed loader and executable tests.
-
-**Architecture:** Keep Home-only weekly content in `Siboya/Resources/Home/home-weekly-content.json` instead of duplicating it inside `taedam-scripts.json`. Decode the resource through focused Home model and loader types; `recommendedScriptID` remains `nil` until the corresponding script is added and selected by the team.
+**Architecture:** Home 전용 주차 데이터는 `Siboya/Resources/Home/home-weekly-content.json`에 둔다. 대본 제목·이미지·본문은 복제하지 않고 `recommendedScriptID`로 `taedam-scripts.json`을 참조한다. 현재 대본이 6개이므로 20주부터 대본 JSON 배열 순서대로 UUID를 반복 사용한다.
 
 **Tech Stack:** Swift 6, Foundation `Codable`, Swift Testing, Xcode 26.5, iOS 26.5
 
-## Global Constraints
+## 확정 조건
 
-- Figma is the visual source of truth; JSON is the copy, week, list, and identifier source of truth.
-- Store exactly one Home content entry for every gestational week from 20 through 40.
-- Keep `recommendedScriptID` present in every JSON entry and set it to `null` until a recommended script is confirmed.
-- Do not duplicate script title, image name, sentences, prompt, or guide in the Home JSON.
-- Do not change `taedam-scripts.json` in this task.
-- Do not push the branch.
+- Figma는 화면 표현의 기준이고 JSON은 문구·주차·목록·식별자의 기준이다.
+- 20~40주 모든 주차에 정확히 하나의 Home 콘텐츠를 둔다.
+- `recommendedScriptID`는 필수 UUID이며 `null`을 허용하지 않는다.
+- 6개 대본의 기존 UUID를 다시 발급하지 않고 그대로 사용한다.
+- 20~25주에 대본 1~6을 연결하고 26주, 32주, 38주에서 대본 1부터 다시 순환한다.
+- Home JSON에 대본 제목, 이미지 이름, 문장, 생각힌트를 중복 저장하지 않는다.
+- 이번 단계에서는 Home·미리보기·준비자세 View를 구현하지 않는다.
+- 푸시는 사용자 확인을 받은 뒤 `feature/SCRUM-27-home-preview-preparation` 브랜치에만 수행한다.
 
----
+## 데이터 누락 정책
 
-### Task 1: Decode and load bundled weekly Home content
+- 앱 번들 정적 데이터이므로 네트워크 오류 UI와 새로고침 버튼을 제공하지 않는다.
+- 프로필, 주차 항목, 추천 대본 연결 또는 개별 대본이 없거나 유효하지 않으면 해당 데이터에 의존하는 영역만 숨긴다.
+- 정상적으로 읽고 검증한 데이터는 다른 항목의 실패와 관계없이 계속 표시한다.
+- Home에서 유효하게 연결된 대본만 선택할 수 있게 하므로, 대본 조회가 실패한 경우 미리보기와 준비자세를 열지 않는다.
 
-**Files:**
-- Create: `SiboyaTests/Home/HomeWeeklyContentDocumentTests.swift`
-- Create: `Siboya/Features/Home/Model/HomeWeeklyContentDocument.swift`
-- Create: `Siboya/Features/Home/Service/BundledHomeWeeklyContentLoader.swift`
-- Create: `Siboya/Resources/Home/home-weekly-content.json`
+## 작업 범위
 
-**Interfaces:**
-- Consumes: `Bundle`, `JSONDecoder`, the approved 20–40 week Notion headlines.
-- Produces: `HomeWeeklyContentDocument`, `HomeWeeklyContent`, `HomeWeeklyContentDocument.content(forGestationalWeek:)`, and `BundledHomeWeeklyContentLoader.load(from:)`.
+### 1. 테스트로 데이터 계약 고정
 
-- [ ] **Step 1: Write the failing tests**
+파일: `SiboyaTests/Home/HomeWeeklyContentDocumentTests.swift`
 
-Create `SiboyaTests/Home/HomeWeeklyContentDocumentTests.swift`:
+- [x] 20~40주가 순서대로 한 번씩 존재하는지 검사한다.
+- [x] 모든 헤드라인이 비어 있지 않은지 검사한다.
+- [x] 21개 추천 ID가 번들 대본 6개 ID를 순서대로 반복한 배열과 같은지 검사한다.
+- [x] 정확한 주차 조회와 범위 밖 조회를 검사한다.
+- [x] `recommendedScriptID`가 UUID로 디코딩되는지 검사한다.
 
-```swift
-import Foundation
-import Testing
-@testable import Siboya
+### 2. 모델과 로더 추가
 
-struct HomeWeeklyContentDocumentTests {
-    @Test func bundledDocumentContainsEveryWeekFromTwentyThroughForty() throws {
-        let document = try BundledHomeWeeklyContentLoader.load()
+파일:
 
-        #expect(document.weeks.map(\.gestationalWeek) == Array(20...40))
-        #expect(Set(document.weeks.map(\.gestationalWeek)).count == 21)
-        #expect(document.weeks.allSatisfy { !$0.headline.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
-        #expect(document.weeks.allSatisfy { $0.recommendedScriptID == nil })
-    }
+- `Siboya/Features/Home/Model/HomeWeeklyContentDocument.swift`
+- `Siboya/Features/Home/Service/BundledHomeWeeklyContentLoader.swift`
 
-    @Test func documentReturnsContentForExactGestationalWeek() throws {
-        let document = try BundledHomeWeeklyContentLoader.load()
-        let content = try #require(document.content(forGestationalWeek: 20))
+- [x] `HomeWeeklyContentDocument`와 `HomeWeeklyContent`를 정의한다.
+- [x] `recommendedScriptID`를 필수 `UUID`로 정의한다.
+- [x] 임신 주차로 항목을 찾는 `content(forGestationalWeek:)`를 제공한다.
+- [x] `Home` 하위 디렉터리와 번들 루트 fallback을 지원하는 로더를 추가한다.
 
-        #expect(content.headline == "아빠의 낮은 목소리가 잘 들리는 시기")
-        #expect(content.recommendedScriptID == nil)
-        #expect(document.content(forGestationalWeek: 19) == nil)
-        #expect(document.content(forGestationalWeek: 41) == nil)
-    }
+### 3. 20~40주 JSON 추가
 
-    @Test func recommendedScriptIDDecodesAsUUIDOrNull() throws {
-        let linkedID = UUID(uuidString: "57A07A17-20D6-440C-989F-0B1208B6ED01")!
-        let data = Data(
-            """
-            {
-              "weeks": [
-                {
-                  "gestationalWeek": 20,
-                  "headline": "연결됨",
-                  "recommendedScriptID": "\(linkedID.uuidString)"
-                },
-                {
-                  "gestationalWeek": 21,
-                  "headline": "미연결",
-                  "recommendedScriptID": null
-                }
-              ]
-            }
-            """.utf8
-        )
+파일: `Siboya/Resources/Home/home-weekly-content.json`
 
-        let document = try JSONDecoder().decode(HomeWeeklyContentDocument.self, from: data)
+- [x] 기획 Notion의 20~40주 헤드라인을 저장한다.
+- [x] 기존 6개 대본 UUID를 21개 항목에 순환 연결한다.
+- [x] `taedam-scripts.json`은 수정하지 않는다.
 
-        #expect(document.weeks[0].recommendedScriptID == linkedID)
-        #expect(document.weeks[1].recommendedScriptID == nil)
-    }
-}
-```
+### 4. 검증과 커밋
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [x] 집중 테스트 `HomeWeeklyContentDocumentTests`를 통과시킨다.
+- [x] 전체 `SiboyaTests`를 통과시킨다.
+- [x] SwiftLint 신규 경고가 없는지 확인한다.
+- [ ] 문서와 데이터 계층 변경을 로컬 커밋한다.
+- [ ] 변경 범위와 테스트 결과를 사용자에게 보여주고 푸시 승인을 받는다.
+- [ ] 승인 후 SCRUM-27 브랜치에 푸시한다.
 
-Run:
+## 완료 조건
 
-```bash
-xcodebuild test -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -derivedDataPath /tmp/SiboyaDerivedData -only-testing:SiboyaTests/HomeWeeklyContentDocumentTests
-```
-
-Expected: build failure because `BundledHomeWeeklyContentLoader`, `HomeWeeklyContentDocument`, and `HomeWeeklyContent` do not exist yet.
-
-- [ ] **Step 3: Add the minimal decoding model**
-
-Create `Siboya/Features/Home/Model/HomeWeeklyContentDocument.swift`:
-
-```swift
-import Foundation
-
-struct HomeWeeklyContentDocument: Decodable, Sendable {
-    let weeks: [HomeWeeklyContent]
-
-    func content(forGestationalWeek gestationalWeek: Int) -> HomeWeeklyContent? {
-        weeks.first { $0.gestationalWeek == gestationalWeek }
-    }
-}
-
-struct HomeWeeklyContent: Decodable, Sendable {
-    let gestationalWeek: Int
-    let headline: String
-    let recommendedScriptID: UUID?
-}
-```
-
-- [ ] **Step 4: Add the bundled resource loader**
-
-Create `Siboya/Features/Home/Service/BundledHomeWeeklyContentLoader.swift`:
-
-```swift
-import Foundation
-
-enum BundledHomeWeeklyContentLoader {
-    static func load(from bundle: Bundle = .main) throws -> HomeWeeklyContentDocument {
-        let resourceURL = bundle.url(
-            forResource: "home-weekly-content",
-            withExtension: "json",
-            subdirectory: "Home"
-        ) ?? bundle.url(
-            forResource: "home-weekly-content",
-            withExtension: "json"
-        )
-
-        guard let resourceURL else {
-            throw HomeWeeklyContentLoadingError.resourceNotFound
-        }
-
-        let data = try Data(contentsOf: resourceURL)
-        return try JSONDecoder().decode(HomeWeeklyContentDocument.self, from: data)
-    }
-}
-
-enum HomeWeeklyContentLoadingError: Error {
-    case resourceNotFound
-}
-```
-
-- [ ] **Step 5: Add the approved 20–40 week JSON resource**
-
-Create `Siboya/Resources/Home/home-weekly-content.json`:
-
-```json
-{
-  "weeks": [
-    { "gestationalWeek": 20, "headline": "아빠의 낮은 목소리가 잘 들리는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 21, "headline": "아기가 소리에 귀를 기울이기 시작하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 22, "headline": "목소리에 반응해 꼼지락 움직이는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 23, "headline": "아빠의 다정한 억양을 알아채는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 24, "headline": "청각이 발달해 외부 소리를 구분하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 25, "headline": "아빠와 대화하며 정서를 키워가는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 26, "headline": "아빠의 목소리를 머릿속에 기억하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 27, "headline": "힘찬 태동으로 아빠에게 응답하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 28, "headline": "아기의 감정이 더욱 풍부해지는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 29, "headline": "아빠의 목소리로 마음의 안정을 찾는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 30, "headline": "세상 밖 소리에 호기심이 많아지는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 31, "headline": "태어날 세상과의 첫 교감을 시작하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 32, "headline": "목소리의 톤과 높낮이를 구분하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 33, "headline": "아빠와의 대화에 더 적극적으로 반응하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 34, "headline": "아빠 목소리를 들으며 안도감을 느끼는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 35, "headline": "아빠의 사랑을 온전히 받아들이는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 36, "headline": "세상에 나갈 준비를 차근차근 마치는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 37, "headline": "언제든 아빠를 만날 준비가 되어있는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 38, "headline": "아빠의 목소리로 편안하게 휴식하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 39, "headline": "태어나 첫인사를 나눌 준비를 하는 시기", "recommendedScriptID": null },
-    { "gestationalWeek": 40, "headline": "마침내 아빠와 눈을 맞추고 만날 시기", "recommendedScriptID": null }
-  ]
-}
-```
-
-- [ ] **Step 6: Run the focused tests and verify GREEN**
-
-Run:
-
-```bash
-xcodebuild test -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -derivedDataPath /tmp/SiboyaDerivedData -only-testing:SiboyaTests/HomeWeeklyContentDocumentTests
-```
-
-Expected: `HomeWeeklyContentDocumentTests` passes with 3 tests and 0 failures.
-
-- [ ] **Step 7: Run the complete unit test target**
-
-Run:
-
-```bash
-xcodebuild test -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -derivedDataPath /tmp/SiboyaDerivedData -only-testing:SiboyaTests
-```
-
-Expected: `** TEST SUCCEEDED **` with 0 failures.
-
-- [ ] **Step 8: Commit the tested implementation**
-
-```bash
-git add Siboya/Features/Home/Model/HomeWeeklyContentDocument.swift Siboya/Features/Home/Service/BundledHomeWeeklyContentLoader.swift Siboya/Resources/Home/home-weekly-content.json SiboyaTests/Home/HomeWeeklyContentDocumentTests.swift
-git commit -m "feat: add weekly home content resource"
-```
-
+- `home-weekly-content.json`만 수정해 주차별 헤드라인과 추천 대본 연결을 바꿀 수 있다.
+- 모든 추천 ID가 실제 번들 대본 한 개와 정확히 연결된다.
+- 데이터 누락 시 오류 UI 없이 유효한 데이터만 노출한다는 정책이 기능 스펙과 공통 계약에 동일하게 반영되어 있다.
+- View 구현 파일은 변경하지 않는다.

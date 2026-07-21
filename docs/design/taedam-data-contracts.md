@@ -21,8 +21,8 @@
 
 | View | 전달받아 표시할 값 | 밖으로 전달할 이벤트 | View에서 하지 않는 일 |
 |---|---|---|---|
-| Home | 태명, 추천 설명·대본, 카테고리별 대본 목록 | 대본 선택, `새로고침` | `ModelContext` 생성, JSON 디코딩, SwiftData 쓰기, 앱 전역 탭 전환 |
-| 대본·생각힌트 미리보기 | `ScriptPreviewDTO`의 주차·제목·이미지·시간·문장·`bucketListPrompt`·`bucketListGuide` | 뒤로가기, `준비하기`, `새로고침` | 대본 조회, 태명 치환, 권한 요청 |
+| Home | 태명, 추천 설명·대본, 카테고리별 대본 목록 | 대본 선택 | `ModelContext` 생성, JSON 디코딩, SwiftData 쓰기, 앱 전역 탭 전환 |
+| 대본·생각힌트 미리보기 | `ScriptPreviewDTO`의 주차·제목·이미지·시간·문장·`bucketListPrompt`·`bucketListGuide` | 뒤로가기, `준비하기` | 대본 조회, 태명 치환, 권한 요청 |
 | 준비자세 모달 | 태명, 시작 처리 중 여부 | 닫기, `시작하기`, 설정 열기 | 마이크·Speech 권한 API 직접 호출, 카운트다운 시작 |
 
 상위 ViewModel·Coordinator가 `TaedamRepository`, 번들 대본 로더와 권한 서비스를 연결한다. View 구현 담당자는 전달된 값과 callback을 기준으로 화면을 만들면 되며 SwiftData 저장 코드를 직접 작성하지 않는다.
@@ -38,9 +38,9 @@
 
 - 화면의 레이아웃·스타일·컴포넌트 배치는 Figma를 기준으로 하고, 실제 문구·주차·소요 시간·카테고리·대본 목록은 JSON을 기준으로 한다.
 - Home 추천 설명은 `home-weekly-content.json`의 주차별 `headline`을 사용한다.
-- `recommendedScriptID`는 추천 대본이 확정되기 전까지 `null`로 두고, 대본 추가 시 해당 `scripts[].id`를 연결한다.
+- `recommendedScriptID`는 기존 번들 대본 6개의 UUID를 20~40주에 JSON 순서대로 반복 연결한다.
 - 대본 이미지가 Assets에 없으면 Home과 미리보기 모두 공통 `script_artwork_placeholder`를 표시한다.
-- 프로필·JSON·대본을 불러올 수 없으면 `데이터를 불러오지 못했어요.`와 `새로고침` 버튼을 표시하고 전체 조회를 다시 시도한다.
+- 프로필·Home 주차 항목·추천 연결·대본을 읽거나 검증하지 못하면 해당 데이터에 의존하는 영역만 숨기고 정상 데이터는 계속 표시한다. 번들 정적 데이터이므로 오류 UI와 새로고침은 제공하지 않는다.
 - 준비자세 sheet는 닫기 버튼과 grabber 아래 방향 드래그로 닫을 수 있으며 두 경로는 동일한 dismiss 동작을 사용한다.
 - Home에서 선택한 대본은 대본과 생각힌트를 함께 보여주는 미리보기로 이동한다.
 - 미리보기의 `준비하기`는 준비자세 모달을 열고, 모달의 `시작하기`가 권한 확인 후 카운트다운으로 이어진다.

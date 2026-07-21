@@ -66,7 +66,7 @@ Siboya/Resources/Home/home-weekly-content.json
     {
       "gestationalWeek": 20,
       "headline": "아빠의 낮은 목소리가 잘 들리는 시기",
-      "recommendedScriptID": null
+      "recommendedScriptID": "57A07A17-20D6-440C-989F-0B1208B6ED01"
     }
   ]
 }
@@ -79,13 +79,14 @@ Siboya/Resources/Home/home-weekly-content.json
 | `weeks` | `[Object]` | O | 20~40주차 Home 콘텐츠 목록 |
 | `weeks[].gestationalWeek` | `Int` | O | Home 콘텐츠를 선택할 임신 주차 |
 | `weeks[].headline` | `String` | O | 해당 주차의 추천 헤드라인 |
-| `weeks[].recommendedScriptID` | `String` (UUID) 또는 `null` | O | 추천 카드가 참조할 `scripts[].id`; 추천 대본 확정 전에는 `null` |
+| `weeks[].recommendedScriptID` | `String` (UUID) | O | 추천 카드가 참조할 기존 `scripts[].id` |
 
 - 20~40주차의 헤드라인은 [기획 Notion의 주차별 홈 화면 추천 헤드라인](https://app.notion.com/p/39ffbac165f1804ea1b4ea014eac08f9?source=copy_link)을 원문 기준으로 저장한다.
-- `recommendedScriptID`는 대본이 추가되고 해당 주차의 추천 대본이 확정될 때 채운다. 임의의 대본 ID를 연결하지 않는다.
+- 현재 대본이 6개이므로 `recommendedScriptID`는 20주부터 `taedam-scripts.json` 배열 순서대로 6개 기존 UUID를 반복 연결한다.
+- 순환은 26주, 32주, 38주에서 첫 번째 대본으로 다시 시작한다. 추후 대본이나 추천 정책이 바뀌면 Home JSON의 ID만 수정한다.
 - Home JSON은 대본 제목, 이미지 이름이나 본문을 복제하지 않는다. ID가 있으면 `taedam-scripts.json`에서 해당 대본을 조회한다.
-- `recommendedScriptID == null`이면 헤드라인은 표시할 수 있지만 추천 대본 카드로 이동하지 않는다.
-- 값이 `null`이 아닌데 대응하는 대본이 없으면 데이터 연결 오류로 처리하고 해당 추천 카드는 표시하지 않는다.
+- 대응하는 대본이 없으면 해당 추천 카드만 표시하지 않고 나머지 정상 데이터는 계속 표시한다.
+- 번들 정적 데이터의 누락·연결 실패에는 오류 문구, 팝업이나 새로고침 UI를 제공하지 않는다.
 
 ### 디코딩 모델
 
@@ -97,7 +98,7 @@ struct HomeWeeklyContentDocument: Decodable, Sendable {
 struct HomeWeeklyContent: Decodable, Sendable {
     let gestationalWeek: Int
     let headline: String
-    let recommendedScriptID: UUID?
+    let recommendedScriptID: UUID
 }
 ```
 
@@ -105,9 +106,9 @@ struct HomeWeeklyContent: Decodable, Sendable {
 
 1. `gestationalWeek`는 `20...40` 범위이며 중복될 수 없다.
 2. `headline`은 trim 후 비어 있을 수 없다.
-3. `recommendedScriptID`가 문자열이면 유효한 UUID여야 한다.
-4. `recommendedScriptID`가 `null`인 항목은 정상적인 미연결 데이터로 허용한다.
-5. `recommendedScriptID`가 값이 있으면 `taedam-scripts.json`에 같은 `scripts[].id`가 정확히 하나 있어야 한다.
+3. `recommendedScriptID`는 유효한 UUID여야 하며 `null`일 수 없다.
+4. `recommendedScriptID`와 같은 `scripts[].id`가 `taedam-scripts.json`에 정확히 하나 있어야 한다.
+5. 20~40주의 ID 배열은 번들 대본 6개의 ID 배열을 순서대로 반복한 값과 같아야 한다.
 
 ## 4. 대본 JSON 계약
 
