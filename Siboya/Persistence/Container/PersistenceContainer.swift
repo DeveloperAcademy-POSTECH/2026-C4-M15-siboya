@@ -11,7 +11,7 @@ enum PersistenceContainer {
     static let shared: ModelContainer = makeContainer()
 
     static func makeContainer(inMemory: Bool = false) -> ModelContainer {
-        let schema = Schema([TaedamRecord.self])
+        let schema = Schema([BabyProfile.self, BucketListItem.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
 
         do {
