@@ -7,8 +7,11 @@
 
 import SwiftUI
 
+@MainActor
 struct TaedamScreen: View {
     @State private var model: TaedamScreenModel
+    @State private var bucketListInputModel: TaedamBucketListInputModel
+    @FocusState private var isBucketListEditorFocused: Bool
 
     private let onBack: () -> Void
     private let onFinish: () -> Void
@@ -17,12 +20,18 @@ struct TaedamScreen: View {
 
     init(
         input: TaedamSessionInputDTO,
+        transcriber: (any BucketListTranscribing)? = nil,
         onBack: @escaping () -> Void = {},
         onFinish: @escaping () -> Void = {},
         onBucketListReached: @escaping () -> Void = {},
         onReplayScriptFromBucketList: @escaping () -> Void = {}
     ) {
         _model = State(initialValue: TaedamScreenModel(input: input))
+        _bucketListInputModel = State(
+            initialValue: TaedamBucketListInputModel(
+                transcriber: transcriber ?? SpeechBucketListTranscriber()
+            )
+        )
         self.onBack = onBack
         self.onFinish = onFinish
         self.onBucketListReached = onBucketListReached
@@ -42,6 +51,8 @@ struct TaedamScreen: View {
 
             toolbar
 
+            transcriptionControl
+
             if let countdownValue = model.countdownValue {
                 countdownOverlay(value: countdownValue)
             }
@@ -51,6 +62,9 @@ struct TaedamScreen: View {
         }
         .onDisappear {
             model.cancel()
+            Task {
+                await bucketListInputModel.cancel()
+            }
         }
         .onChange(of: model.phase) { oldPhase, newPhase in
             guard oldPhase != .bucketList,
@@ -59,14 +73,21 @@ struct TaedamScreen: View {
             }
 
             onBucketListReached()
+            Task {
+                await bucketListInputModel.start(duration: .seconds(20))
+            }
+        }
+        .onChange(of: bucketListInputModel.phase) { _, newPhase in
+            if newPhase != .editing {
+                isBucketListEditorFocused = false
+            }
         }
     }
 
     private var toolbar: some View {
         HStack {
             Button {
-                model.cancel()
-                onBack()
+                closeScreen(action: onBack)
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold))
@@ -81,8 +102,7 @@ struct TaedamScreen: View {
             Spacer()
 
             Button {
-                model.cancel()
-                onFinish()
+                closeScreen(action: onFinish)
             } label: {
                 Text("완료")
                     .font(.system(size: 13, weight: .medium))
@@ -111,6 +131,14 @@ struct TaedamScreen: View {
                                 currentLineIndex: model.currentLineIndex,
                                 progress: model.currentLineProgress,
                                 bucketListGuide: model.bucketListGuide,
+                                bucketListText: bucketListDisplayText(for: line),
+                                editedBucketListText: Binding(
+                                    get: { bucketListInputModel.editedText },
+                                    set: { bucketListInputModel.editedText = $0 }
+                                ),
+                                isBucketListEditing: line.kind == .bucketList &&
+                                    bucketListInputModel.phase == .editing,
+                                bucketListEditorFocus: $isBucketListEditorFocused,
                                 isSelectable: model.isLineSelectable(at: line.index)
                             ) {
                                 selectLine(at: line.index)
@@ -123,6 +151,14 @@ struct TaedamScreen: View {
                     .padding(.bottom, geometry.size.height * 0.72)
                 }
                 .scrollIndicators(.hidden)
+                .scrollDismissesKeyboard(.immediately)
+                .background {
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isBucketListEditorFocused = false
+                        }
+                }
                 .onChange(of: model.currentLineIndex) { _, newIndex in
                     guard let newIndex else { return }
 
@@ -138,11 +174,79 @@ struct TaedamScreen: View {
     }
 
     private func selectLine(at index: Int) {
+        isBucketListEditorFocused = false
+
         if model.phase == .bucketList {
             onReplayScriptFromBucketList()
+
+            if bucketListInputModel.phase == .editing {
+                model.selectLine(at: index)
+                return
+            }
+
+            Task {
+                await bucketListInputModel.cancel()
+                model.selectLine(at: index)
+            }
+            return
         }
 
         model.selectLine(at: index)
+    }
+
+    @ViewBuilder
+    private var transcriptionControl: some View {
+        if bucketListInputModel.phase == .transcribing {
+            VStack {
+                Spacer()
+
+                Button {
+                    Task {
+                        await bucketListInputModel.finish()
+                    }
+                } label: {
+                    Label("말하기 완료", systemImage: "stop.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 20)
+                        .frame(height: 48)
+                        .background(.black, in: Capsule())
+                        .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("버킷리스트 말하기 완료")
+                .padding(.bottom, 32)
+            }
+        } else if bucketListInputModel.phase == .finalizing {
+            VStack {
+                Spacer()
+
+                ProgressView("음성을 정리하고 있어요")
+                    .font(.system(size: 13, weight: .medium))
+                    .padding(.horizontal, 18)
+                    .frame(height: 44)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.bottom, 32)
+            }
+        }
+    }
+
+    private func bucketListDisplayText(for line: TaedamLineDTO) -> String {
+        guard line.kind == .bucketList else { return line.text }
+
+        let transcript = bucketListInputModel.liveTranscript.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        return transcript.isEmpty ? line.text : transcript
+    }
+
+    private func closeScreen(action: @escaping () -> Void) {
+        isBucketListEditorFocused = false
+        model.cancel()
+        Task {
+            await bucketListInputModel.cancel()
+            action()
+        }
     }
 
     private func countdownOverlay(value: Int) -> some View {
