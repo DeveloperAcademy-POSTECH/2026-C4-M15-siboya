@@ -55,10 +55,10 @@ struct SwiftDataTaedamRepositoryTests {
 
     @Test func ensureBabyProfile_이미_있으면_그대로_둔다() async throws {
         let context = makeContext()
-        let repository = await SwiftDataTaedamRepository(modelContext: context)
-        try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+let repository = SwiftDataTaedamRepository(modelContext: context)
+try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
 
-        try await repository.ensureBabyProfile(nickname: "다른이름", gestationalWeek: 10)
+try await repository.ensureBabyProfile(nickname: "다른이름", gestationalWeek: 10)
 
 let profile = try repository.fetchBabyProfile()
         #expect(profile?.nickname == "콩콩이")
