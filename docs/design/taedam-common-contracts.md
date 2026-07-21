@@ -400,7 +400,7 @@ protocol TaedamRepository: Sendable {
 - `TaedamRepository`는 SwiftData 변경을 담당한다. 화면의 반응형 조회는 `@Query`를 직접 사용한다.
 - `toggleCompletion`은 화면이 계산한 값을 받지 않고, 저장된 최신 `isCompleted`를 Repository 내부에서 뒤집는다.
 - `ensureBabyProfile`은 멱등적이다. 이미 `BabyProfile`이 있으면 아무 것도 하지 않고, 없을 때만 생성한다. 온보딩 화면이 없는 MVP 단계에서는 앱 최초 진입 시 임시로 호출해 하나만 만들어 둔다.
-- `nickname`은 `ensureBabyProfile`/`updateNickname` 둘 다 trim 후 빈 문자열이면 실패한다.
+- `ensureBabyProfile`은 프로필이 없어서 생성할 때만 `nickname`을 trim/검증하며, trim 후 빈 문자열이면 실패한다. `updateNickname`은 항상 trim 후 빈 문자열이면 실패한다.
 
 ## 7. 저장·수정 불변 조건
 
