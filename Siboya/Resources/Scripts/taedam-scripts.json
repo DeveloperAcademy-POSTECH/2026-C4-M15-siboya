@@ -1,0 +1,125 @@
+{
+  "scripts": [
+    {
+      "id": "57A07A17-20D6-440C-989F-0B1208B6ED01",
+      "version": 1,
+      "category": "집에서 소소하게",
+      "title": "일요일 아침 냄새",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_home_sunday_morning_20w",
+        "estimatedDurationSeconds": 35
+      },
+      "sentences": [
+        "안녕, {{babyNickname}}아.",
+        "아빠야. 오늘 하루도 잘 보냈지?",
+        "아빠는 오늘 문득 우리가 함께 맞이할 일요일 아침을 상상해 봤어.",
+        "알람 소리 대신에 기분 좋게 눈을 뜨고, 주방에서는 고소한 빵 굽는 냄새가 나는 그런 아침 말이야.",
+        "셋이 머리도 안 감고 식탁에 둘러앉아 갓 구운 식빵에 잼을 발라 먹으면 참 평화롭겠다는 생각이 들었어."
+      ],
+      "bucketListPrompt": "{{babyNickname}}아, 네가 태어나서 우리랑 집에서 같이 밥을 먹게 되면, 아빠는 주방에서 너를 위해 […] 해주고 싶어.",
+      "bucketListGuide": "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
+    },
+    {
+      "id": "C9F7AE67-4EB5-475C-BB8D-DFDAB2EAF1D8",
+      "version": 1,
+      "category": "집에서 소소하게",
+      "title": "거실 매트 위에서",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_home_living_room_mat_20w",
+        "estimatedDurationSeconds": 38
+      },
+      "sentences": [
+        "{{babyNickname}}아, 아빠 목소리 들리지?",
+        "배 속은 편안한가 모르겠네.",
+        "아빠는 가끔 우리 집 거실에 네 물건들이 하나둘 놓이는 상상을 해.",
+        "장난감도 굴러다니고, 푹신한 매트도 깔려 있겠지.",
+        "거기 누워서 너랑 뒹굴고 놀기도 하고, 가만히 눈을 맞추며 쉬기도 할 거야.",
+        "집이라는 공간이 너로 인해 더 따뜻해질 것 같아 참 설렌단다."
+      ],
+      "bucketListPrompt": "네가 자라서 아빠랑 집에서 같이 놀 수 있게 되면, 아빠는 거실에서 너랑 꼭 […]하고 싶어.",
+      "bucketListGuide": "집에서 뒹굴며 하고 싶은 놀이나 일상의 소소한 모습을 말해보세요."
+    },
+    {
+      "id": "0C86D77C-E361-4147-841C-C0CCFB1500A8",
+      "version": 1,
+      "category": "밖으로 한 걸음",
+      "title": "오후의 동네 산책",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_outside_neighborhood_walk_20w",
+        "estimatedDurationSeconds": 36
+      },
+      "sentences": [
+        "사랑하는 {{babyNickname}}아.",
+        "오늘 날씨가 꽤 괜찮더라.",
+        "아빠는 퇴근길에 선선한 바람을 맞으면서 걷는데, 문득 네 생각이 났어.",
+        "나중에 너랑 유모차를 끌고 동네 한 바퀴 천천히 돌면 참 좋겠더라고.",
+        "가다가 동네 단골 빵집도 들르고, 지나가는 강아지 구경도 하면서 말이야.",
+        "소박하지만 그런 오후가 아빠는 기다려져."
+      ],
+      "bucketListPrompt": "네가 자라서 아빠 손을 잡고 동네 산책을 할 수 있게 되면, 아빠는 너랑 같이 꼭 […]하고 싶어.",
+      "bucketListGuide": "동네나 집 주변에서 아이와 가볍게 하고 싶은 활동을 말해보세요."
+    },
+    {
+      "id": "37F8A739-D7DE-4AB7-9CBF-6D9B47B7CF12",
+      "version": 1,
+      "category": "밖으로 한 걸음",
+      "title": "조용한 도서관 구석에서",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_outside_quiet_library_20w",
+        "estimatedDurationSeconds": 34
+      },
+      "sentences": [
+        "{{babyNickname}}아, 아빠가 오늘은 책 한 권을 읽다가 네 생각이 나서 말을 건네.",
+        "나중에 너랑 조용한 도서관이나 동네 책방에 같이 가보고 싶어.",
+        "거기 구석에 편하게 앉아서 알록달록한 그림책을 같이 넘겨보는 거지.",
+        "네가 작은 손가락으로 그림을 가리키며 호기심 어린 눈으로 아빠를 바라볼 모습이 눈에 선해."
+      ],
+      "bucketListPrompt": "네가 자라서 그림책에 관심을 가지기 시작할 때, 아빠는 너에게 꼭 […]하고 싶어.",
+      "bucketListGuide": "책이나 그림을 매개로 야외나 조용한 공간에서 나누고 싶은 경험을 말해보세요."
+    },
+    {
+      "id": "E9E7D541-3CC5-445F-9D6C-6DE65DB398C1",
+      "version": 1,
+      "category": "멀리멀리 대모험",
+      "title": "바다 냄새와 파도 소리",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_adventure_ocean_waves_20w",
+        "estimatedDurationSeconds": 37
+      },
+      "sentences": [
+        "{{babyNickname}}아, 시원한 바다를 머릿속으로 한번 그려봐.",
+        "파도가 철썩철썩 모래사장을 두드리고, 코끝에는 짭조름한 바다 내음이 스치는 곳이야.",
+        "아빠는 바다를 참 좋아하는데, 너도 바다를 좋아할지 궁금하네.",
+        "넓은 바다를 바라보고 서 있으면 걱정도 사라지고 기분이 맑아지거든.",
+        "너에게도 그 기분을 느끼게 해주고 싶어."
+      ],
+      "bucketListPrompt": "네가 물놀이를 할 수 있을 만큼 씩씩하게 자라면, 아빠는 너랑 엄마랑 다 같이 꼭 […]하고 싶어.",
+      "bucketListGuide": "바다나 수영장 등 첫 가족 여행지에서 함께 해보고 싶은 도전을 말해보세요."
+    },
+    {
+      "id": "03FBD2A9-43D4-48B0-BC9A-E40AC13638BC",
+      "version": 1,
+      "category": "멀리멀리 대모험",
+      "title": "밤하늘의 불빛들",
+      "metadata": {
+        "targetGestationalWeek": 20,
+        "artworkAssetName": "script_adventure_night_sky_20w",
+        "estimatedDurationSeconds": 35
+      },
+      "sentences": [
+        "{{babyNickname}}아, 조용한 시골길이나 캠핑장을 상상해 보자.",
+        "사방은 캄캄하고 아주 조용한데, 밤하늘을 올려다보면 별들이 가득 떠 있는 곳이야.",
+        "귀뚜라미 소리도 약하게 들리고 공기는 아주 상쾌하지.",
+        "그런 곳에서 가만히 밤하늘을 바라보고 있으면 마음이 편안해진단다.",
+        "너와 함께 그런 고요한 밤을 나누고 싶어."
+      ],
+      "bucketListPrompt": "네가 조금 더 자라서 하늘의 별을 알아볼 때쯤, 아빠는 너를 데리고 꼭 […]하고 싶어.",
+      "bucketListGuide": "야외 캠핑, 별 보기, 밤 산책 등 밤에 아이와 함께 나누고 싶은 경험을 말해보세요."
+    }
+  ]
+}
