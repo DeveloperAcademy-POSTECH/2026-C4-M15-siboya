@@ -11,6 +11,7 @@ struct TaedamResultView: View {
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
 
+    // result가 전달한 ID와 같은 BucketList
     @State private var isSnackbarPresented = false
 
     let result: SavedBucketListDTO

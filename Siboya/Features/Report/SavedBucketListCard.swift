@@ -8,26 +8,32 @@
 import SwiftUI
 
 struct SavedBucketListCard: View {
-    let summary: String
-    let promise: TaedamActionItem
+    // SwiftData에 저장된 실제 약속 모델, 값을 수정하지 않고 읽기만 한다.
+    let item: BucketListItem
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             cardTitle
             
-            Text(summary)
-                .font(.body)
+            // 약속이 만들어진 태담의 카데고리
+            Text(item.category)
+                .font(.headline)
                 .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
             
             Divider()
             
-            Text(promise.title)
+            // STT 이후 사용자가 키보드로 최종 확인한 문장
+            Text(item.content)
                 .font(.body)
                 .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
+                .fixedSize(
+                    horizontal: false, vertical: true
+                )
                 .accessibilityLabel("저장된 약속")
-                .accessibilityValue(promise.title)
+                .accessibilityValue(item.content)
+        
+            completionStatus
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -55,18 +61,27 @@ struct SavedBucketListCard: View {
         .font(.subheadline)
         .foregroundStyle(Color(.systemRed))
     }
+    
+    private var completionStatus: some View {
+        Label(
+            item.isCompleted ? "완료한 약속" : "진행 전",
+            systemImage: item.isCompleted
+            ? "checkmark.circle.fill" : "circle"
+        )
+        .font(.subheadline)
+        .foregroundStyle(item.isCompleted ? Color.blue : Color.secondary)
+    }
 }
 
 #Preview {
     ZStack {
         Color(.systemGray6)
             .ignoresSafeArea()
-        
+
         SavedBucketListCard(
-            summary: "방금 전 태담 속 아이와 함께하고 싶은 일을 담았어요",
-            promise: TaedamActionItem(
-                id: UUID(),
-                title: "메론빵과 소금빵과 붕어빵 만들어주기"
+            item: BucketListItem(
+                category: "아기사랑",
+                content: "메론빵 만들어주기"
             )
         )
         .padding(24)
