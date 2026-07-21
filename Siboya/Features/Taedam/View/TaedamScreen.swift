@@ -11,8 +11,11 @@ import SwiftUI
 struct TaedamScreen: View {
     @State private var model: TaedamScreenModel
     @State private var bucketListInputModel: TaedamBucketListInputModel
+    @State private var normalizedVoiceMotion = 0.0
+    @State private var isVoiceActive = false
     @FocusState private var isBucketListEditorFocused: Bool
 
+    private let voiceMotionMonitor: any VoiceMotionMonitoring
     private let onBack: () -> Void
     private let onFinish: () -> Void
     private let onBucketListReached: () -> Void
@@ -21,6 +24,7 @@ struct TaedamScreen: View {
     init(
         input: TaedamSessionInputDTO,
         transcriber: (any BucketListTranscribing)? = nil,
+        voiceMotionMonitor: (any VoiceMotionMonitoring)? = nil,
         onBack: @escaping () -> Void = {},
         onFinish: @escaping () -> Void = {},
         onBucketListReached: @escaping () -> Void = {},
@@ -32,6 +36,7 @@ struct TaedamScreen: View {
                 transcriber: transcriber ?? SpeechBucketListTranscriber()
             )
         )
+        self.voiceMotionMonitor = voiceMotionMonitor ?? AudioVoiceMotionMonitor()
         self.onBack = onBack
         self.onFinish = onFinish
         self.onBucketListReached = onBucketListReached
@@ -43,7 +48,10 @@ struct TaedamScreen: View {
             Color.white
                 .ignoresSafeArea()
 
-            TaedamAmbientBackground()
+            TaedamAmbientBackground(
+                normalizedVoiceMotion: normalizedVoiceMotion,
+                isVoiceActive: isVoiceActive
+            )
 
             scriptScrollView
 
@@ -59,11 +67,13 @@ struct TaedamScreen: View {
         }
         .task {
             model.start()
+            await observeVoiceMotion()
         }
         .onDisappear {
             model.cancel()
             Task {
                 await bucketListInputModel.cancel()
+                await stopVoiceMotionMonitoring()
             }
         }
         .onChange(of: model.phase) { oldPhase, newPhase in
@@ -74,6 +84,12 @@ struct TaedamScreen: View {
 
             onBucketListReached()
             Task {
+                await stopVoiceMotionMonitoring()
+
+                guard bucketListInputModel.phase != .editing else {
+                    return
+                }
+
                 await bucketListInputModel.start(duration: .seconds(20))
             }
         }
@@ -81,6 +97,11 @@ struct TaedamScreen: View {
             if newPhase != .editing {
                 isBucketListEditorFocused = false
             }
+        }
+        .onChange(of: bucketListInputModel.voiceMotionSample) { _, sample in
+            guard model.phase == .bucketList else { return }
+            normalizedVoiceMotion = sample.normalizedValue
+            isVoiceActive = sample.isVoiceActive
         }
     }
 
@@ -181,12 +202,16 @@ struct TaedamScreen: View {
 
             if bucketListInputModel.phase == .editing {
                 model.selectLine(at: index)
+                Task {
+                    try? await voiceMotionMonitor.startMonitoring()
+                }
                 return
             }
 
             Task {
                 await bucketListInputModel.cancel()
                 model.selectLine(at: index)
+                try? await voiceMotionMonitor.startMonitoring()
             }
             return
         }
@@ -231,24 +256,6 @@ struct TaedamScreen: View {
         }
     }
 
-    private func bucketListDisplayText(for line: TaedamLineDTO) -> String {
-        guard line.kind == .bucketList else { return line.text }
-
-        let transcript = bucketListInputModel.liveTranscript.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        return transcript.isEmpty ? line.text : transcript
-    }
-
-    private func closeScreen(action: @escaping () -> Void) {
-        isBucketListEditorFocused = false
-        model.cancel()
-        Task {
-            await bucketListInputModel.cancel()
-            action()
-        }
-    }
-
     private func countdownOverlay(value: Int) -> some View {
         ZStack {
             Color.white.opacity(0.78)
@@ -270,6 +277,48 @@ struct TaedamScreen: View {
             }
         }
         .transition(.opacity)
+    }
+}
+
+private extension TaedamScreen {
+    func bucketListDisplayText(for line: TaedamLineDTO) -> String {
+        guard line.kind == .bucketList else { return line.text }
+
+        let transcript = bucketListInputModel.liveTranscript.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+        return transcript.isEmpty ? line.text : transcript
+    }
+
+    func closeScreen(action: @escaping () -> Void) {
+        isBucketListEditorFocused = false
+        model.cancel()
+        Task {
+            await bucketListInputModel.cancel()
+            await stopVoiceMotionMonitoring()
+            action()
+        }
+    }
+
+    func observeVoiceMotion() async {
+        let samples = voiceMotionMonitor.samples
+        try? await voiceMotionMonitor.startMonitoring()
+
+        for await sample in samples {
+            guard !Task.isCancelled else { return }
+            guard model.phase != .bucketList else { continue }
+            normalizedVoiceMotion = sample.normalizedValue
+            isVoiceActive = sample.isVoiceActive
+        }
+    }
+
+    func stopVoiceMotionMonitoring() async {
+        await voiceMotionMonitor.stopMonitoring()
+
+        withAnimation(.easeOut(duration: 0.28)) {
+            normalizedVoiceMotion = 0
+            isVoiceActive = false
+        }
     }
 }
 
