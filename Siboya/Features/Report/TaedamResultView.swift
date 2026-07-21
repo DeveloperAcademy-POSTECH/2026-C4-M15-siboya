@@ -13,7 +13,7 @@ struct TaedamResultView: View {
 
     @State private var isSnackbarPresented = false
 
-    let result: TaedamResultData
+    let result: SavedBucketListDTO
     let onComplete: () -> Void
 
     var body: some View {
@@ -107,7 +107,7 @@ struct TaedamResultView: View {
         }
 
         withAnimation(.easeIn(duration: 0.2)) {
-            isSnackbarPresented = true // false
+            isSnackbarPresented = false //true 
         }
     }
 }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SavedPromiseSnackbar: View {
+struct SavedBucketListSnackbar: View {
     let message: String
     
     var body: some View {
@@ -47,7 +47,7 @@ struct SavedPromiseSnackbar: View {
         Color.black
             .ignoresSafeArea()
 
-        SavedPromiseSnackbar(
+        SavedBucketListSnackbar(
             message: "약속탭에 저장되었어요"
         )
         .padding(24)

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SavedPromiseCard: View {
+struct SavedBucketListCard: View {
     let summary: String
     let promise: TaedamActionItem
     
@@ -62,7 +62,7 @@ struct SavedPromiseCard: View {
         Color(.systemGray6)
             .ignoresSafeArea()
         
-        SavedPromiseCard(
+        SavedBucketListCard(
             summary: "방금 전 태담 속 아이와 함께하고 싶은 일을 담았어요",
             promise: TaedamActionItem(
                 id: UUID(),
