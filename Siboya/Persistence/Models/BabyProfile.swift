@@ -9,7 +9,7 @@ import SwiftData
 @Model
 final class BabyProfile {
     @Attribute(.unique) var id: UUID
-    var nickname: String
+    private(set) var nickname: String
     var gestationalWeek: Int
 
     init(
@@ -20,5 +20,9 @@ final class BabyProfile {
         self.id = id
         self.nickname = nickname
         self.gestationalWeek = gestationalWeek
+    }
+
+    func updateNickname(_ newNickname: String) {
+        nickname = newNickname
     }
 }

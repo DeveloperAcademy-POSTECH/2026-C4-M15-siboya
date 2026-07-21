@@ -298,7 +298,7 @@ import SwiftData
 @Model
 final class BabyProfile {
     @Attribute(.unique) var id: UUID
-    var nickname: String
+    private(set) var nickname: String
     var gestationalWeek: Int
 
     init(
@@ -310,14 +310,18 @@ final class BabyProfile {
         self.nickname = nickname
         self.gestationalWeek = gestationalWeek
     }
+
+    func updateNickname(_ newNickname: String) {
+        nickname = newNickname
+    }
 }
 
 @Model
 final class BucketListItem {
     @Attribute(.unique) var id: UUID
-    var category: String
-    var content: String
-    var isCompleted: Bool
+    private(set) var category: String
+    private(set) var content: String
+    private(set) var isCompleted: Bool
     var createdAt: Date
 
     init(
@@ -333,8 +337,18 @@ final class BucketListItem {
         self.isCompleted = isCompleted
         self.createdAt = createdAt
     }
+
+    func updateContent(_ newContent: String) {
+        content = newContent
+    }
+
+    func toggleCompletion() {
+        isCompleted.toggle()
+    }
 }
 ```
+
+- `nickname`/`category`/`content`/`isCompleted`는 `private(set)`으로 막혀 있고, 각 모델의 메서드(`updateNickname`/`updateContent`/`toggleCompletion`)를 통해서만 값이 바뀐다. `@Query`가 View에 살아있는 모델 레퍼런스를 직접 주기 때문에, Repository를 거치지 않은 직접 대입을 막기 위한 장치다.
 
 ## 6. 공통 프로토콜
 
@@ -371,6 +385,8 @@ protocol BucketListTranscribing: Sendable {
 
 protocol TaedamRepository: Sendable {
     func fetchBabyProfile() throws -> BabyProfile?
+    func ensureBabyProfile(nickname: String, gestationalWeek: Int) async throws
+    func updateNickname(_ nickname: String) async throws
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
     func updateContent(
         command: UpdateBucketListContentCommandDTO
@@ -383,6 +399,8 @@ protocol TaedamRepository: Sendable {
 - `ScriptRepository`는 번들 JSON을 로드·검증하지만 JSON 원본을 수정하지 않는다.
 - `TaedamRepository`는 SwiftData 변경을 담당한다. 화면의 반응형 조회는 `@Query`를 직접 사용한다.
 - `toggleCompletion`은 화면이 계산한 값을 받지 않고, 저장된 최신 `isCompleted`를 Repository 내부에서 뒤집는다.
+- `ensureBabyProfile`은 멱등적이다. 이미 `BabyProfile`이 있으면 아무 것도 하지 않고, 없을 때만 생성한다. 온보딩 화면이 없는 MVP 단계에서는 앱 최초 진입 시 임시로 호출해 하나만 만들어 둔다.
+- `nickname`은 `ensureBabyProfile`/`updateNickname` 둘 다 trim 후 빈 문자열이면 실패한다.
 
 ## 7. 저장·수정 불변 조건
 
