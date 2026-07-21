@@ -5,49 +5,45 @@
 //  Created by Erin Yaebin Kim on 7/20/26.
 //
 
+import SwiftData
 import SwiftUI
 
 struct TaedamResultView: View {
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
-
-    // result가 전달한 ID와 같은 BucketList
+    
+    // result가 전달한 ID와 같은 BucketListItem 하나만 관리한다
+    // SwiftData의 값이 변경되면 화면도 자동으로 다시 그려진다
+    @Query private var bucketListItems: [BucketListItem]
+    
     @State private var isSnackbarPresented = false
-
-    let result: SavedBucketListDTO
+    
     let onComplete: () -> Void
-
+    
+    init(
+        result: SavedBucketListDTO,
+        onComplete: @escaping () -> Void
+    ) {
+        let savedItemID = result.bucketListItemID
+        
+        // 저장 결과가 가리키는 BucketListItem만 조회합니다.
+        _bucketListItems = Query(
+            filter: #Predicate<BucketListItem> { item in
+                item.id == savedItemID
+            }
+        )
+        
+        self.onComplete = onComplete
+    }
+    
     var body: some View {
         ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
+            resultBackground
 
-            Image("Taedam-BG")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .opacity(0.38)
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    ResultHeaderView(
-                        week: result.week,
-                        theme: result.theme,
-                        imageName: result.imageName
-                    )
-
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.2))
-                        .frame(width: 1, height: 36)
-
-                    SavedPromiseCard(
-                        summary: result.summary,
-                        promise: result.promise
-                    )
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 36)
-                .padding(.bottom, 24)
+            if let savedItem {
+                loadedContent(item: savedItem)
+            } else {
+                notFoundContent
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -59,18 +55,68 @@ struct TaedamResultView: View {
             .padding(.vertical, 12)
         }
         .overlay(alignment: .bottom) {
-            if isSnackbarPresented {
-                SavedPromiseSnackbar(
-                    message: "약속탭에 저장되었어요"
-                )
-                .padding(.horizontal, 24)
-                .padding(.bottom, 92)
-                .transition(snackbarTransition)
-                .zIndex(1)
-            }
+            snackbarOverlay
         }
-        .task {
+        .task(id: savedItem?.id) {
+            // 저장된 모델을 실제로 찾은 경우에만
+            // 저장 성공 메시지를 표시합니다.
+            guard savedItem != nil else {
+                return
+            }
+
             await presentSnackbar()
+        }
+    }
+
+    // ID는 unique이므로 조회 결과는 최대 하나여야 합니다.
+    private var savedItem: BucketListItem? {
+        bucketListItems.first
+    }
+
+    private var resultBackground: some View {
+        ZStack {
+            Color(.systemBackground)
+                .ignoresSafeArea()
+
+            Image("Taedam-BG")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .opacity(0.38)
+        }
+    }
+
+    private func loadedContent(
+        item: BucketListItem
+    ) -> some View {
+        ScrollView {
+            SavedBucketListCard(item: item)
+                .padding(.horizontal, 24)
+                .padding(.top, 48)
+                .padding(.bottom, 24)
+        }
+    }
+
+    private var notFoundContent: some View {
+        ContentUnavailableView(
+            "저장된 약속을 찾을 수 없어요",
+            systemImage: "exclamationmark.triangle",
+            description: Text(
+                "저장된 약속이 삭제되었거나 불러오지 못했어요."
+            )
+        )
+    }
+
+    @ViewBuilder
+    private var snackbarOverlay: some View {
+        if isSnackbarPresented {
+            SavedBucketListSnackbar(
+                message: "약속 탭에 저장되었어요"
+            )
+            .padding(.horizontal, 24)
+            .padding(.bottom, 92)
+            .transition(snackbarTransition)
+            .zIndex(1)
         }
     }
 
@@ -87,19 +133,27 @@ struct TaedamResultView: View {
     private func presentSnackbar() async {
         let showAnimation: Animation = reduceMotion
             ? .easeOut(duration: 0.2)
-            : .spring(response: 0.35, dampingFraction: 0.82)
+            : .spring(
+                response: 0.35,
+                dampingFraction: 0.82
+            )
 
         withAnimation(showAnimation) {
             isSnackbarPresented = true
         }
 
+        // VoiceOver 사용자에게도 저장 완료 사실을 알립니다.
         AccessibilityNotification
-            .Announcement("약속탭에 저장되었어요")
+            .Announcement("약속 탭에 저장되었어요")
             .post()
 
         do {
-            try await Task.sleep(for: .seconds(2))
+            try await Task.sleep(
+                for: .seconds(2)
+            )
         } catch {
+            // 화면이 닫혀 Task가 취소되면
+            // 이후 상태 변경을 실행하지 않습니다.
             return
         }
 
@@ -107,25 +161,35 @@ struct TaedamResultView: View {
             return
         }
 
-        withAnimation(.easeIn(duration: 0.2)) {
-            isSnackbarPresented = false //true 
+        withAnimation(
+            .easeIn(duration: 0.2)
+        ) {
+            isSnackbarPresented = false
         }
     }
 }
-
-#Preview {
-    TaedamResultView(
-        result: TaedamResultData(
-                    week: 22,
-                    theme: "일요일 아침",
-                    summary: "방금 전 태담 속 아이와 함께하고 싶은 일을 담았어요.",
-                    promise:
-                        TaedamActionItem(
-                            id: UUID(),
-                            title: "메론빵 만들어주기"
-                        ),
-                    imageName: "TitleImage"
-                ),
-                onComplete: {}
-    )
-}
+    
+    #Preview {
+        // Preview에서는 실제 앱 저장소가 아닌
+        // 메모리 전용 SwiftData 저장소를 사용합니다.
+        let container = PersistenceContainer.makeContainer(
+            inMemory: true
+        )
+        
+        let savedItem = BucketListItem(
+            category: "아기사랑",
+            content: "메론빵 만들어주기"
+        )
+        
+        // 결과 화면이 @Query로 찾을 수 있도록
+        // Preview용 모델을 먼저 저장소에 넣습니다.
+        container.mainContext.insert(savedItem)
+        
+        return TaedamResultView(
+            result: SavedBucketListDTO(
+                bucketListItemID: savedItem.id
+            ),
+            onComplete: {}
+        )
+        .modelContainer(container)
+    }
