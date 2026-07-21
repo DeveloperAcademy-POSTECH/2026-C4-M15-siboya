@@ -17,19 +17,16 @@ import Speech
 /// 사용 예시:
 /// ```swift
 /// let transcriber = SpeechBucketListTranscriber()
-///
 /// let transcriptTask = Task {
 ///     for await transcript in transcriber.partialTranscripts {
 ///         // 화면에 최신 전체 전사문을 표시합니다.
 ///     }
 /// }
 /// try await transcriber.start(duration: .seconds(20))
-///
 /// // 사용자가 정지 버튼을 누르거나 화면의 20초 타이머가 끝났을 때 호출합니다.
 /// let draft = try await transcriber.finish()
 /// transcriptTask.cancel()
 /// ```
-///
 /// 최초 발화 후 연속 무음이 감지되거나 `duration`이 지나면 마이크를 자동으로 닫고
 /// ``automaticEndEvents``로 알립니다. 최종 ``BucketListDraftDTO``를 받으려면 호출 측에서
 /// `finish()`를 호출해야 합니다. 대본으로 돌아갈 때는 `cancel()`로 전사문을 폐기합니다.
@@ -43,9 +40,13 @@ final class SpeechBucketListTranscriber: BucketListTranscribing {
     /// 마이크 입력이 자동으로 끝날 때 종료 이유를 전달합니다.
     nonisolated let automaticEndEvents: AsyncStream<BucketListTranscriptionEndReason>
 
+    /// STT 마이크 버퍼에서 계산한 배경 모션 값을 전달합니다.
+    nonisolated let voiceMotionSamples: AsyncStream<VoiceMotionSampleDTO>
+
     private let partialTranscriptContinuation: AsyncStream<String>.Continuation
     private let automaticEndEventContinuation:
         AsyncStream<BucketListTranscriptionEndReason>.Continuation
+    private let audioLevelProcessor: BucketListAudioLevelProcessor
     private let recognizer: SFSpeechRecognizer?
     private let audioEngine: AVAudioEngine
     private let audioSession: AVAudioSession
@@ -60,7 +61,6 @@ final class SpeechBucketListTranscriber: BucketListTranscribing {
     private var receivedFinalResult = false
     private var recognitionFailed = false
     private var hasInstalledAudioTap = false
-    private var silenceDetector: BucketListSilenceDetector
 
     /// 전사 서비스를 생성합니다.
     ///
@@ -81,19 +81,21 @@ final class SpeechBucketListTranscriber: BucketListTranscribing {
             of: BucketListTranscriptionEndReason.self,
             bufferingPolicy: .bufferingNewest(1)
         )
+        let audioLevelProcessor = BucketListAudioLevelProcessor(
+            silenceDetectionPolicy: silenceDetectionPolicy
+        )
 
         partialTranscripts = partialTranscriptStream.stream
         partialTranscriptContinuation = partialTranscriptStream.continuation
         automaticEndEvents = automaticEndEventStream.stream
         automaticEndEventContinuation = automaticEndEventStream.continuation
+        voiceMotionSamples = audioLevelProcessor.voiceMotionSamples
+        self.audioLevelProcessor = audioLevelProcessor
         recognizer = SFSpeechRecognizer(locale: locale)
         audioEngine = AVAudioEngine()
         audioSession = AVAudioSession.sharedInstance()
         authorizationService = TaedamSpeechAuthorizationService()
         self.finalizationGracePeriod = finalizationGracePeriod
-        silenceDetector = BucketListSilenceDetector(
-            policy: silenceDetectionPolicy
-        )
     }
 
     deinit {
@@ -281,7 +283,7 @@ private extension SpeechBucketListTranscriber {
     ) {
         guard state == .transcribing else { return }
 
-        if silenceDetector.process(
+        if audioLevelProcessor.process(
             rmsDecibels: rmsDecibels,
             duration: duration
         ) {
@@ -362,6 +364,8 @@ private extension SpeechBucketListTranscriber {
             recognitionRequest?.endAudio()
         }
 
+        audioLevelProcessor.publishRestingSample()
+
         try? audioSession.setActive(
             false,
             options: .notifyOthersOnDeactivation
@@ -385,14 +389,12 @@ private extension SpeechBucketListTranscriber {
         latestTranscript = ""
         receivedFinalResult = false
         recognitionFailed = false
-        silenceDetector.reset()
+        audioLevelProcessor.reset()
     }
 }
 
 private extension SpeechBucketListTranscriber {
     enum State {
-        case idle
-        case transcribing
-        case awaitingFinalResult
+        case idle, transcribing, awaitingFinalResult
     }
 }

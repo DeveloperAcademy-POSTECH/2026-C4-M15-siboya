@@ -100,6 +100,21 @@ struct TaedamBucketListInputModelTests {
         #expect(transcriber.startedDurations == [.seconds(20)])
     }
 
+    @Test func sttVoiceMotionIsForwardedWhileTranscribing() async {
+        let transcriber = MockBucketListTranscriber()
+        let model = TaedamBucketListInputModel(transcriber: transcriber)
+        let sample = VoiceMotionSampleDTO(
+            normalizedValue: 0.8,
+            isVoiceActive: true
+        )
+
+        await model.start()
+        transcriber.sendVoiceMotion(sample)
+        await waitUntil { model.voiceMotionSample == sample }
+
+        #expect(model.voiceMotionSample == sample)
+    }
+
     private func waitUntil(
         _ condition: @MainActor () -> Bool
     ) async {
@@ -118,10 +133,13 @@ private final class MockBucketListTranscriber: BucketListTranscribing {
     nonisolated let partialTranscripts: AsyncStream<String>
     nonisolated let automaticEndEvents:
         AsyncStream<BucketListTranscriptionEndReason>
+    nonisolated let voiceMotionSamples: AsyncStream<VoiceMotionSampleDTO>
 
     private let partialTranscriptContinuation: AsyncStream<String>.Continuation
     private let automaticEndContinuation:
         AsyncStream<BucketListTranscriptionEndReason>.Continuation
+    private let voiceMotionContinuation:
+        AsyncStream<VoiceMotionSampleDTO>.Continuation
     private let draft: BucketListDraftDTO
     private let finishError: BucketListTranscriptionError?
 
@@ -144,11 +162,17 @@ private final class MockBucketListTranscriber: BucketListTranscribing {
             of: BucketListTranscriptionEndReason.self,
             bufferingPolicy: .bufferingNewest(1)
         )
+        let voiceMotionSampleStream = AsyncStream.makeStream(
+            of: VoiceMotionSampleDTO.self,
+            bufferingPolicy: .bufferingNewest(1)
+        )
 
         partialTranscripts = partialTranscriptStream.stream
         partialTranscriptContinuation = partialTranscriptStream.continuation
         automaticEndEvents = automaticEndEventStream.stream
         automaticEndContinuation = automaticEndEventStream.continuation
+        voiceMotionSamples = voiceMotionSampleStream.stream
+        voiceMotionContinuation = voiceMotionSampleStream.continuation
         self.draft = draft
         self.finishError = finishError
     }
@@ -156,6 +180,7 @@ private final class MockBucketListTranscriber: BucketListTranscribing {
     deinit {
         partialTranscriptContinuation.finish()
         automaticEndContinuation.finish()
+        voiceMotionContinuation.finish()
     }
 
     func start(duration: Duration) async throws {
@@ -182,5 +207,9 @@ private final class MockBucketListTranscriber: BucketListTranscribing {
 
     func sendAutomaticEnd(reason: BucketListTranscriptionEndReason) {
         automaticEndContinuation.yield(reason)
+    }
+
+    func sendVoiceMotion(_ sample: VoiceMotionSampleDTO) {
+        voiceMotionContinuation.yield(sample)
     }
 }

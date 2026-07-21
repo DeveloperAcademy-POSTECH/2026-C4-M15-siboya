@@ -25,6 +25,10 @@ final class TaedamBucketListInputModel {
     private(set) var draft: BucketListDraftDTO?
     private(set) var error: BucketListTranscriptionError?
     private(set) var automaticEndReason: BucketListTranscriptionEndReason?
+    private(set) var voiceMotionSample = VoiceMotionSampleDTO(
+        normalizedValue: 0,
+        isVoiceActive: false
+    )
 
     /// 키보드로 수정 중인 문장입니다. 저장 단계에서는 이 값만 사용해야 합니다.
     var editedText = ""
@@ -33,6 +37,7 @@ final class TaedamBucketListInputModel {
     private var activeSessionID: UUID?
     private var partialTranscriptTask: Task<Void, Never>?
     private var automaticEndTask: Task<Void, Never>?
+    private var voiceMotionTask: Task<Void, Never>?
 
     init(transcriber: any BucketListTranscribing) {
         self.transcriber = transcriber
@@ -93,6 +98,7 @@ final class TaedamBucketListInputModel {
     private func observeTranscriber(sessionID: UUID) {
         let partialTranscripts = transcriber.partialTranscripts
         let automaticEndEvents = transcriber.automaticEndEvents
+        let voiceMotionSamples = transcriber.voiceMotionSamples
 
         partialTranscriptTask = Task { [weak self] in
             for await transcript in partialTranscripts {
@@ -117,6 +123,17 @@ final class TaedamBucketListInputModel {
                 return
             }
         }
+
+        voiceMotionTask = Task { [weak self] in
+            for await sample in voiceMotionSamples {
+                guard !Task.isCancelled,
+                      self?.activeSessionID == sessionID else {
+                    return
+                }
+
+                self?.voiceMotionSample = sample
+            }
+        }
     }
 
     private func moveToEditingState(draft: BucketListDraftDTO) {
@@ -124,6 +141,10 @@ final class TaedamBucketListInputModel {
         liveTranscript = draft.rawTranscript
         editedText = draft.editedText
         phase = .editing
+        voiceMotionSample = VoiceMotionSampleDTO(
+            normalizedValue: 0,
+            isVoiceActive: false
+        )
         stopObservingTranscriber()
     }
 
@@ -144,6 +165,8 @@ final class TaedamBucketListInputModel {
         partialTranscriptTask = nil
         automaticEndTask?.cancel()
         automaticEndTask = nil
+        voiceMotionTask?.cancel()
+        voiceMotionTask = nil
     }
 
     private func resetDraftValues() {
@@ -152,5 +175,9 @@ final class TaedamBucketListInputModel {
         editedText = ""
         error = nil
         automaticEndReason = nil
+        voiceMotionSample = VoiceMotionSampleDTO(
+            normalizedValue: 0,
+            isVoiceActive: false
+        )
     }
 }

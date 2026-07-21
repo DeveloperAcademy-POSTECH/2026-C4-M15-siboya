@@ -21,6 +21,11 @@ protocol BucketListTranscribing: Sendable {
     /// 화면은 이벤트를 받으면 `finish()`를 호출해 최종 전사문을 확정해야 합니다.
     var automaticEndEvents: AsyncStream<BucketListTranscriptionEndReason> { get }
 
+    /// STT가 사용하는 동일한 마이크 버퍼에서 계산한 음성 모션 값을 전달합니다.
+    ///
+    /// 화면은 이 스트림을 사용해 버킷리스트 발화 중에도 앰비언트 배경을 움직입니다.
+    var voiceMotionSamples: AsyncStream<VoiceMotionSampleDTO> { get }
+
     /// 마이크 입력과 실시간 음성 인식을 시작합니다.
     ///
     /// - Parameter duration: 마이크를 열어둘 최대 시간입니다. 태담에서는 `.seconds(20)`을 사용합니다.
