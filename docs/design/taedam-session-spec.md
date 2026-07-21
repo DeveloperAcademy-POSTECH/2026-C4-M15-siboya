@@ -1,6 +1,6 @@
 # 태담 진행 기능 스펙
 
-- **상태**: review
+- **상태**: approved
 - **작성일**: 2026-07-21
 - **적용 범위**: 대본 미리보기, 권한 확인, 3초 카운트다운, 대본 자동 진행, 버킷리스트 STT, 키보드 수정·저장, 태담 요약
 - **공통 계약**: [태담 공통 데이터 계약](./taedam-common-contracts.md)
@@ -40,13 +40,16 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 
 `4.0`, `2.5`, `10.0`은 UI 테스트 후 조정할 수 있는 타이밍 정책값이다.
 
-- 전체 문장을 기본 색으로 미리 배치하고, `currentLineProgress`에 따라 전경색 텍스트를 마스크해 노래방 가사처럼 채운다.
+- 전체 문장을 기본 색으로 미리 배치하고, `currentLineProgress`에 따라 각 글자의 전경색을 선형 보간해 노래방 가사처럼 채운다.
+- 글자 채움 애니메이션은 기본 0.08초이며, 비활성 글자 opacity는 0.15를 사용한다.
+- 대본 본문과 STT 플레이스홀더는 SF Pro 28pt Bold, line height 42pt, letter spacing 0.38pt를 사용한다.
+- `KaraokeText`의 채움 표현과 일반 대본문장의 흐림·투명도 표현은 서로 독립적으로 유지한다.
 - 텍스트 레이아웃은 진행 중 바뀌지 않는다.
 - 진행률이 `1`이 되면 다음 문장을 자동으로 시작한다.
-- 문장 이동을 위한 스와이프는 제공하지 않는다.
-- 사용자가 이미 지나간 일반 문장을 탭하면 현재 진행 Task를 취소하고, 선택한 문장의 진행률을 `0`으로 초기화한 뒤 그 문장부터 즉시 재개한다.
+- 대본은 세로 `ScrollView`로 감싸 사용자가 이전·다음 문장을 자유롭게 탐색할 수 있게 한다.
+- 대본 진행 중이거나 `.bucketList` 상태일 때 사용자가 이전·현재·다음 일반 대본 문장을 탭하면 현재 진행 Task를 취소하고, 선택한 문장의 진행률을 `0`으로 초기화한 뒤 그 문장부터 즉시 재개한다.
 - 문장을 다시 선택할 때 3초 카운트다운은 반복하지 않는다.
-- 미래 문장과 `.bucketList` 줄은 수동으로 선택하지 않는다.
+- `.bucketList` 줄은 수동으로 선택하지 않는다.
 - 자동 진행 Task는 한 번에 하나만 유지하고, 문장 재선택·화면 종료·STT 전환 시 취소한다.
 
 ## 5. 실시간 음성 반응
@@ -65,13 +68,17 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 
 ## 6. 버킷리스트 STT·텍스트 수정
 
-- 마지막 일반 문장의 진행률이 `1`이 되면 `bucketListPrompt`로 자동 전환한다.
+- 마지막 일반 문장의 진행률이 `1`이 되면 `bucketListGuide` 안내 카드와 `bucketListPrompt` STT 플레이스홀더로 자동 전환한다.
+- `bucketListGuide`는 STT 플레이스홀더 직전에 보조 텍스트로 표시하며 예시 답변은 표시하지 않는다.
 - 음성 반응 모니터의 `stopMonitoring()`을 완료해 기존 input tap을 제거한 뒤 STT용 input tap을 설치한다.
 - STT는 별도의 스와이프, 탭 또는 시작 버튼 없이 자동 시작한다.
 - 한 번의 STT 최대 입력 시간은 20초다.
 - STT 진행 중 정지 버튼을 항상 표시한다. 정지 버튼은 `finish()`로 현재 전사 결과를 확정한다.
 - 20초가 경과하면 자동으로 `finish()`한다.
 - 부분 전사문은 화면 표시용으로만 사용하고 저장하지 않는다.
+- 첫 부분 전사문이 들어오면 `bucketListPrompt` 플레이스홀더를 제거하고 전사문으로 덮어쓴다.
+- `.bucketList` 상태에서 일반 대본문장을 선택하면 진행 중인 STT를 중단하고 선택한 문장부터 대본을 재개한다.
+- 재개한 대본이 끝나 다시 `.bucketList`에 도달하면 STT 진입 이벤트를 다시 전달한다.
 - 최종 전사문을 `BucketListDraftDTO`로 만든 뒤 `.reviewingBucketListDraft`로 전환한다.
 - 전사 결과 수정 수단은 **키보드 텍스트 수정 하나만** 제공한다.
 - **다시 말하기, STT 재시도, 재발화 버튼은 제공하지 않는다.**
@@ -125,12 +132,12 @@ sequenceDiagram
         loop 일반 대본
             Progress-->>Screen: currentLineProgress
             Motion-->>Screen: normalizedVoiceMotion
-            opt 지나간 문장 탭
-                User->>Screen: 이전 문장 선택
+            opt 일반 대본 문장 탭
+                User->>Screen: 이전·현재·다음 문장 선택
                 Screen->>Progress: 현재 Task 취소 후 선택 문장부터 재개
             end
         end
-        Progress-->>Screen: 마지막 문장 완료 + bucketListPrompt
+        Progress-->>Screen: 마지막 문장 완료 + bucketListGuide + STT placeholder
         Screen->>Motion: stopMonitoring()
         Screen->>Speech: 20초 STT 자동 시작
         Speech-->>Screen: 부분 전사문
