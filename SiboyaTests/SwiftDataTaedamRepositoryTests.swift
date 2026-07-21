@@ -67,7 +67,7 @@ struct SwiftDataTaedamRepositoryTests {
 
     @Test func ensureBabyProfile_닉네임이_공백뿐이면_emptyNickname을_던진다() async throws {
         let context = makeContext()
-        let repository = await SwiftDataTaedamRepository(modelContext: context)
+let repository = SwiftDataTaedamRepository(modelContext: context)
 
         await #expect(throws: TaedamRepositoryError.emptyNickname) {
             try await repository.ensureBabyProfile(nickname: "   ", gestationalWeek: 22)
