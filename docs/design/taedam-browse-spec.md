@@ -1,6 +1,6 @@
 # Home(태담 탭) 기능 스펙
 
-- **상태**: review
+- **상태**: approved
 - **작성일**: 2026-07-21
 - **최종 수정일**: 2026-07-21
 - **적용 범위**: Home의 주차별 추천 태담과 카테고리별 대본 목록
@@ -67,19 +67,18 @@
 
 - **loading**: 아기 프로필, 주차별 Home JSON과 번들 대본 JSON을 로드·검증한다.
 - **loaded**: 태명, 주차별 헤드라인, 연결된 경우 추천 대본과 카테고리별 대본 목록을 표시한다.
-- **profileMissing**: 아기 프로필을 찾지 못했음을 안내하고 온보딩 진입 수단을 제공한다.
-- **empty**: 유효한 대본이 하나도 없음을 안내한다.
-- **failed**: 프로필 조회 또는 JSON 디코딩·검증 실패를 사용자용 메시지로 변환해 표시한다.
+- **unavailable**: 프로필 없음, Home 주차 데이터 없음, 유효한 대본 없음 또는 JSON 로드·디코딩 실패를 하나의 오류 UI로 표시한다.
 
-현재 프로필 주차와 같은 Home 콘텐츠가 없으면 `failed`로 처리한다. `recommendedScriptID == null`은 실패가 아니며 추천 카드만 표시하지 않는 정상 `loaded` 상태다.
+`unavailable`에서는 화면에 `데이터를 불러오지 못했어요.` 텍스트와 `새로고침` 버튼 하나만 표시한다. 별도 오류 팝업은 사용하지 않는다. `새로고침`은 프로필, Home JSON과 대본 JSON 전체 로드를 다시 실행하며, 재로딩 중에는 버튼을 비활성화하고 중복 요청을 만들지 않는다.
 
-Figma에는 `loaded` 상태만 정의되어 있다. `profileMissing`, `empty`, `failed` 상태의 문구와 시각 표현은 추가 디자인 확인이 필요하다.
+현재 프로필 주차와 같은 Home 콘텐츠가 없으면 `unavailable`로 처리한다. `recommendedScriptID == null`은 실패가 아니며 추천 카드만 표시하지 않는 정상 `loaded` 상태다.
 
 ## 7. 사용자 행동
 
 1. 추천 카드 또는 대본 행을 탭하면 View는 해당 대본의 `scriptID`와 `scriptVersion`을 선택 callback으로 전달한다.
 2. 상위 ViewModel·Coordinator가 `ScriptSelectionDTO`를 만들고 대본·생각힌트 미리보기 화면을 push한다. 공통 타입이 추가되기 전에는 callback의 두 원시 값을 사용할 수 있다.
 3. 같은 항목을 연속 탭해도 미리보기 화면을 중복으로 열지 않는다.
+4. `unavailable`에서 `새로고침`을 선택하면 View는 `onRefresh` callback을 한 번 전달한다.
 
 ## 8. Figma와 현재 데이터 차이
 
@@ -89,7 +88,7 @@ Figma에는 `loaded` 상태만 정의되어 있다. `profileMissing`, `empty`, `
 | 추천 설명 | `아빠의 낮은 목소리가 잘 들리는 시기` | 주차별 Home JSON의 20주차 `headline` | 현재 프로필 주차와 같은 JSON 값을 표시한다 |
 | 추천 대본 연결 | 추천 카드 존재 | `recommendedScriptID`는 대본 확정 전 `null` | 임의 대본을 선택하지 않고 ID가 채워질 때 추천 카드를 연결한다 |
 | 카테고리·대본 | `멀리멀리 대모험` 아래 `오후의 동네 산책`, `조용한 도서관 구석에서`, `시끌시끌 공원` | 두 제목은 `밖으로 한 걸음`이며 `시끌시끌 공원`은 없음 | JSON의 카테고리와 대본 목록을 그대로 표시한다 |
-| 대표 이미지 | Figma 이미지 존재 | JSON에 asset 이름은 있으나 해당 imageset은 브랜치에 없음 | 에셋 제공 전 placeholder 또는 실패 상태 필요 |
+| 대표 이미지 | Figma 이미지 존재 | JSON에 asset 이름은 있으나 해당 imageset은 브랜치에 없음 | 이미지가 없으면 공통 `script_artwork_placeholder`를 표시하고 데이터 로딩 실패로 처리하지 않는다 |
 
 화면 모양은 Figma를 따르고 위 콘텐츠 차이는 JSON을 우선한다. View는 데이터가 바뀌어도 다시 구현하지 않도록 동적 목록과 주입된 표시값으로 만든다.
 

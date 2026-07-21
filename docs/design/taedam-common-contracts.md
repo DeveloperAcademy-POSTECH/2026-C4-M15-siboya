@@ -154,7 +154,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
 | `scripts[].category` | `String` | O | 대본 카테고리 |
 | `scripts[].title` | `String` | O | 개별 대본 제목 |
 | `scripts[].metadata.targetGestationalWeek` | `Int` | O | 대본 대상 임신 주차 |
-| `scripts[].metadata.artworkAssetName` | `String` | O | Assets 이미지 이름 |
+| `scripts[].metadata.artworkAssetName` | `String` | O | 우선 조회할 Assets 이미지 이름. 리소스가 없으면 공통 placeholder 사용 |
 | `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 대본 미리보기에 표시할 예상 소요 시간 |
 | `scripts[].sentences` | `[String]` | O | 자동 진행할 일반 대본 문장 |
 | `scripts[].bucketListPrompt` | `String` | O | 미리보기의 마지막 빈칸 문장이자 STT 전 플레이스홀더 |
@@ -203,9 +203,11 @@ struct ScriptMetadataContent: Decodable, Sendable {
 4. 각 문장, `category`, `bucketListPrompt`와 `bucketListGuide`는 trim 후 비어 있을 수 없다.
 5. `bucketListPrompt`는 `sentences`에 중복해서 넣지 않는다.
 6. `bucketListGuide`에는 `예:` 또는 예시 답변을 포함하지 않는다.
-7. `artworkAssetName`은 실제 Assets 리소스와 일치해야 한다.
+7. `artworkAssetName`은 trim 후 비어 있을 수 없다. 해당 Assets 리소스가 없으면 `script_artwork_placeholder`를 표시하며 JSON 로딩을 실패시키지 않는다.
 8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
 현재 `BundledTaedamScriptLoader`는 JSON 디코딩만 수행한다. 위 1~8 검증을 모두 강제하는 로직은 아직 구현되지 않았으므로 후속 통합 작업에서 보완해야 한다.
+
+Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 사용한다. `UIImage(named: artworkAssetName)`이 `nil`이면 `script_artwork_placeholder`를 표시한다. `Image(artworkAssetName)`은 리소스 존재 여부를 Optional로 반환하지 않으므로 `??`로 fallback하지 않는다.
 
 ## 5. 공통 DTO
 

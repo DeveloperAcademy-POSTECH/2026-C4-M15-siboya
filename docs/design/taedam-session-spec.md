@@ -5,7 +5,7 @@
 - **최종 수정일**: 2026-07-21
 - **적용 범위**: 대본·생각힌트 미리보기, 준비자세 모달, 권한 확인, 3초 카운트다운, 대본 자동 진행, 버킷리스트 STT, 키보드 수정·저장, 태담 요약
 - **공통 계약**: [태담 공통 데이터 계약](./taedam-common-contracts.md)
-- **디자인 기준**: [Figma 미리보기](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-11964), [Figma 준비자세](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-12106)
+- **디자인 기준**: [Figma 미리보기](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-11964), [Figma 준비자세](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-12106), [Figma 마이크 권한 허용](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-12161)
 
 ## 1. 목적
 
@@ -49,7 +49,9 @@
 
 - **loading**: 선택한 대본과 아기 프로필을 조회한다.
 - **loaded**: 대본, 생각힌트와 `준비하기` 버튼을 표시한다.
-- **failed**: 대본 또는 프로필을 불러오지 못한 원인을 사용자용 메시지로 표시하고 재시도할 수 있게 한다.
+- **unavailable**: 대본이나 프로필이 없거나 로드에 실패하면 `데이터를 불러오지 못했어요.` 텍스트와 `새로고침` 버튼 하나만 표시한다.
+
+`새로고침`은 선택한 대본과 아기 프로필 조회를 다시 실행한다. 재로딩 중에는 버튼을 비활성화하고 중복 요청을 만들지 않으며 별도 오류 팝업은 표시하지 않는다.
 
 ### 사용자 행동
 
@@ -57,6 +59,7 @@
 2. `준비하기`를 선택하면 준비자세 모달을 한 번만 표시한다.
 3. `준비하기`는 권한을 요청하거나 카운트다운을 직접 시작하지 않는다.
 4. 준비자세 모달을 닫으면 같은 미리보기의 스크롤 위치와 `TaedamSessionInputDTO`를 유지한다.
+5. `unavailable`에서 `새로고침`을 선택하면 View는 `onRefresh` callback을 한 번 전달한다.
 
 ### Figma와 현재 대본 데이터 차이
 
@@ -66,7 +69,7 @@
 | 소요 시간 | `약 2분` | `estimatedDurationSeconds == 35`이므로 분 올림 시 `약 1분` | JSON 값을 변환해 현재는 `약 1분`을 표시한다 |
 | 마무리 대본 | 빈칸 문장 뒤에 `맛있게 먹어줄 거지? … 사랑해.` 표시 | 해당 종료 문장 없음. 테스트도 종료 인사를 제외하도록 확인 | JSON에 없는 Figma 전용 문장은 표시하지 않는다 |
 | 생각힌트 | 전구 아이콘 뒤 요리·식사 주제 안내 | 같은 문구가 `bucketListGuide`에 존재 | `bucketListGuide`를 표시한다 |
-| 대표 이미지 | 이미지와 배경 존재 | `artworkAssetName`은 있으나 해당 imageset은 브랜치에 없음 | 에셋 제공 전 placeholder 또는 실패 상태가 필요하다 |
+| 대표 이미지 | 이미지와 배경 존재 | `artworkAssetName`은 있으나 해당 imageset은 브랜치에 없음 | 이미지가 없으면 공통 `script_artwork_placeholder`를 표시하고 데이터 로딩 실패로 처리하지 않는다 |
 
 화면 모양은 Figma를 따르고 문구·주차·소요 시간은 JSON에서 만든 DTO를 우선한다. View는 값에 따라 길이와 줄 수가 달라져도 레이아웃이 유지되게 한다.
 
@@ -95,7 +98,19 @@
 - `.notDetermined`이면 시스템 권한 요청을 표시한다.
 - 권한 요청 중에는 `시작하기`를 다시 선택할 수 없게 한다.
 - 필요한 권한이 모두 허용된 뒤에만 모달을 닫고 태담 대본 화면으로 진입한다.
-- `.denied` 또는 `.restricted`이면 시스템 팝업을 반복 요청하지 않고 설정 이동 안내를 보여준다.
+- 마이크 권한이 `.denied` 또는 `.restricted`이면 Figma의 `마이크권한 허용` Alert를 표시한다.
+
+```text
+음성기능을 사용하시려면 [설정
+> 개인정보보호 > 마이크]에서
+태담앱의 접근을 허용해 주세요.
+```
+
+- Alert에는 `닫기`와 `설정` 버튼을 표시한다.
+- `설정`은 `UIApplication.openSettingsURLString`으로 앱별 설정 화면을 연다. iOS 공개 API로 마이크 토글의 세부 화면을 직접 열지는 않는다.
+- `닫기`는 Alert만 닫고 준비자세 모달을 유지한다. 이후 사용자가 `시작하기`를 다시 누르면 권한을 다시 확인하고, 여전히 거부 상태이면 같은 Alert를 다시 표시한다.
+- 설정 앱에서 앱으로 돌아와도 세션을 자동 시작하지 않는다. 사용자가 `시작하기`를 다시 눌렀을 때 권한을 재확인한다.
+- Speech 인식 권한이 `.denied` 또는 `.restricted`인 경우에도 같은 `닫기`·`설정` 구조를 사용하고 본문은 `음성 인식 기능을 사용하시려면 설정에서 태담앱의 음성 인식 접근을 허용해 주세요.`로 표시한다.
 - 권한이 확정되기 전에는 3초 카운트다운을 시작하지 않는다.
 - 모달이 화면에 남아 있거나 사라지는 애니메이션 중에는 카운트다운을 시작하지 않는다.
 
@@ -187,6 +202,7 @@ sequenceDiagram
     participant Preview as 대본 미리보기
     participant Preparation as 준비자세 모달
     participant Permission as 마이크·Speech 권한
+    participant Settings as 설정 앱
     participant Screen as 태담 화면
     participant Progress as 대본 진행
     participant Motion as 음성 반응
@@ -242,7 +258,16 @@ sequenceDiagram
             Data-->>Summary: BucketListItem 하나
         else 권한 거부·제한
             Permission-->>Preparation: denied or restricted
-            Preparation-->>User: 권한 설명·설정 이동 안내
+            Preparation-->>User: Figma 권한 Alert 표시
+            alt 설정 선택
+                User->>Preparation: 설정
+                Preparation->>Settings: openSettingsURLString
+                Settings-->>Preparation: 앱 복귀
+                Preparation-->>User: 준비자세 유지·자동 시작 안 함
+            else 닫기 선택
+                User->>Preparation: 닫기
+                Preparation-->>User: Alert만 닫고 준비자세 유지
+            end
         end
     end
 ```
