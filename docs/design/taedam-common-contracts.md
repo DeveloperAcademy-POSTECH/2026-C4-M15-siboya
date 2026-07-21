@@ -27,7 +27,7 @@ flowchart LR
     Preview -->|TaedamSessionInputDTO| Session[태담 진행]
     Mic[마이크 입력] -->|PCM 버퍼| Motion[음성 반응]
     Motion -->|VoiceMotionSampleDTO| Session
-    Session -->|마지막 대본 완료| STT[20초 Speech STT]
+    Session -->|마지막 대본 완료| STT[무음 자동 종료<br/>최대 20초 Speech STT]
     Mic -->|PCM 버퍼| STT
     STT -->|BucketListDraftDTO| Keyboard[키보드 텍스트 수정]
     Keyboard -->|SaveBucketListCommandDTO| Repository[TaedamRepository]
@@ -204,7 +204,6 @@ enum TaedamPhaseDTO: Equatable, Sendable {
     case countingDown(remainingSeconds: Int)
     case readingScript(index: Int)
     case transcribingBucketList(remainingSeconds: Int)
-    case reviewingBucketListDraft
     case editingBucketList
     case saving
     case completed(bucketListItemID: UUID)
@@ -355,7 +354,6 @@ protocol TaedamScriptProgressing: Sendable {
     func prepare(input: TaedamSessionInputDTO) async
     func start() async
     func selectLine(at index: Int) async throws
-    func beginEditingBucketListDraft() async throws
     func cancel() async
 }
 
@@ -366,8 +364,16 @@ protocol VoiceMotionMonitoring: Sendable {
     func stopMonitoring() async
 }
 
+enum BucketListTranscriptionEndReason: Equatable, Sendable {
+    case silence
+    case maximumDuration
+    case recognitionFinalized
+    case recognitionFailed
+}
+
 protocol BucketListTranscribing: Sendable {
     var partialTranscripts: AsyncStream<String> { get }
+    var automaticEndEvents: AsyncStream<BucketListTranscriptionEndReason> { get }
 
     func start(duration: Duration) async throws
     func finish() async throws -> BucketListDraftDTO

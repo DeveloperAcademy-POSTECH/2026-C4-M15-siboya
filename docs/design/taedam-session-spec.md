@@ -15,7 +15,7 @@
 |---|---|---|---|
 | 대본 미리보기 | `ScriptSelectionDTO` | 대본 요약 표시, 권한 확인 | `TaedamSessionInputDTO` |
 | 카운트다운·대본 진행 | `TaedamSessionInputDTO` | 3초 카운트다운, 문장 채우기, 음성 반응 모션 | 버킷리스트 STT 자동 전환 |
-| 버킷리스트 STT | `.bucketList` 줄 | 최대 20초 전사, 수동 정지 | `BucketListDraftDTO` |
+| 버킷리스트 STT | `.bucketList` 줄 | 발화 후 무음 자동 종료, 최대 20초 전사, 수동 정지 | `BucketListDraftDTO` |
 | 버킷리스트 텍스트 수정 | `BucketListDraftDTO` | 키보드 수정·확정 | `SaveBucketListCommandDTO` |
 | 태담 요약 | `SavedBucketListDTO` | 방금 저장한 `BucketListItem` 하나 표시 | `onComplete: () -> Void` |
 
@@ -43,6 +43,7 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - 전체 문장을 기본 색으로 미리 배치하고, `currentLineProgress`에 따라 각 글자의 전경색을 선형 보간해 노래방 가사처럼 채운다.
 - 글자 채움 애니메이션은 기본 0.08초이며, 비활성 글자 opacity는 0.15를 사용한다.
 - 대본 본문과 STT 플레이스홀더는 SF Pro 28pt Bold, line height 42pt, letter spacing 0.38pt를 사용한다.
+- `bucketListGuide` 안내 문구는 SF Pro 20pt Regular, line height 30pt, letter spacing -1pt와 가운데 정렬을 사용한다.
 - `KaraokeText`의 채움 표현과 일반 대본문장의 흐림·투명도 표현은 서로 독립적으로 유지한다.
 - 텍스트 레이아웃은 진행 중 바뀌지 않는다.
 - 진행률이 `1`이 되면 다음 문장을 자동으로 시작한다.
@@ -74,13 +75,20 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - STT는 별도의 스와이프, 탭 또는 시작 버튼 없이 자동 시작한다.
 - 한 번의 STT 최대 입력 시간은 20초다.
 - STT 진행 중 정지 버튼을 항상 표시한다. 정지 버튼은 `finish()`로 현재 전사 결과를 확정한다.
-- 20초가 경과하면 자동으로 `finish()`한다.
+- 최초 발화를 감지한 뒤 최소 2초의 입력 시간을 확보하고 1.5초 연속 무음이 이어지면 자동으로 `finish()`한다.
+- 최초 발화를 감지하지 못한 상태에서는 무음으로 자동 종료하지 않는다.
+- 무음 자동 종료 여부와 관계없이 20초가 경과하면 자동으로 `finish()`한다.
 - 부분 전사문은 화면 표시용으로만 사용하고 저장하지 않는다.
 - 첫 부분 전사문이 들어오면 `bucketListPrompt` 플레이스홀더를 제거하고 전사문으로 덮어쓴다.
-- `.bucketList` 상태에서 일반 대본문장을 선택하면 진행 중인 STT를 중단하고 선택한 문장부터 대본을 재개한다.
-- 재개한 대본이 끝나 다시 `.bucketList`에 도달하면 STT 진입 이벤트를 다시 전달한다.
-- 최종 전사문을 `BucketListDraftDTO`로 만든 뒤 `.reviewingBucketListDraft`로 전환한다.
+- STT 진행 중 일반 대본문장을 선택하면 진행 중인 STT를 중단하고 선택한 문장부터 대본을 재개한다.
+- 편집 상태에서 일반 대본문장을 선택하면 작성 중인 문장을 보존한 채 선택한 문장부터 대본을 재개한다.
+- STT 중단 후 재개한 대본이 다시 `.bucketList`에 도달하면 STT 진입 이벤트를 다시 전달한다.
+- 편집 상태에서 재개한 대본이 다시 `.bucketList`에 도달하면 STT를 시작하지 않고 기존 텍스트필드와 작성 중인 문장을 복원한다.
+- 최종 전사문을 `BucketListDraftDTO`로 만든 뒤 키보드로 수정 가능한 `.editingBucketList`로 전환한다.
 - 전사 결과 수정 수단은 **키보드 텍스트 수정 하나만** 제공한다.
+- 수정 상태의 입력 영역은 일반 대본과 구분되는 라운드 카드 컨테이너로 표시하고 자동으로 키보드 포커스를 준다.
+- 수정 중 다른 대본문장, 안내 카드, 화면의 빈 영역을 선택하거나 스크롤하면 입력 포커스를 해제한다.
+- 입력 포커스 해제는 `.editingBucketList` 상태와 작성 중인 문장을 변경하지 않으며, 사용자가 텍스트필드를 다시 선택해 계속 수정할 수 있어야 한다.
 - **다시 말하기, STT 재시도, 재발화 버튼은 제공하지 않는다.**
 - 전사문이 비어 있거나 인식에 실패해도 빈 편집 화면에서 키보드로 직접 입력할 수 있다.
 - 키보드 편집 화면은 `rawTranscript`를 초기 `editedText`로 사용하고, 사용자가 최종 확정한 `editedText`만 저장 명령에 넣는다.
@@ -88,9 +96,16 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 
 ### 무음 기반 자동 종료
 
-이 기능은 팀 합의 전까지 구현하지 않는다. 현재는 20초 타임아웃과 사용자의 정지 입력만 사용한다.
+STT용 오디오 tap이 Speech 요청에 전달하는 동일한 PCM 버퍼에서 RMS dB를 계산한다. 무음 감지를 위한
+별도의 tap은 설치하지 않는다.
 
-후보 정책은 발화를 한 번 탐지한 뒤 `최소 2초 입력 + 1.5초 연속 무음`을 만족하면 종료하는 방식이다. 적용하더라도 20초 제한과 정지 버튼은 유지한다.
+- 음성 비활성 상태에서 `rmsDB >= -40`이면 최초 발화와 음성 활성을 감지한다.
+- 음성 활성 상태에서 `rmsDB <= -45`이면 무음 구간을 시작한다.
+- `-45 < rmsDB < -40` 구간에서는 직전 활성 상태를 유지해 경계값에서 판정이 반복되는 것을 줄인다.
+- 최초 발화 감지 후 `최소 2초 입력 + 1.5초 연속 무음`을 모두 만족하면 마이크 입력을 닫는다.
+- 무음 도중 발화가 다시 감지되면 연속 무음 시간을 0으로 초기화한다.
+- 무음, 20초 제한 또는 Speech 자체 종료 이벤트를 받으면 세션이 `finish()`를 한 번만 호출한다.
+- 주변 소음으로 무음을 판단하지 못하는 경우에도 20초 제한과 정지 버튼은 항상 유지한다.
 
 ## 7. 저장·태담 요약
 
@@ -141,11 +156,15 @@ sequenceDiagram
         Screen->>Motion: stopMonitoring()
         Screen->>Speech: 20초 STT 자동 시작
         Speech-->>Screen: 부분 전사문
-        alt 사용자가 20초 전 정지
+        alt 사용자가 정지
             User->>Screen: 정지
             Screen->>Speech: finish()
+        else 최초 발화 후 1.5초 연속 무음
+            Speech-->>Screen: silence 자동 종료 이벤트
+            Screen->>Speech: finish()
         else 20초 경과
-            Speech-->>Screen: 자동 finish()
+            Speech-->>Screen: maximumDuration 자동 종료 이벤트
+            Screen->>Speech: finish()
         end
         Speech-->>Screen: BucketListDraftDTO
         Screen->>Keyboard: 키보드 텍스트 수정
@@ -164,7 +183,7 @@ sequenceDiagram
 
 ## 9. 핵심 불변 조건
 
-1. STT는 하나의 태담 세션에서 한 번만 시작하며 재발화 수정 경로를 제공하지 않는다.
+1. STT는 동시에 하나만 실행하며 다시 말하기나 재발화 수정 경로를 제공하지 않는다.
 2. STT 결과는 키보드 수정 후에만 저장할 수 있다.
 3. 하나의 세션은 `BucketListItem`을 하나만 생성한다.
 4. 태담 요약 화면은 해당 세션이 만든 `BucketListItem` 하나만 표시한다.
