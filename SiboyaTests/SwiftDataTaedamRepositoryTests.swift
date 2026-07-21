@@ -44,11 +44,11 @@ struct SwiftDataTaedamRepositoryTests {
 
     @Test func ensureBabyProfile_없으면_생성한다() async throws {
         let context = makeContext()
-        let repository = await SwiftDataTaedamRepository(modelContext: context)
+let repository = SwiftDataTaedamRepository(modelContext: context)
 
-        try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
 
-        let profile = try await repository.fetchBabyProfile()
+let profile = try repository.fetchBabyProfile()
         #expect(profile?.nickname == "콩콩이")
         #expect(profile?.gestationalWeek == 22)
     }
