@@ -102,7 +102,6 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
   `artworkAssetName`과 사용자가 확정한 `editedText`를 직접 전달한다.
 - 요약 화면은 일회성 화면이므로 SwiftData 또는 Repository를 다시 조회하지 않는다.
 - 요약 셀에는 해당 세션에서 최종 확정한 약속 하나만 표시한다.
-- `artworkAssetName`과 일치하는 에셋이 아직 없으면 기본 `TitleImage`를 표시한다.
 - 태담 점수, 발화 평가, 그래프, 주파수·음량 수치, 녹음 시간과 오디오 재생 UI는 표시하지 않는다.
 - 상위 화면에는 `onComplete: () -> Void`만 전달한다. 상위 화면은 완료 시 현재 화면을 닫고 별도 항목을 강조하거나 추가 이동하지 않는다.
 
