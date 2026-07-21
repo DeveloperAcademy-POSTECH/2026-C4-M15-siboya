@@ -39,7 +39,7 @@ final class SwiftDataTaedamRepository: TaedamRepository, @unchecked Sendable {
         guard let item = try fetchItem(id: command.bucketListItemID) else {
             throw TaedamRepositoryError.bucketListItemNotFound
         }
-        item.content = content
+        item.updateContent(content)
         try modelContext.save()
     }
 
@@ -47,7 +47,7 @@ final class SwiftDataTaedamRepository: TaedamRepository, @unchecked Sendable {
         guard let item = try fetchItem(id: bucketListItemID) else {
             throw TaedamRepositoryError.bucketListItemNotFound
         }
-        item.isCompleted.toggle()
+        item.toggleCompletion()
         try modelContext.save()
     }
 

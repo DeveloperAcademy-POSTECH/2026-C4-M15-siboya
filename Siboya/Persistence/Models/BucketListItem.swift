@@ -9,9 +9,9 @@ import SwiftData
 @Model
 final class BucketListItem {
     @Attribute(.unique) var id: UUID
-    var category: String
-    var content: String
-    var isCompleted: Bool
+    private(set) var category: String
+    private(set) var content: String
+    private(set) var isCompleted: Bool
     var createdAt: Date
 
     init(
@@ -26,5 +26,13 @@ final class BucketListItem {
         self.content = content
         self.isCompleted = isCompleted
         self.createdAt = createdAt
+    }
+
+    func updateContent(_ newContent: String) {
+        content = newContent
+    }
+
+    func toggleCompletion() {
+        isCompleted.toggle()
     }
 }
