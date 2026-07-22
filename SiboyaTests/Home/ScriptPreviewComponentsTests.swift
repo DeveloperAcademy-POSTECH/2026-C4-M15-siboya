@@ -53,6 +53,23 @@ struct ScriptPreviewComponentsTests {
         #expect(ScriptPreviewHero.thumbnailCornerRadius == 32)
     }
 
+    /// Hero 배경은 일러스트 상단이 잘리지 않도록 위쪽 기준으로 채우고, 일반 공통 이미지는 기존 중앙 기준을 유지하는지 검증합니다.
+    @Test @MainActor
+    func heroUsesTopArtworkAlignmentWhileDefaultArtworkStaysCentered() {
+        let hero = ScriptPreviewHero(
+            artworkSeries: .one,
+            targetGestationalWeek: 22,
+            title: "일요일 아침 냄새"
+        )
+        let defaultArtwork = ScriptArtworkView(
+            assetName: "TitleImage1",
+            cornerRadius: 0
+        )
+
+        #expect(hero.backgroundArtworkAlignment == .top)
+        #expect(defaultArtwork.imageAlignment == .center)
+    }
+
     /// 접근성 글자 크기에서는 긴 제목이 다음 영역과 겹치지 않도록 Hero 높이가 확장되는지 검증합니다.
     @Test @MainActor
     func heroGrowsForAccessibilityText() {

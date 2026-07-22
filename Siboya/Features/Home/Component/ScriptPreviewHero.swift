@@ -21,6 +21,9 @@ struct ScriptPreviewHero: View {
     /// 표시 위치별 에셋 이름을 제공하는 대본 이미지 시리즈입니다.
     let artworkSeries: ScriptArtworkSeries
 
+    /// Back 배경의 일러스트 상단을 보존하기 위해 Hero에서만 사용하는 이미지 채우기 기준입니다.
+    let backgroundArtworkAlignment: Alignment = .top
+
     /// 사용자에게 보여줄 권장 임신 주차입니다.
     let targetGestationalWeek: Int
 
@@ -38,7 +41,8 @@ struct ScriptPreviewHero: View {
             // 배경 이미지를 Hero 최상단에서 시작해 선택한 대본의 시각적 맥락을 제공합니다.
             ScriptArtworkView(
                 assetName: artworkSeries.backgroundAssetName,
-                cornerRadius: 0
+                cornerRadius: 0,
+                imageAlignment: backgroundArtworkAlignment
             )
             .frame(maxWidth: .infinity)
             .frame(height: Self.backgroundHeight)
