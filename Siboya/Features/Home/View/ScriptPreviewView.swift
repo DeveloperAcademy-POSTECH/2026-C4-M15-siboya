@@ -13,6 +13,9 @@ struct ScriptPreviewView: View {
     /// ScrollView가 Hero의 full-bleed 배치를 보존하도록 무시할 안전 영역 방향입니다.
     static let ignoredSafeAreaEdges: Edge.Set = .top
 
+    /// 상위 화면 설정과 무관하게 시스템 뒤로가기 버튼을 제공하도록 요청할 navigation bar 상태입니다.
+    static let navigationBarVisibility: Visibility = .visible
+
     /// 미리보기와 태담 실행이 같은 대본 입력을 유지하도록 보관하는 이동 데이터입니다.
     let route: ScriptPreviewRoute
 
@@ -70,6 +73,8 @@ struct ScriptPreviewView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        // Home에서 push된 화면의 시스템 뒤로가기 버튼과 interactive pop을 명시적으로 유지합니다.
+        .toolbar(Self.navigationBarVisibility, for: .navigationBar)
         // 시스템 뒤로가기 버튼은 유지하면서 Hero 배경이 navigation bar 뒤에서도 보이게 합니다.
         .toolbarBackground(.hidden, for: .navigationBar)
         .sheet(

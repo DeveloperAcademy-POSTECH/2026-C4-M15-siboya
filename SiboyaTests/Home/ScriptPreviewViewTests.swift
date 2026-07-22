@@ -12,6 +12,12 @@ import Testing
 /// 대본 미리보기와 준비자세 View가 화면 조립에 필요한 표시 데이터를 보존하는지 검증합니다.
 @MainActor
 struct ScriptPreviewViewTests {
+    /// 미리보기 화면이 상위 설정과 무관하게 시스템 navigation bar 표시를 요청하는지 검증합니다.
+    @Test
+    func previewKeepsSystemNavigationBarVisible() {
+        #expect(ScriptPreviewView.navigationBarVisibility == .visible)
+    }
+
     /// 미리보기 ScrollView가 Hero와 같은 기준으로 상단만 확장하는지 검증합니다.
     @Test
     func previewExtendsScrollThroughOnlyTopSafeArea() {

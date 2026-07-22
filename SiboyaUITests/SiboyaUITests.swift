@@ -7,35 +7,50 @@
 
 import XCTest
 
+/// 실제 앱을 실행해 Home과 대본 미리보기 사이의 시스템 navigation 동작을 검증합니다.
 final class SiboyaUITests: XCTestCase {
+    /// 각 테스트가 사용할 앱 프로세스입니다.
+    private var app: XCUIApplication?
 
+    /// 실패 뒤 다음 검증을 계속하지 않고 앱을 Home에서 새로 시작합니다.
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
+        app = XCUIApplication()
+        app?.launch()
     }
 
+    /// 테스트가 끝난 앱을 종료해 다음 테스트의 navigation path가 남지 않게 합니다.
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        app?.terminate()
+        app = nil
     }
 
+    /// Home 대본을 선택하면 시스템 BackButton이 나타나고 선택 시 같은 Home 목록으로 돌아오는지 검증합니다.
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
-        app.launch()
+    func testPreviewShowsSystemBackButtonAndReturnsHome() throws {
+        // setUp에서 생성한 앱이 없으면 이후의 화면 탐색이 무의미하므로 즉시 실패 처리합니다.
+        guard let app else {
+            XCTFail("UI 테스트 앱을 시작하지 못했습니다.")
+            return
+        }
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        let scriptRow = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "일요일 아침 냄새"))
+            .firstMatch
+        XCTAssertTrue(scriptRow.waitForExistence(timeout: 5))
+
+        scriptRow.tap()
+
+        let backButton = app.buttons.matching(identifier: "BackButton").firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 3))
+
+        backButton.tap()
+        XCTAssertTrue(scriptRow.waitForExistence(timeout: 3))
     }
 
+    /// 앱 시작 성능을 기존 Xcode 기본 기준으로 계속 측정합니다.
     @MainActor
     func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }
