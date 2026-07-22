@@ -42,12 +42,13 @@ final class SiboyaUITests: XCTestCase {
 
         homeScriptButton.tap()
 
-        let backButton = app.buttons.matching(identifier: "BackButton").firstMatch
+        // 다른 화면의 동명 버튼이 아닌 현재 navigation bar의 시스템 BackButton만 찾습니다.
+        let backButton = app.navigationBars.buttons.matching(identifier: "BackButton").firstMatch
         XCTAssertTrue(backButton.waitForExistence(timeout: 3))
 
         backButton.tap()
-        // 시스템 뒤로가기가 완료되면 Preview에만 있던 BackButton이 없어져야 합니다.
-        XCTAssertFalse(backButton.waitForExistence(timeout: 3))
+        // 시스템 뒤로가기 애니메이션이 끝날 때까지 기다려 Preview에만 있던 BackButton의 소멸을 검증합니다.
+        XCTAssertTrue(backButton.waitForNonExistence(timeout: 3))
         // 같은 Home 버튼이 다시 나타나야 실제 navigation path 복귀를 검증할 수 있습니다.
         XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 3))
     }
