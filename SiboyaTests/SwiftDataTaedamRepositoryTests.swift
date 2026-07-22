@@ -40,6 +40,71 @@ struct SwiftDataTaedamRepositoryTests {
         #expect(profile?.gestationalWeek == 22)
     }
 
+    // MARK: - ensureBabyProfile
+
+    @Test func ensureBabyProfile_없으면_생성한다() async throws {
+        let context = makeContext()
+let repository = SwiftDataTaedamRepository(modelContext: context)
+
+try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+
+let profile = try repository.fetchBabyProfile()
+        #expect(profile?.nickname == "콩콩이")
+        #expect(profile?.gestationalWeek == 22)
+    }
+
+    @Test func ensureBabyProfile_이미_있으면_그대로_둔다() async throws {
+        let context = makeContext()
+let repository = SwiftDataTaedamRepository(modelContext: context)
+try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+
+try await repository.ensureBabyProfile(nickname: "다른이름", gestationalWeek: 10)
+
+let profile = try repository.fetchBabyProfile()
+        #expect(profile?.nickname == "콩콩이")
+        #expect(profile?.gestationalWeek == 22)
+    }
+
+    @Test func ensureBabyProfile_닉네임이_공백뿐이면_emptyNickname을_던진다() async throws {
+        let context = makeContext()
+let repository = SwiftDataTaedamRepository(modelContext: context)
+
+        await #expect(throws: TaedamRepositoryError.emptyNickname) {
+            try await repository.ensureBabyProfile(nickname: "   ", gestationalWeek: 22)
+        }
+    }
+
+    // MARK: - updateNickname
+
+    @Test func updateNickname_태명을_변경한다() async throws {
+        let context = makeContext()
+        let repository = await SwiftDataTaedamRepository(modelContext: context)
+        try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+
+        try await repository.updateNickname("꾹꾹이")
+
+        #expect(try repository.fetchBabyProfile()?.nickname == "꾹꾹이")
+    }
+
+    @Test func updateNickname_공백뿐이면_emptyNickname을_던진다() async throws {
+        let context = makeContext()
+        let repository = await SwiftDataTaedamRepository(modelContext: context)
+        try await repository.ensureBabyProfile(nickname: "콩콩이", gestationalWeek: 22)
+
+        await #expect(throws: TaedamRepositoryError.emptyNickname) {
+            try await repository.updateNickname("   ")
+        }
+    }
+
+    @Test func updateNickname_프로필이_없으면_babyProfileNotFound를_던진다() async throws {
+        let context = makeContext()
+        let repository = await SwiftDataTaedamRepository(modelContext: context)
+
+        await #expect(throws: TaedamRepositoryError.babyProfileNotFound) {
+            try await repository.updateNickname("꾹꾹이")
+        }
+    }
+
     // MARK: - save
 
     @Test func save_유효한_입력이면_저장하고_id를_반환한다() async throws {

@@ -25,7 +25,7 @@
 ## 2. 전체 플로우
 
 ```mermaid
-flowchart LR
+    flowchart LR
     HomeJSON[주차별 Home JSON] --> HomeContent[HomeWeeklyContentLoader]
     ScriptJSON[번들 대본 JSON] --> Scripts[BundledTaedamScriptLoader]
     Profile[(BabyProfile)] --> Home[Home<br/>추천·카테고리별 대본]
@@ -56,21 +56,21 @@ flowchart LR
 ### 저장 위치
 
 ```text
-Siboya/Resources/Home/home-weekly-content.json
+    Siboya/Resources/Home/home-weekly-content.json
 ```
 
 ### JSON 예시
 
 ```json
-{
-  "weeks": [
     {
-      "gestationalWeek": 20,
-      "headline": "아빠의 낮은 목소리가 잘 들리는 시기",
-      "recommendedScriptID": "57A07A17-20D6-440C-989F-0B1208B6ED01"
+        "weeks": [
+            {
+                "gestationalWeek": 20,
+                "headline": "아빠의 낮은 목소리가 잘 들리는 시기",
+                "recommendedScriptID": "57A07A17-20D6-440C-989F-0B1208B6ED01"
+            }
+        ]
     }
-  ]
-}
 ```
 
 ### 필드 정의
@@ -92,15 +92,15 @@ Siboya/Resources/Home/home-weekly-content.json
 ### 디코딩 모델
 
 ```swift
-struct HomeWeeklyContentDocument: Decodable, Sendable {
-    let weeks: [HomeWeeklyContent]
-}
-
-struct HomeWeeklyContent: Decodable, Sendable {
-    let gestationalWeek: Int
-    let headline: String
-    let recommendedScriptID: UUID
-}
+    struct HomeWeeklyContentDocument: Decodable, Sendable {
+        let weeks: [HomeWeeklyContent]
+    }
+    
+    struct HomeWeeklyContent: Decodable, Sendable {
+        let gestationalWeek: Int
+        let headline: String
+        let recommendedScriptID: UUID
+    }
 ```
 
 ### 검증 규칙
@@ -116,34 +116,34 @@ struct HomeWeeklyContent: Decodable, Sendable {
 ### 저장 위치
 
 ```text
-Siboya/Resources/Scripts/taedam-scripts.json
+    Siboya/Resources/Scripts/taedam-scripts.json
 ```
 
 ### JSON 예시
 
 ```json
-{
-  "scripts": [
     {
-      "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
-      "version": 1,
-      "category": "집에서 소소하게",
-      "title": "일요일 아침 냄새",
-      "metadata": {
-        "targetGestationalWeek": 20,
-        "artworkAssetName": "script_home_sunday_morning_20w",
-        "estimatedDurationSeconds": 35
-      },
-      "sentences": [
-        "안녕, {{babyNickname}}아.",
-        "아빠야. 오늘 하루도 잘 보냈지?",
-        "아빠는 오늘 문득 우리가 함께 맞이할 일요일 아침을 상상해 봤어."
-      ],
-      "bucketListPrompt": "{{babyNickname}}아, 아빠는 너를 위해 […] 해주고 싶어.",
-      "bucketListGuide": "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
+        "scripts": [
+            {
+                "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
+                "version": 1,
+                "category": "집에서 소소하게",
+                "title": "일요일 아침 냄새",
+                "metadata": {
+                    "targetGestationalWeek": 20,
+                    "artworkAssetName": "script_home_sunday_morning_20w",
+                    "estimatedDurationSeconds": 35
+                },
+                "sentences": [
+                    "안녕, {{babyNickname}}아.",
+                    "아빠야. 오늘 하루도 잘 보냈지?",
+                    "아빠는 오늘 문득 우리가 함께 맞이할 일요일 아침을 상상해 봤어."
+                ],
+                "bucketListPrompt": "{{babyNickname}}아, 아빠는 너를 위해 […] 해주고 싶어.",
+                "bucketListGuide": "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
+            }
+        ]
     }
-  ]
-}
 ```
 
 ### 필드 정의
@@ -175,26 +175,26 @@ Siboya/Resources/Scripts/taedam-scripts.json
 ### 디코딩 모델
 
 ```swift
-struct TaedamScriptDocument: Decodable, Sendable {
-    let scripts: [TaedamScriptContent]
-}
-
-struct TaedamScriptContent: Decodable, Sendable {
-    let id: UUID
-    let version: Int
-    let category: String
-    let title: String
-    let metadata: ScriptMetadataContent
-    let sentences: [String]
-    let bucketListPrompt: String
-    let bucketListGuide: String
-}
-
-struct ScriptMetadataContent: Decodable, Sendable {
-    let targetGestationalWeek: Int
-    let artworkAssetName: String
-    let estimatedDurationSeconds: Int?
-}
+    struct TaedamScriptDocument: Decodable, Sendable {
+        let scripts: [TaedamScriptContent]
+    }
+    
+    struct TaedamScriptContent: Decodable, Sendable {
+        let id: UUID
+        let version: Int
+        let category: String
+        let title: String
+        let metadata: ScriptMetadataContent
+        let sentences: [String]
+        let bucketListPrompt: String
+        let bucketListGuide: String
+    }
+    
+    struct ScriptMetadataContent: Decodable, Sendable {
+        let targetGestationalWeek: Int
+        let artworkAssetName: String
+        let estimatedDurationSeconds: Int?
+    }
 ```
 
 ### 검증 규칙
@@ -216,40 +216,40 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
 ### 탐색·대본 선택
 
 ```swift
-struct TaedamCategorySelectionDTO: Equatable, Sendable {
-    let category: String
-}
-
-struct ScriptSelectionDTO: Equatable, Sendable {
-    let scriptID: UUID
-    let scriptVersion: Int
-}
-
-struct ScriptSentenceDTO: Identifiable, Equatable, Sendable {
-    let index: Int
-    let text: String
-
-    var id: Int { index }
-}
-
-struct ScriptPreviewDTO: Equatable, Sendable {
-    let scriptID: UUID
-    let scriptVersion: Int
-    let category: String
-    let title: String
-    let targetGestationalWeek: Int
-    let artworkAssetName: String
-    let estimatedDurationSeconds: Int?
-    let sentences: [ScriptSentenceDTO]
-    let bucketListPrompt: String
-    let bucketListGuide: String
-}
-
-struct BabyProfileDTO: Identifiable, Equatable, Sendable {
-    let id: UUID
-    let nickname: String
-    let gestationalWeek: Int
-}
+    struct TaedamCategorySelectionDTO: Equatable, Sendable {
+        let category: String
+    }
+    
+    struct ScriptSelectionDTO: Equatable, Sendable {
+        let scriptID: UUID
+        let scriptVersion: Int
+    }
+    
+    struct ScriptSentenceDTO: Identifiable, Equatable, Sendable {
+        let index: Int
+        let text: String
+        
+        var id: Int { index }
+    }
+    
+    struct ScriptPreviewDTO: Equatable, Sendable {
+        let scriptID: UUID
+        let scriptVersion: Int
+        let category: String
+        let title: String
+        let targetGestationalWeek: Int
+        let artworkAssetName: String
+        let estimatedDurationSeconds: Int?
+        let sentences: [ScriptSentenceDTO]
+        let bucketListPrompt: String
+        let bucketListGuide: String
+    }
+    
+    struct BabyProfileDTO: Identifiable, Equatable, Sendable {
+        let id: UUID
+        let nickname: String
+        let gestationalWeek: Int
+    }
 ```
 
 - `ScriptPreviewDTO`는 PR #8을 통해 `develop`에 구현되어 있다.
@@ -259,30 +259,30 @@ struct BabyProfileDTO: Identifiable, Equatable, Sendable {
 ### 태담 진행
 
 ```swift
-enum TaedamLineKindDTO: Equatable, Sendable {
-    case script(sentenceIndex: Int)
-    case bucketList
-}
-
-struct TaedamLineDTO: Identifiable, Equatable, Sendable {
-    let index: Int
-    let kind: TaedamLineKindDTO
-    let text: String
-
-    var id: Int { index }
-}
-
-struct TaedamSessionInputDTO: Equatable, Sendable {
-    let script: ScriptPreviewDTO
-    let babyNickname: String
-}
-
-enum TaedamScreenPhase: Equatable, Sendable {
-    case ready
-    case countingDown(remainingSeconds: Int)
-    case readingScript(index: Int)
-    case bucketList
-}
+    enum TaedamLineKindDTO: Equatable, Sendable {
+        case script(sentenceIndex: Int)
+        case bucketList
+    }
+    
+    struct TaedamLineDTO: Identifiable, Equatable, Sendable {
+        let index: Int
+        let kind: TaedamLineKindDTO
+        let text: String
+        
+        var id: Int { index }
+    }
+    
+    struct TaedamSessionInputDTO: Equatable, Sendable {
+        let script: ScriptPreviewDTO
+        let babyNickname: String
+    }
+    
+    enum TaedamScreenPhase: Equatable, Sendable {
+        case ready
+        case countingDown(remainingSeconds: Int)
+        case readingScript(index: Int)
+        case bucketList
+    }
 ```
 
 - `TaedamSessionInputDTO.lines`는 `sentences` 뒤에 `bucketListPrompt`를 사용하는 `.bucketList` 줄을 정확히 하나 추가하는 계산 프로퍼티다.
@@ -296,36 +296,36 @@ enum TaedamScreenPhase: Equatable, Sendable {
 아래 타입은 SSD에 합의된 후속 기능 경계이며 아직 원격 코드에 구현되지 않았다. View 코드에서 현재 존재하는 타입처럼 참조하지 않는다.
 
 ```swift
-enum TaedamSessionPhaseDTO: Equatable, Sendable {
-    case ready
-    case countingDown(remainingSeconds: Int)
-    case readingScript(index: Int)
-    case bucketList
-    case transcribingBucketList(remainingSeconds: Int)
-    case reviewingBucketListDraft
-    case editingBucketList
-    case saving
-    case completed(bucketListItemID: UUID)
-    case failed(message: String)
-}
-
-struct TaedamSessionStateDTO: Equatable, Sendable {
-    let phase: TaedamSessionPhaseDTO
-    let currentLine: TaedamLineDTO?
-    let currentLineProgress: Double
-    let liveBucketListTranscript: String
-    let normalizedVoiceMotion: Double
-}
-
-struct VoiceMotionSampleDTO: Equatable, Sendable {
-    let normalizedValue: Double
-    let isVoiceActive: Bool
-}
-
-struct BucketListDraftDTO: Equatable, Sendable {
-    let rawTranscript: String
-    var editedText: String
-}
+    enum TaedamSessionPhaseDTO: Equatable, Sendable {
+        case ready
+        case countingDown(remainingSeconds: Int)
+        case readingScript(index: Int)
+        case bucketList
+        case transcribingBucketList(remainingSeconds: Int)
+        case reviewingBucketListDraft
+        case editingBucketList
+        case saving
+        case completed(bucketListItemID: UUID)
+        case failed(message: String)
+    }
+    
+    struct TaedamSessionStateDTO: Equatable, Sendable {
+        let phase: TaedamSessionPhaseDTO
+        let currentLine: TaedamLineDTO?
+        let currentLineProgress: Double
+        let liveBucketListTranscript: String
+        let normalizedVoiceMotion: Double
+    }
+    
+    struct VoiceMotionSampleDTO: Equatable, Sendable {
+        let normalizedValue: Double
+        let isVoiceActive: Bool
+    }
+    
+    struct BucketListDraftDTO: Equatable, Sendable {
+        let rawTranscript: String
+        var editedText: String
+    }
 ```
 
 - `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`와 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
@@ -338,37 +338,37 @@ struct BucketListDraftDTO: Equatable, Sendable {
 ### 버킷리스트 저장·수정
 
 ```swift
-struct SaveBucketListCommandDTO: Sendable {
-    let category: String
-    let content: String
-}
-
-struct SavedBucketListDTO: Sendable {
-    let bucketListItemID: UUID
-}
-
-struct UpdateBucketListContentCommandDTO: Sendable {
-    let bucketListItemID: UUID
-    let content: String
-}
+    struct SaveBucketListCommandDTO: Sendable {
+        let category: String
+        let content: String
+    }
+    
+    struct SavedBucketListDTO: Sendable {
+        let bucketListItemID: UUID
+    }
+    
+    struct UpdateBucketListContentCommandDTO: Sendable {
+        let bucketListItemID: UUID
+        let content: String
+    }
 ```
 
 ## 6. SwiftData 스키마
 
 ```mermaid
-erDiagram
+    erDiagram
     BABY_PROFILE {
-        UUID id PK
-        String nickname
-        Int gestationalWeek
+    UUID id PK
+    String nickname
+    Int gestationalWeek
     }
-
+    
     BUCKET_LIST_ITEM {
-        UUID id PK
-        String category
-        String content
-        Bool isCompleted
-        Date createdAt
+    UUID id PK
+    String category
+    String content
+    Bool isCompleted
+    Date createdAt
     }
 ```
 
@@ -395,110 +395,126 @@ erDiagram
 ### 현재 SwiftData 모델
 
 ```swift
-import Foundation
-import SwiftData
-
-@Model
-final class BabyProfile {
-    @Attribute(.unique) var id: UUID
-    var nickname: String
-    var gestationalWeek: Int
-
-    init(
-        id: UUID = UUID(),
-        nickname: String,
-        gestationalWeek: Int
-    ) {
-        self.id = id
-        self.nickname = nickname
-        self.gestationalWeek = gestationalWeek
+    import Foundation
+    import SwiftData
+    
+    @Model
+    final class BabyProfile {
+        @Attribute(.unique) var id: UUID
+        private(set) var nickname: String
+        var gestationalWeek: Int
+        
+        init(
+             id: UUID = UUID(),
+             nickname: String,
+             gestationalWeek: Int
+             ) {
+                 self.id = id
+                 self.nickname = nickname
+                 self.gestationalWeek = gestationalWeek
+             }
+        
+        func updateNickname(_ newNickname: String) {
+            nickname = newNickname
+        }
     }
-}
-
-@Model
-final class BucketListItem {
-    @Attribute(.unique) var id: UUID
-    private(set) var category: String
-    private(set) var content: String
-    private(set) var isCompleted: Bool
-    var createdAt: Date
-
-    init(
-        id: UUID = UUID(),
-        category: String,
-        content: String,
-        isCompleted: Bool = false,
-        createdAt: Date = .now
-    ) {
-        self.id = id
-        self.category = category
-        self.content = content
-        self.isCompleted = isCompleted
-        self.createdAt = createdAt
+    
+    @Model
+    final class BucketListItem {
+        @Attribute(.unique) var id: UUID
+        private(set) var category: String
+        private(set) var content: String
+        private(set) var isCompleted: Bool
+        var createdAt: Date
+        
+        init(
+             id: UUID = UUID(),
+             category: String,
+             content: String,
+             isCompleted: Bool = false,
+             createdAt: Date = .now
+             ) {
+                 self.id = id
+                 self.category = category
+                 self.content = content
+                 self.isCompleted = isCompleted
+                 self.createdAt = createdAt
+             }
+        
+        func updateContent(_ newContent: String) {
+            content = newContent
+        }
+        
+        func toggleCompletion() {
+            isCompleted.toggle()
+        }
     }
-
-    func updateContent(_ newContent: String) {
-        content = newContent
-    }
-
-    func toggleCompletion() {
-        isCompleted.toggle()
-    }
-}
 ```
+
+- `nickname`/`category`/`content`/`isCompleted`는 `private(set)`으로 막혀 있고, 각 모델의 메서드(`updateNickname`/`updateContent`/`toggleCompletion`)를 통해서만 값이 바뀐다. `@Query`가 View에 살아있는 모델 레퍼런
+스를 직접 주기 때문에 Repository를 거치지 않은 직접 대입을 막기 위한 장치다.
 
 앱 루트의 `SiboyaApp`이 `PersistenceContainer.shared`를 `.modelContainer(...)`로 주입한다. `SwiftDataTaedamRepository`는 전달받은 `ModelContext`를 사용하며 메인 액터에서 호출해야 한다.
 
 ## 7. 공통 프로토콜
 
-`TaedamRepository`는 `origin/develop`에 구현되어 있다. 나머지 프로토콜은 음성·STT 및 화면 통합을 위한 설계 계약이며 아직 원격 코드에 구현되지 않았다. 번들 대본은 현재 `BundledTaedamScriptLoader` 정적 메서드가 직접 로드한다.
+`TaedamRepository`, `VoiceMotionMonitoring`, `BucketListTranscribing`은 현재 코드에 구현되어 있다. `ScriptRepository`와 `TaedamScriptProgressing`은 Home·미리보기 통합을 위한 설계 계약이며 아직 구현되지 않았다. 번
+들 대본은 현재 `BundledTaedamScriptLoader`의 정적 메서드가 직접 로드한다.
+
+develop의 아래 문장은 SCRUM-24가 병합되는 시점에는 오래된 설명이 됩니다.
+
+나머지 프로토콜은 음성·STT 및 화면 통합을 위한 설계 계약이며 아직 원격 코드에 구현되지 않았다.
 
 ```swift
-protocol ScriptRepository: Sendable {
-    func fetchScripts() async throws -> [ScriptPreviewDTO]
-    func fetchScript(selection: ScriptSelectionDTO) async throws -> ScriptPreviewDTO
-}
-
-protocol TaedamScriptProgressing: Sendable {
-    var states: AsyncStream<TaedamSessionStateDTO> { get }
-
-    func prepare(input: TaedamSessionInputDTO) async
-    func start() async
-    func selectLine(at index: Int) async throws
-    func beginEditingBucketListDraft() async throws
-    func cancel() async
-}
-
-protocol VoiceMotionMonitoring: Sendable {
-    var samples: AsyncStream<VoiceMotionSampleDTO> { get }
-
-    func startMonitoring() async throws
-    func stopMonitoring() async
-}
-
-protocol BucketListTranscribing: Sendable {
-    var partialTranscripts: AsyncStream<String> { get }
-
-    func start(duration: Duration) async throws
-    func finish() async throws -> BucketListDraftDTO
-    func cancel() async
-}
-
-protocol TaedamRepository: Sendable {
-    func fetchBabyProfile() throws -> BabyProfile?
-    func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
-    func updateContent(
-        command: UpdateBucketListContentCommandDTO
-    ) async throws
-    func toggleCompletion(bucketListItemID: UUID) async throws
-    func delete(bucketListItemID: UUID) async throws
-}
+    protocol ScriptRepository: Sendable {
+        func fetchScripts() async throws -> [ScriptPreviewDTO]
+        func fetchScript(selection: ScriptSelectionDTO) async throws -> ScriptPreviewDTO
+    }
+    
+    protocol TaedamScriptProgressing: Sendable {
+        var states: AsyncStream<TaedamSessionStateDTO> { get }
+        
+        func prepare(input: TaedamSessionInputDTO) async
+        func start() async
+        func selectLine(at index: Int) async throws
+        func beginEditingBucketListDraft() async throws
+        func cancel() async
+    }
+    
+    protocol VoiceMotionMonitoring: Sendable {
+        var samples: AsyncStream<VoiceMotionSampleDTO> { get }
+        
+        func startMonitoring() async throws
+        func stopMonitoring() async
+    }
+    
+    protocol BucketListTranscribing: Sendable {
+        var partialTranscripts: AsyncStream<String> { get }
+        
+        func start(duration: Duration) async throws
+        func finish() async throws -> BucketListDraftDTO
+        func cancel() async
+    }
+    
+    protocol TaedamRepository: Sendable {
+        func fetchBabyProfile() throws -> BabyProfile?
+        func ensureBabyProfile(nickname: String, gestationalWeek: Int) async throws
+        func updateNickname(_ nickname: String) async throws
+        func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
+        func updateContent(
+                           command: UpdateBucketListContentCommandDTO
+                           ) async throws
+                           func toggleCompletion(bucketListItemID: UUID) async throws
+                           func delete(bucketListItemID: UUID) async throws
+    }
 ```
 
 - `ScriptRepository`는 Home·미리보기 통합 시 도입할 예정인 경계다. 현재 View에서 이 타입을 참조하면 컴파일되지 않는다.
 - `TaedamRepository`는 SwiftData 변경을 담당한다. `fetchBabyProfile()`은 현재 `BabyProfile?`을 직접 반환한다.
 - View는 SwiftData 저장 모델을 직접 수정하지 않는다. 표시용 조회는 `@Query`를 사용할 수 있지만, 저장·수정·완료 토글·삭제는 ViewModel 또는 상위 조정자가 `TaedamRepository`를 호출한다.
 - `toggleCompletion`은 화면이 계산한 값을 받지 않고, 저장된 최신 `isCompleted`를 Repository 내부에서 뒤집는다.
+- `ensureBabyProfile`은 멱등적이다. 이미 `BabyProfile`이 있으면 아무 것도 하지 않고, 없을 때만 생성한다. 온보딩 화면이 없는 MVP 단계에서는 앱 최초 진입 시 임시로 호출해 하나만 만들어 둔다.
+- `ensureBabyProfile`은 프로필이 없어서 생성할 때만 `nickname`을 trim/검증하며, trim 후 빈 문자열이면 실패한다. `updateNickname`은 항상 trim 후 빈 문자열이면 실패한다.
 
 ## 8. 저장·수정 불변 조건
 
