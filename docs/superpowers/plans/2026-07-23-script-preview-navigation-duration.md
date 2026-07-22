@@ -14,6 +14,7 @@
 - 화면 크기와 간격은 Figma `대본&생각힌트 미리보기` 노드 `1009:11964`를 따른다.
 - SSD가 명시한 세로 separator 두께 `1pt`는 Figma의 `0.5pt`보다 우선한다.
 - 실제 문구와 소요 시간 값은 기존 번들 JSON과 `ScriptPreviewDuration.durationText` 변환 결과를 유지한다.
+- `ScriptPreviewDuration`의 두 텍스트 간격은 Figma 기준 `4pt`이며, "소요시간"은 iOS `tertiaryLabel`, 시간 값은 SwiftUI `secondary` 의미 색상을 사용한다.
 - 신규·수정 Swift 코드와 테스트에는 역할, 상호작용과 검증 의도를 설명하는 한국어 주석을 작성한다.
 - 커스텀 뒤로가기 버튼이나 `navigationBarBackButtonHidden(true)`를 추가하지 않고 시스템 back swipe를 유지한다.
 - 권한, sheet, Alert, `TaedamScreen`, Hero safe-area 배치, Home 데이터 조회와 사용자 소유 프로젝트·에셋 변경은 수정하지 않는다.
@@ -313,3 +314,102 @@ git commit -m "fix: 대본 미리보기 시스템 뒤로가기 유지"
 ```
 
 Expected: 커밋에는 위 세 파일만 포함되고 사용자 소유 프로젝트·에셋 변경의 staged/unstaged 상태는 유지된다.
+
+---
+
+### Task 3: Duration 텍스트 간격과 의미 색상 정정
+
+**Files:**
+- Modify: `Siboya/Features/Home/Component/ScriptPreviewDuration.swift`
+- Test: `SiboyaTests/Home/ScriptPreviewComponentsTests.swift`
+
+**Interfaces:**
+- Consumes: 기존 `ScriptPreviewDuration`의 `durationText`와 Figma 노드 `1009:11964`의 텍스트 스타일
+- Produces: `textSpacing: CGFloat`, `labelColor: Color`, `durationColor: Color` 스타일 계약과 이를 적용한 SwiftUI View
+
+- [ ] **Step 1: Figma 간격과 의미 색상을 검증하는 실패 테스트 작성**
+
+`SiboyaTests/Home/ScriptPreviewComponentsTests.swift`에 다음 테스트를 추가한다.
+
+```swift
+    /// 소요시간 두 텍스트가 Figma의 4pt 간격과 tertiary/secondary 의미 색상을 사용하는지 검증합니다.
+    @Test @MainActor
+    func durationUsesFigmaTextHierarchy() {
+        #expect(ScriptPreviewDuration.textSpacing == 4)
+        #expect(ScriptPreviewDuration.labelColor == Color(.tertiaryLabel))
+        #expect(ScriptPreviewDuration.durationColor == Color.secondary)
+    }
+```
+
+- [ ] **Step 2: 새 스타일 계약이 없어서 테스트가 실패하는지 확인**
+
+Run:
+
+```bash
+xcodebuild test -quiet -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests/ScriptPreviewComponentsTests/durationUsesFigmaTextHierarchy
+```
+
+Expected: FAIL at compile time because `textSpacing`, `labelColor`, and `durationColor` do not exist.
+
+- [ ] **Step 3: Figma의 4pt 간격과 의미 색상을 Duration에 적용**
+
+`Siboya/Features/Home/Component/ScriptPreviewDuration.swift`에 다음 스타일 계약을 추가한다.
+
+```swift
+    /// Figma에서 소요시간 레이블과 시간 값 사이에 둔 세로 간격입니다.
+    static let textSpacing: CGFloat = 4
+
+    /// 부가 정보인 소요시간 레이블에 적용하는 iOS tertiary 의미 색상입니다.
+    static let labelColor = Color(.tertiaryLabel)
+
+    /// 핵심 정보인 시간 값에 적용하는 SwiftUI secondary 의미 색상입니다.
+    static let durationColor = Color.secondary
+```
+
+기존 중앙 텍스트 영역을 다음처럼 갱신한다.
+
+```swift
+                VStack(spacing: Self.textSpacing) {
+                    Text("소요시간")
+                        .font(.footnote)
+                        .foregroundStyle(Self.labelColor)
+
+                    Text(durationText)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Self.durationColor)
+                }
+```
+
+- [ ] **Step 4: Duration 집중 테스트와 전체 컴포넌트 테스트 확인**
+
+Run:
+
+```bash
+xcodebuild test -quiet -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests/ScriptPreviewComponentsTests/durationUsesFigmaTextHierarchy
+xcodebuild test -quiet -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests/ScriptPreviewComponentsTests
+```
+
+Expected: PASS. 새 간격·색상 계약과 기존 Duration·Hero·Body·BottomBar 컴포넌트 회귀 테스트가 모두 성공한다.
+
+- [ ] **Step 5: 전체 회귀 테스트, lint와 Debug Simulator 빌드 실행**
+
+Run:
+
+```bash
+xcodebuild test -quiet -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests
+xcodebuild test -quiet -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaUITests/SiboyaUITests/testPreviewShowsSystemBackButtonAndReturnsHome
+./Scripts/lint.sh
+xcodebuild build -quiet -project Siboya.xcodeproj -scheme Siboya -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
+git diff --check
+```
+
+Expected: 모든 단위·경로 UI 테스트 PASS, SwiftLint 오류 0건, Debug Simulator 빌드 성공, whitespace 오류 0건.
+
+- [ ] **Step 6: Task 3 변경만 커밋**
+
+```bash
+git commit --only Siboya/Features/Home/Component/ScriptPreviewDuration.swift SiboyaTests/Home/ScriptPreviewComponentsTests.swift -m "fix: 소요시간 텍스트 색상과 간격 수정"
+```
+
+Expected: 커밋에는 위 두 파일만 포함되고 사용자 소유 프로젝트·에셋 변경의 staged/unstaged 상태는 유지된다.
