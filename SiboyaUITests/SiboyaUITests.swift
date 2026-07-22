@@ -67,6 +67,13 @@ final class SiboyaUITests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "일요일 아침 냄새"))
             .firstMatch
         XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 5))
+
+        // 수정된 탭바 배경이 단색이 아닌지 xcresult에서 Figma와 직접 비교할 Home 화면을 남깁니다.
+        let homeScreenshot = XCTAttachment(screenshot: app.screenshot())
+        homeScreenshot.name = "HomeTabBarGradient"
+        homeScreenshot.lifetime = .keepAlways
+        add(homeScreenshot)
+
         homeScriptButton.tap()
 
         let prepareButton = app.buttons["준비하기"]
@@ -83,6 +90,10 @@ final class SiboyaUITests: XCTestCase {
         XCTAssertTrue(startButton.exists)
         XCTAssertTrue(closeButton.exists)
         XCTAssertTrue(instruction.label.contains("교감할 준비가 되면"))
+
+        // XCUI가 원형 antialias 경계를 안쪽으로 계산해도 최소 40pt 이상의 접근 영역은 유지해야 합니다.
+        XCTAssertGreaterThanOrEqual(closeButton.frame.width, 40)
+        XCTAssertGreaterThanOrEqual(closeButton.frame.height, 40)
 
         // xcresult에서 Figma와 비교할 수 있도록 실제 modal 화면을 첨부합니다.
         let screenshot = XCTAttachment(screenshot: app.screenshot())

@@ -9,6 +9,12 @@ import SwiftUI
 
 /// Home 하단에 고정되어 현재 태담 탭과 약속 탭 이동 동작을 제공하는 탭 바입니다.
 struct HomeBottomTabBar: View {
+    /// Figma에서 탭바 높이의 절반까지 뒤 콘텐츠를 그대로 노출하는 gradient 시작 지점입니다.
+    static let backgroundFadeStartY: CGFloat = 0.5
+
+    /// 시스템 배경색 보간이 화면 아래까지 부드럽게 이어지도록 둔 Figma의 gradient 종료 지점입니다.
+    static let backgroundFadeEndY: CGFloat = 1.1684
+
     /// 이미 선택된 태담 탭을 다시 눌렀을 때 상위 화면에 알릴 동작입니다.
     let onSelectTaedam: () -> Void
 
@@ -17,44 +23,44 @@ struct HomeBottomTabBar: View {
 
     /// 스크롤 콘텐츠와 탭 바가 자연스럽게 분리되도록 상단 그라데이션과 캡슐형 버튼을 구성합니다.
     var body: some View {
-        VStack(spacing: 0) {
-            // 스크롤 마지막 행이 탭 바 배경과 갑자기 맞닿지 않도록 투명한 페이드 영역을 둡니다.
+        HStack(spacing: 0) {
+            // 현재 화면인 태담 탭은 선택 배경과 PrimaryRed 색으로 강조합니다.
+            tabButton(
+                title: "태담",
+                systemImage: "heart.fill",
+                isSelected: true,
+                action: selectTaedam
+            )
+
+            // 아직 선택되지 않은 약속 탭은 상위 라우터가 화면을 바꿀 수 있도록 콜백만 전달합니다.
+            tabButton(
+                title: "약속",
+                systemImage: "lightbulb.max.fill",
+                isSelected: false,
+                action: selectPromise
+            )
+        }
+        .padding(4)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay {
+            Capsule()
+                .stroke(Color.white.opacity(0.45), lineWidth: 0.5)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
+        .padding(.top, 16)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
+        .background {
+            // 하나의 투명→시스템 배경 gradient를 사용해 상단에서 실제 스크롤 콘텐츠가 비치게 합니다.
             LinearGradient(
                 colors: [.clear, Color(.systemBackground)],
-                startPoint: .top,
-                endPoint: .bottom
+                startPoint: UnitPoint(x: 0.5, y: Self.backgroundFadeStartY),
+                endPoint: UnitPoint(x: 0.5, y: Self.backgroundFadeEndY)
             )
-            .frame(height: 16)
+            // Home의 하단 safe area도 같은 fade로 채워 별도의 단색 띠가 생기지 않게 합니다.
+            .ignoresSafeArea(edges: .bottom)
             .allowsHitTesting(false)
-
-            HStack(spacing: 0) {
-                // 현재 화면인 태담 탭은 선택 배경과 PrimaryRed 색으로 강조합니다.
-                tabButton(
-                    title: "태담",
-                    systemImage: "heart.fill",
-                    isSelected: true,
-                    action: selectTaedam
-                )
-
-                // 아직 선택되지 않은 약속 탭은 상위 라우터가 화면을 바꿀 수 있도록 콜백만 전달합니다.
-                tabButton(
-                    title: "약속",
-                    systemImage: "lightbulb.max.fill",
-                    isSelected: false,
-                    action: selectPromise
-                )
-            }
-            .padding(4)
-            .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(Color.white.opacity(0.45), lineWidth: 0.5)
-            }
-            .shadow(color: .black.opacity(0.12), radius: 20, y: 8)
-            .padding(.bottom, 8)
         }
-        .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
     }
 
     /// 아이콘과 제목을 세로로 묶어 Figma와 같은 너비의 탭 버튼을 만듭니다.

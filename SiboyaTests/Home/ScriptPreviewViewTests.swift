@@ -50,7 +50,10 @@ struct ScriptPreviewViewTests {
     func preparationUsesFigmaSheetMetrics() {
         #expect(TaedamPreparationView.sheetDetentFraction == 0.95)
         #expect(TaedamPreparationView.headerHeight == 44)
-        #expect(TaedamPreparationView.closeLabelSize == 22)
+        // Figma close control은 36pt symbol container를 44pt 원형 glass 영역 가운데에 배치합니다.
+        #expect(TaedamPreparationView.closeButtonSize == 44)
+        #expect(TaedamPreparationView.closeLabelSize == 36)
+        #expect(TaedamPreparationView.closeButtonInset == 16)
         #expect(TaedamPreparationView.artworkTopSpacing == 52)
         #expect(TaedamPreparationView.guidanceTopSpacing == 67)
         #expect(TaedamPreparationView.horizontalPadding == 20)

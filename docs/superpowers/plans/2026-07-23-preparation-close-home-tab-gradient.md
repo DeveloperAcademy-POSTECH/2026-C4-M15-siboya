@@ -25,7 +25,7 @@
 
 1. 기존 HStack 내부의 닫기 버튼을 View 전체의 top-trailing overlay로 이동한다.
 2. `xmark`는 17pt medium, symbol container는 36pt로 사용한다.
-3. `.buttonStyle(.glass)`와 `.buttonBorderShape(.circle)`를 함께 적용한다.
+3. `44×44pt` 버튼 영역에 `.glassEffect(.regular.interactive(), in: Circle())`를 직접 적용해 시스템 button style의 가변 inset을 피한다.
 4. 버튼 외곽은 `44×44pt`, sheet 상단·우측 inset은 각각 `16pt`로 유지한다.
 5. 기존 이미지·안내·시작 버튼 배치와 닫기 callback을 보존한다.
 

@@ -47,6 +47,38 @@ struct HomeComponentsTests {
         #expect(accessibilityHeight > regularHeight)
     }
 
+    /// 탭바 상단은 뒤 콘텐츠를 노출하고 하단은 시스템 배경으로 이어져 단색 흰 띠가 되지 않는지 검증합니다.
+    @Test @MainActor
+    func bottomTabBarBackgroundFadesFromContentToSystemBackground() throws {
+        // Figma는 탭바 높이의 절반까지 투명 상태를 유지하고 하단 바깥 지점까지 배경색을 보간합니다.
+        #expect(HomeBottomTabBar.backgroundFadeStartY == 0.5)
+        #expect(HomeBottomTabBar.backgroundFadeEndY == 1.1684)
+
+        let renderer = ImageRenderer(
+            content: HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+                // 투명 gradient가 실제로 뒤 콘텐츠를 드러내는지 판별하기 위한 대비색입니다.
+                .background(Color.red)
+                .frame(width: 402)
+        )
+        renderer.scale = 1
+
+        let image = try #require(renderer.uiImage)
+        // Core Graphics의 원점은 좌하단이므로 이미지 상단은 큰 y, 하단은 작은 y 좌표로 읽습니다.
+        let visualTopPixel = try #require(
+            pixelComponents(
+                in: image,
+                at: CGPoint(x: 4, y: image.size.height - 2)
+            )
+        )
+        let visualBottomPixel = try #require(
+            pixelComponents(in: image, at: CGPoint(x: 4, y: 1))
+        )
+
+        // 상단보다 하단의 녹색 채널이 충분히 커야 흰 시스템 배경으로 실제 보간됐다고 판단합니다.
+        #expect(visualTopPixel.green < visualBottomPixel.green)
+        #expect(visualBottomPixel.green - visualTopPixel.green > 0.3)
+    }
+
     /// 하단 탭 바의 태담과 약속 버튼이 각각 대응하는 상위 동작을 한 번씩 전달하는지 검증합니다.
     @Test @MainActor
     func bottomTabBarForwardsEachTabSelection() {
