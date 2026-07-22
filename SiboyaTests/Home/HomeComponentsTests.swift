@@ -8,7 +8,9 @@ import SwiftUI
 import Testing
 @testable import Siboya
 
+/// Home 모델과 컴포넌트가 표시 및 선택 계약을 지키는지 검증합니다.
 struct HomeComponentsTests {
+    /// 같은 대본이라도 버전이 다르면 서로 다른 화면 항목 ID를 만드는지 검증합니다.
     @Test
     func scriptItemIDIncludesVersion() throws {
         let scriptID = try #require(
@@ -21,12 +23,14 @@ struct HomeComponentsTests {
         #expect(firstVersion.id == "57A07A17-20D6-440C-989F-0B1208B6ED01-1")
     }
 
+    /// 주입한 임신 주차가 사용자에게 보여줄 한국어 문자열로 변환되는지 검증합니다.
     @Test
     func gestationalWeekTextUsesInjectedWeek() {
         #expect(makeItem(week: 20).gestationalWeekText == "20주차")
         #expect(makeItem(week: 40).gestationalWeekText == "40주차")
     }
 
+    /// 공백뿐인 에셋 이름을 유효한 이미지 이름으로 취급하지 않는지 검증합니다.
     @Test
     @MainActor
     func artworkIgnoresBlankAssetName() {
@@ -36,6 +40,7 @@ struct HomeComponentsTests {
         #expect(artwork.resolvedImage == nil)
     }
 
+    /// 등록되지 않은 에셋 이름일 때 이미지 대신 플레이스홀더 조건이 만들어지는지 검증합니다.
     @Test
     @MainActor
     func artworkUsesPlaceholderWhenAssetDoesNotExist() {
@@ -48,6 +53,7 @@ struct HomeComponentsTests {
         #expect(artwork.resolvedImage == nil)
     }
 
+    /// 추천 카드를 선택하면 대본 UUID와 정확한 버전이 상위 화면으로 전달되는지 검증합니다.
     @Test
     @MainActor
     func recommendationCardForwardsScriptSelection() {
@@ -65,11 +71,13 @@ struct HomeComponentsTests {
         #expect(receivedVersion == 3)
     }
 
+    /// 디자인 규격에 따라 추천 카드 높이가 230pt로 고정되어 있는지 검증합니다.
     @Test
     func recommendationCardHeightIsFixedAt230Points() {
         #expect(HomeRecommendationCard.height == 230)
     }
 
+    /// 대본 행을 선택하면 대본 UUID와 정확한 버전이 상위 화면으로 전달되는지 검증합니다.
     @Test
     @MainActor
     func scriptRowForwardsScriptSelection() {
@@ -87,6 +95,7 @@ struct HomeComponentsTests {
         #expect(receivedVersion == 4)
     }
 
+    /// 항목이 없는 카테고리는 숨기고 항목이 있는 카테고리만 표시하는지 검증합니다.
     @Test
     @MainActor
     func categorySectionHidesEmptyItems() {
@@ -105,6 +114,7 @@ struct HomeComponentsTests {
         #expect(populatedSection.hasContent)
     }
 
+    /// 각 테스트가 필요한 값만 바꿀 수 있도록 기본 Home 대본 모델을 생성합니다.
     private func makeItem(
         scriptID: UUID = UUID(),
         version: Int = 1,

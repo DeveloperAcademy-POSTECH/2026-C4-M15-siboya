@@ -5,20 +5,28 @@
 
 import SwiftUI
 
+/// 이번 주 추천 태담을 이미지와 제목으로 강조해 보여주는 전체 너비 카드입니다.
 struct HomeRecommendationCard: View {
+    /// 디자인 규격에 따라 카드가 항상 유지해야 하는 고정 높이입니다.
     static let height: CGFloat = 230
 
+    /// 카드에 표시할 태담 대본 정보입니다.
     let item: HomeScriptItem
+
+    /// 카드 선택 시 대본 식별자와 버전을 상위 화면에 전달하는 콜백입니다.
     let onSelect: (UUID, Int) -> Void
 
+    /// 카드 전체를 하나의 버튼으로 구성해 이미지나 제목 어느 곳을 눌러도 선택되게 합니다.
     var body: some View {
         Button(action: select) {
             ZStack(alignment: .bottomLeading) {
+                // 추천 대본의 대표 이미지를 카드 배경 전체에 표시합니다.
                 HomeArtworkView(
                     assetName: item.artworkAssetName,
                     cornerRadius: 20
                 )
 
+                // 이미지 위에서도 하단 제목이 읽히도록 시스템 배경색으로 자연스럽게 덮습니다.
                 LinearGradient(
                     colors: [
                         .clear,
@@ -28,6 +36,7 @@ struct HomeRecommendationCard: View {
                     endPoint: .bottom
                 )
 
+                // 추천 대본 제목을 카드의 주요 정보로 하단에 배치합니다.
                 Text(item.title)
                     .font(.title3)
                     .fontWeight(.semibold)
@@ -50,11 +59,13 @@ struct HomeRecommendationCard: View {
         .accessibilityLabel(item.title)
     }
 
+    /// 선택된 대본을 정확한 버전으로 열 수 있도록 UUID와 버전을 함께 전달합니다.
     func select() {
         onSelect(item.scriptID, item.scriptVersion)
     }
 }
 
+// 이미지가 준비되지 않은 추천 카드의 기본 플레이스홀더 상태를 확인합니다.
 #Preview("Recommendation with placeholder") {
     HomeRecommendationCard(
         item: HomeScriptItem(
@@ -69,6 +80,7 @@ struct HomeRecommendationCard: View {
     .padding(20)
 }
 
+// 시스템 배경색 그라데이션과 제목이 다크 모드에서도 구분되는지 확인합니다.
 #Preview("Recommendation in dark mode") {
     HomeRecommendationCard(
         item: HomeScriptItem(
@@ -84,6 +96,7 @@ struct HomeRecommendationCard: View {
     .preferredColorScheme(.dark)
 }
 
+// 접근성 글자 크기에서 고정 높이 카드의 제목 배치를 확인합니다.
 #Preview("Recommendation with accessibility text") {
     HomeRecommendationCard(
         item: HomeScriptItem(
