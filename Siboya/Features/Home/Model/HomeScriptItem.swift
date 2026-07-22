@@ -19,8 +19,8 @@ struct HomeScriptItem: Identifiable, Equatable, Sendable {
     /// 해당 대본을 추천할 임신 주차입니다.
     let targetGestationalWeek: Int
 
-    /// 카드와 행이 각 크기에 맞는 에셋을 선택할 때 사용하는 이미지 시리즈입니다.
-    let artworkSeries: HomeArtworkSeries
+    /// 카드와 행이 각 크기에 맞는 에셋을 선택할 때 사용하는 대본 공통 이미지 시리즈입니다.
+    let artworkSeries: ScriptArtworkSeries
 
     /// 같은 UUID라도 버전이 다르면 SwiftUI가 별도 항목으로 인식하도록 만든 복합 식별자입니다.
     var id: String {

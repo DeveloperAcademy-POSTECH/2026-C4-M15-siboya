@@ -64,23 +64,27 @@ struct HomeComponentsTests {
         #expect(promiseSelectionCount == 1)
     }
 
-    /// 첫 번째 이미지 시리즈가 행과 추천 카드에서 각각 올바른 에셋 이름을 만드는지 검증합니다.
+    /// 첫 번째 이미지 시리즈가 네 표시 위치에 맞는 에셋 이름을 만드는지 검증합니다.
     @Test
     func firstArtworkSeriesBuildsRoleSpecificAssetNames() {
-        let series = HomeArtworkSeries.cycling(forZeroBasedIndex: 0)
+        let series = ScriptArtworkSeries.cycling(forZeroBasedIndex: 0)
 
         #expect(series.rowAssetName == "TitleImage1")
         #expect(series.cardAssetName == "TitleImage1Card")
+        #expect(series.thumbnailAssetName == "TitleImage1Thumbnail")
+        #expect(series.backgroundAssetName == "TitleImage1Back")
     }
 
-    /// 일곱 번째 뒤의 항목이 다시 첫 번째 이미지로 돌아와 임의 중복 규칙이 결정적으로 유지되는지 검증합니다.
+    /// 일곱 번째 뒤의 항목이 다시 첫 번째 이미지 묶음으로 순환하는지 검증합니다.
     @Test
     func artworkSeriesCyclesAfterSeventhItem() {
-        let seventhSeries = HomeArtworkSeries.cycling(forZeroBasedIndex: 6)
-        let eighthSeries = HomeArtworkSeries.cycling(forZeroBasedIndex: 7)
+        let seventhSeries = ScriptArtworkSeries.cycling(forZeroBasedIndex: 6)
+        let eighthSeries = ScriptArtworkSeries.cycling(forZeroBasedIndex: 7)
 
         #expect(seventhSeries.rowAssetName == "TitleImage7")
         #expect(seventhSeries.cardAssetName == "TitleImage7Card")
+        #expect(seventhSeries.thumbnailAssetName == "TitleImage7Thumbnail")
+        #expect(seventhSeries.backgroundAssetName == "TitleImage7Back")
         #expect(eighthSeries == .one)
     }
 
