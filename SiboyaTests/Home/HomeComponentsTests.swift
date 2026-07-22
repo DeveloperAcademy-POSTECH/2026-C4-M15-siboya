@@ -66,6 +66,11 @@ struct HomeComponentsTests {
     }
 
     @Test
+    func recommendationCardHeightIsFixedAt230Points() {
+        #expect(HomeRecommendationCard.height == 230)
+    }
+
+    @Test
     @MainActor
     func scriptRowForwardsScriptSelection() {
         let item = makeItem(version: 4)

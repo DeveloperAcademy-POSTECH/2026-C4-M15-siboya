@@ -6,6 +6,8 @@
 import SwiftUI
 
 struct HomeRecommendationCard: View {
+    static let height: CGFloat = 230
+
     let item: HomeScriptItem
     let onSelect: (UUID, Int) -> Void
 
@@ -33,7 +35,8 @@ struct HomeRecommendationCard: View {
                     .multilineTextAlignment(.leading)
                     .padding(20)
             }
-            .frame(maxWidth: .infinity, minHeight: 230)
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.height)
             .clipShape(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
