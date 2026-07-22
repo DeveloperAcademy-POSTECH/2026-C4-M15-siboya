@@ -19,7 +19,7 @@ struct HomeScriptRow: View {
             HStack(spacing: 9) {
                 // 목록에서 빠르게 대본을 구분할 수 있도록 정사각형 대표 이미지를 표시합니다.
                 HomeArtworkView(
-                    assetName: item.artworkAssetName,
+                    assetName: item.rowArtworkAssetName,
                     cornerRadius: 17
                 )
                 .frame(width: 66, height: 66)
@@ -57,15 +57,15 @@ struct HomeScriptRow: View {
     }
 }
 
-// 이미지가 없는 경우에도 행의 크기와 텍스트 배치가 유지되는지 확인합니다.
-#Preview("Script row with placeholder") {
+// 등록된 66pt 이미지와 제목·주차 텍스트 배치를 확인합니다.
+#Preview("Script row with image") {
     HomeScriptRow(
         item: HomeScriptItem(
             scriptID: UUID(),
             scriptVersion: 1,
             title: "조용한 도서관 구석에서",
             targetGestationalWeek: 20,
-            artworkAssetName: "missing-script-artwork"
+            artworkSeries: .three
         ),
         onSelect: { _, _ in }
     )

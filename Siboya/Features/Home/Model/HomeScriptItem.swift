@@ -19,8 +19,8 @@ struct HomeScriptItem: Identifiable, Equatable, Sendable {
     /// 해당 대본을 추천할 임신 주차입니다.
     let targetGestationalWeek: Int
 
-    /// 대표 이미지를 불러올 때 사용하는 Asset Catalog 이름입니다.
-    let artworkAssetName: String
+    /// 카드와 행이 각 크기에 맞는 에셋을 선택할 때 사용하는 이미지 시리즈입니다.
+    let artworkSeries: HomeArtworkSeries
 
     /// 같은 UUID라도 버전이 다르면 SwiftUI가 별도 항목으로 인식하도록 만든 복합 식별자입니다.
     var id: String {
@@ -30,5 +30,15 @@ struct HomeScriptItem: Identifiable, Equatable, Sendable {
     /// 임신 주차를 화면에서 바로 사용할 수 있는 한국어 문자열로 변환합니다.
     var gestationalWeekText: String {
         "\(targetGestationalWeek)주차"
+    }
+
+    /// 추천 카드가 큰 카드 전용 이미지를 조회할 때 사용하는 Asset Catalog 이름입니다.
+    var cardArtworkAssetName: String {
+        artworkSeries.cardAssetName
+    }
+
+    /// 대본 행이 66×66 이미지를 조회할 때 사용하는 Asset Catalog 이름입니다.
+    var rowArtworkAssetName: String {
+        artworkSeries.rowAssetName
     }
 }

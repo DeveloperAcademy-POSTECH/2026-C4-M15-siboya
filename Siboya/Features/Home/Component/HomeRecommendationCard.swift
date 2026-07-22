@@ -22,7 +22,7 @@ struct HomeRecommendationCard: View {
             ZStack(alignment: .bottomLeading) {
                 // 추천 대본의 대표 이미지를 카드 배경 전체에 표시합니다.
                 HomeArtworkView(
-                    assetName: item.artworkAssetName,
+                    assetName: item.cardArtworkAssetName,
                     cornerRadius: 20
                 )
 
@@ -65,15 +65,15 @@ struct HomeRecommendationCard: View {
     }
 }
 
-// 이미지가 준비되지 않은 추천 카드의 기본 플레이스홀더 상태를 확인합니다.
-#Preview("Recommendation with placeholder") {
+// 등록된 카드 전용 이미지와 하단 제목 배치를 확인합니다.
+#Preview("Recommendation with image") {
     HomeRecommendationCard(
         item: HomeScriptItem(
             scriptID: UUID(),
             scriptVersion: 1,
             title: "바다 냄새와 파도 소리",
             targetGestationalWeek: 20,
-            artworkAssetName: "missing-script-artwork"
+            artworkSeries: .one
         ),
         onSelect: { _, _ in }
     )
@@ -88,7 +88,7 @@ struct HomeRecommendationCard: View {
             scriptVersion: 1,
             title: "바다 냄새와 파도 소리",
             targetGestationalWeek: 20,
-            artworkAssetName: "missing-script-artwork"
+            artworkSeries: .two
         ),
         onSelect: { _, _ in }
     )
@@ -104,7 +104,7 @@ struct HomeRecommendationCard: View {
             scriptVersion: 1,
             title: "바다 냄새와 파도 소리가 들리는 긴 여행 이야기",
             targetGestationalWeek: 20,
-            artworkAssetName: "missing-script-artwork"
+            artworkSeries: .three
         ),
         onSelect: { _, _ in }
     )

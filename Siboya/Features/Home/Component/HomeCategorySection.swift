@@ -51,7 +51,7 @@ struct HomeCategorySection: View {
     }
 }
 
-// 실제 에셋과 누락된 에셋이 섞인 카테고리 목록을 확인합니다.
+// 서로 다른 실제 에셋을 사용하는 두 행의 카테고리 배치를 확인합니다.
 #Preview("Category section") {
     HomeCategorySection(
         title: "멀리멀리 대모험",
@@ -61,14 +61,14 @@ struct HomeCategorySection: View {
                 scriptVersion: 1,
                 title: "바다 냄새와 파도 소리",
                 targetGestationalWeek: 20,
-                artworkAssetName: "TitleImage2"
+                artworkSeries: .two
             ),
             HomeScriptItem(
                 scriptID: UUID(),
                 scriptVersion: 1,
                 title: "밤하늘의 불빛들",
                 targetGestationalWeek: 20,
-                artworkAssetName: "missing-script-artwork"
+                artworkSeries: .seven
             )
         ],
         onSelect: { _, _ in }
