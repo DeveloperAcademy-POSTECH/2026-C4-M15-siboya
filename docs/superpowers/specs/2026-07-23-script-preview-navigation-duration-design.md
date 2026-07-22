@@ -26,6 +26,7 @@ Home에서 대본 미리보기로 이동했을 때 SSD가 요구하는 시스템
 - 현재 `소요시간`은 `.caption`, 시간은 `.subheadline`을 사용하고 텍스트 묶음 가장자리에 separator를 overlay한다.
 - Figma는 `소요시간`을 13pt Footnote, `약 N분`을 20pt Title3 Semibold로 사용한다.
 - Figma의 중앙 영역은 기본 너비 `73pt`, 내부 여백 `10pt`, 텍스트 간격 `4pt`이며 양쪽 `35pt` 세로선과 중앙 영역 사이는 각각 `18pt`다.
+- Figma의 `소요시간`은 `Labels/Tertiary`, `약 N분`은 `Labels/Secondary` 의미 색상을 사용한다.
 - 현재 구현은 시간 글꼴, 내부 여백과 선 사이 간격이 모두 작아 전체 컴포넌트가 Figma보다 축소돼 보인다.
 
 ## 선택한 설계
@@ -49,17 +50,18 @@ Home에서 대본 미리보기로 이동했을 때 SSD가 요구하는 시스템
 18pt spacing
 73pt 이상 중앙 영역
   ├─ 10pt 내부 여백
-  ├─ 소요시간: Footnote 13pt
+  ├─ 소요시간: Footnote 13pt, Labels/Tertiary
   ├─ 4pt spacing
-  └─ 약 N분: Title3 20pt Semibold
+  └─ 약 N분: Title3 20pt Semibold, Labels/Secondary
 18pt spacing
 1pt × 35pt separator
 ```
 
 - 중앙 영역은 일반 글자 크기에서 Figma의 `73pt`를 유지하고 Dynamic Type에서는 잘리지 않도록 최소 너비로 취급한다.
 - 양쪽 separator는 Figma처럼 중앙 영역과 분리된 고정 `35pt` 높이로 가운데 정렬한다.
+- 텍스트 간격은 `4pt` 상수로 관리하고, `소요시간`은 `Color(.tertiaryLabel)`, 시간 값은 `Color.secondary`를 사용해 다크 모드에서도 Figma의 의미 계층을 유지한다.
 - 기존 `durationText`의 분 올림, `nil`일 때 전체 숨김과 하나의 접근성 요소 결합은 유지한다.
-- 텍스트 색상과 `ScriptPreviewView`에서 Duration 위에 주는 `8pt` 간격은 이번 크기 수정 범위에서 변경하지 않는다.
+- `ScriptPreviewView`에서 Duration 위에 주는 `8pt` 간격은 변경하지 않는다.
 
 ## 변경 범위
 
@@ -78,11 +80,12 @@ Home에서 대본 미리보기로 이동했을 때 SSD가 요구하는 시스템
 ## 테스트
 
 1. 35초, 60초, 61초와 `nil`의 기존 표시값 테스트를 유지한다.
-2. separator 두께 `1pt`, 높이 `35pt`, 선 사이 간격 `18pt`, 중앙 최소 너비 `73pt`, 내부 여백 `10pt` 계약을 검증한다.
-3. 일반 글자 크기에서 Duration의 fitting size가 최소 `111×67pt`이고, 접근성 글자 크기에서 높이와 필요 너비가 확장되는지 검증한다.
-4. UI Test에서 Home의 대본 행을 선택해 미리보기로 이동하고 시스템 `BackButton`이 나타나는지 확인한다.
-5. 같은 UI Test에서 뒤로가기를 선택하면 Home의 대본 목록이 다시 표시되는지 확인한다.
-6. 관련 단위 테스트, UI Test, 전체 `SiboyaTests`, SwiftLint와 Debug Simulator 빌드를 실행한다.
+2. separator 두께 `1pt`, 높이 `35pt`, 선 사이 간격 `18pt`, 중앙 최소 너비 `73pt`, 내부 여백 `10pt`, 텍스트 간격 `4pt` 계약을 검증한다.
+3. `소요시간`이 tertiary label, 시간 값이 secondary label 의미 색상을 사용하는지 검증한다.
+4. 일반 글자 크기에서 Duration의 fitting size가 최소 `111×67pt`이고, 접근성 글자 크기에서 높이와 필요 너비가 확장되는지 검증한다.
+5. UI Test에서 Home의 대본 행을 선택해 미리보기로 이동하고 시스템 `BackButton`이 나타나는지 확인한다.
+6. 같은 UI Test에서 뒤로가기를 선택하면 Home의 대본 목록이 다시 표시되는지 확인한다.
+7. 관련 단위 테스트, UI Test, 전체 `SiboyaTests`, SwiftLint와 Debug Simulator 빌드를 실행한다.
 
 ## 제외한 접근
 
@@ -94,6 +97,6 @@ Home에서 대본 미리보기로 이동했을 때 SSD가 요구하는 시스템
 
 1. Home → Preview 이동 시 시스템 뒤로가기 버튼이 표시되고 Home으로 복귀한다.
 2. Hero의 화면 최상단 배치와 투명 navigation bar가 유지된다.
-3. Duration이 승인된 Figma 수치와 SSD의 1pt 세로선 계약을 함께 만족한다.
+3. Duration이 승인된 Figma 수치, tertiary/secondary 텍스트 계층과 SSD의 1pt 세로선 계약을 함께 만족한다.
 4. `nil` 소요 시간, Dynamic Type, 기존 준비자세·권한·세션 흐름에 회귀가 없다.
 5. 신규·수정 Swift 코드와 테스트의 주석이 한국어로 작성된다.
