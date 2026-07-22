@@ -3,15 +3,12 @@
 //  Siboya
 //
 //  SCRUM-26 태담 체크박스 리스트
-//  BabyProfile / BucketListItem 실제 SwiftData 모델 연결.
-//  태명 변경 / 주차 수정: TaedamRepository.updateNickname·updateGestationalWeek 연결 완료.
-//  내용 수정: 편집 UX(인라인 vs 상세화면) 확정 전이라 TODO.
+//  화면 렌더링만 담당. Repository 호출·에러 처리는 TaedamChecklistViewModel로 분리.
+//  BucketListItem 표시용 서브뷰는 ChecklistRow.swift 참고.
 //
 
 import SwiftUI
 import SwiftData
-
-// MARK: - Main View
 
 struct TaedamChecklistView: View {
 
@@ -23,10 +20,10 @@ struct TaedamChecklistView: View {
     private var bucketListItems: [BucketListItem]
 
     @Environment(\.modelContext) private var modelContext
+    @State private var viewModel = TaedamChecklistViewModel()
 
     @State private var expandedItemID: UUID?
     @State private var selectedTab: Tab = .promise
-    @State private var errorMessage: String?
 
     @State private var isEditingNickname = false
     @State private var draftNickname = ""
@@ -59,7 +56,8 @@ struct TaedamChecklistView: View {
                             item: item,
                             isExpanded: expandedItemID == item.id,
                             onTap: { toggleExpand(item.id) },
-                            onDelete: { delete(item.id) }
+                            onDelete: { delete(item.id) },
+                            onCommitEdit: { newContent in updateContent(item.id, newContent) }
                         )
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
@@ -78,13 +76,13 @@ struct TaedamChecklistView: View {
         .alert(
             "오류",
             isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
             )
         ) {
-            Button("확인") { errorMessage = nil }
+            Button("확인") { viewModel.errorMessage = nil }
         } message: {
-            Text(errorMessage ?? "")
+            Text(viewModel.errorMessage ?? "")
         }
     }
 
@@ -242,18 +240,10 @@ struct TaedamChecklistView: View {
     }
 
     private func commitNicknameChange() {
-        let trimmed = draftNickname.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            isEditingNickname = false
-            return
-        }
+        let nickname = draftNickname
+        isEditingNickname = false
         Task {
-            do {
-                try await repository.updateNickname(trimmed)
-            } catch {
-                errorMessage = "태명 변경에 실패했어요. 다시 시도해주세요."
-            }
-            isEditingNickname = false
+            await viewModel.updateNickname(nickname, using: repository)
         }
     }
 
@@ -265,13 +255,10 @@ struct TaedamChecklistView: View {
     }
 
     private func commitWeekChange() {
+        let week = draftWeek
+        isEditingWeek = false
         Task {
-            do {
-                try await repository.updateGestationalWeek(draftWeek)
-            } catch {
-                errorMessage = "주차 수정에 실패했어요. 다시 시도해주세요."
-            }
-            isEditingWeek = false
+            await viewModel.updateGestationalWeek(week, using: repository)
         }
     }
 
@@ -285,71 +272,13 @@ struct TaedamChecklistView: View {
 
     private func delete(_ id: UUID) {
         Task {
-            do {
-                try await repository.delete(bucketListItemID: id)
-            } catch {
-                errorMessage = "삭제에 실패했어요. 다시 시도해주세요."
-            }
+            await viewModel.delete(bucketListItemID: id, using: repository)
         }
     }
-}
 
-// MARK: - Row
-
-private struct ChecklistRow: View {
-    let item: BucketListItem
-    let isExpanded: Bool
-    let onTap: () -> Void
-    let onDelete: () -> Void
-
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMM d"
-        return formatter
-    }()
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                Text(item.content)
-                    .font(.system(size: 15, weight: .medium))
-                    .lineLimit(isExpanded ? nil : 1)
-                    .onTapGesture(perform: onTap)
-
-                Spacer()
-
-                Menu {
-                    Button {
-                        // TODO: 내용 수정 — 인라인 편집 vs 상세화면 이동 확정되면 updateContent(command:) 연결
-                    } label: {
-                        Label("내용 수정", systemImage: "pencil")
-                    }
-                    Button(role: .destructive, action: onDelete) {
-                        Label("삭제", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 12) {
-                Label(Self.dateFormatter.string(from: item.createdAt), systemImage: "calendar")
-                Label(item.category, systemImage: "tag")
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 18)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color(red: 1, green: 1, blue: 1))
-        .cornerRadius(16)
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive, action: onDelete) {
-                Label("삭제", systemImage: "trash")
-            }
+    private func updateContent(_ id: UUID, _ content: String) {
+        Task {
+            await viewModel.updateContent(bucketListItemID: id, content: content, using: repository)
         }
     }
 }
