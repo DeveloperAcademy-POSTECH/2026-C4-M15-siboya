@@ -20,3 +20,11 @@ struct ScriptPreviewRoute: Identifiable, Equatable, Sendable {
         "\(sessionInput.script.scriptID.uuidString)-\(sessionInput.script.scriptVersion)"
     }
 }
+
+extension ScriptPreviewRoute: Hashable {
+    /// NavigationStack이 같은 대본·버전의 화면을 일관되게 식별하도록 route ID만 해시 값으로 사용합니다.
+    /// - Parameter hasher: NavigationStack 내부 경로 저장소가 제공하는 해시 누적 객체입니다.
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}

@@ -16,6 +16,9 @@ struct ContentView: View {
     /// 프로필과 번들 문서를 읽은 결과를 관찰해 순수 `HomeView`에 전달합니다.
     @State private var model = HomeScreenModel()
 
+    /// Home에서 선택한 대본 route를 차례로 보관해 뒤로 가기 후에도 동일한 Home 상태를 유지합니다.
+    @State private var navigationPath = NavigationPath()
+
     /// 대본 선택을 이후 미리보기 화면 조정자에게 전달할 동작입니다.
     private let onSelectScript: (UUID, Int) -> Void
 
@@ -34,16 +37,53 @@ struct ContentView: View {
         self.onSelectPromiseTab = onSelectPromiseTab
     }
 
-    /// 화면 상태와 선택 동작을 `HomeView`에 전달하고 최초 표시 시 SwiftData 데이터를 준비합니다.
+    /// Home을 NavigationStack 루트로 두고 성공적으로 해석한 대본 route만 미리보기 화면으로 이동시킵니다.
     var body: some View {
-        HomeView(
-            state: model.state,
-            onSelectScript: onSelectScript,
-            onSelectPromiseTab: onSelectPromiseTab
-        )
+        NavigationStack(path: $navigationPath) {
+            HomeView(
+                state: model.state,
+                onSelectScript: handleScriptSelection,
+                onSelectPromiseTab: onSelectPromiseTab
+            )
+            .navigationDestination(for: ScriptPreviewRoute.self) { route in
+                // 선택 시 만든 route를 그대로 전달해 미리보기 이후 돌아와도 같은 실행 입력을 유지합니다.
+                ScriptPreviewView(route: route)
+            }
+        }
         .task {
             await prepareAndLoadHome()
         }
+    }
+
+    /// Home 컴포넌트의 분리된 UUID·버전 인자를 route 해석에 필요한 선택 DTO로 묶습니다.
+    /// - Parameters:
+    ///   - scriptID: 사용자가 누른 대본의 고유 식별자입니다.
+    ///   - scriptVersion: 사용자가 누른 대본 수정본 번호입니다.
+    /// - Returns: 대본·수정본 조합을 잃지 않고 보관한 선택 DTO입니다.
+    static func makeScriptSelection(
+        scriptID: UUID,
+        scriptVersion: Int
+    ) -> ScriptSelectionDTO {
+        ScriptSelectionDTO(scriptID: scriptID, scriptVersion: scriptVersion)
+    }
+
+    /// Home 선택을 외부 알림과 미리보기 route 생성으로 연결하고, 해석 성공 시에만 화면 전환을 추가합니다.
+    /// - Parameters:
+    ///   - scriptID: Home 카드 또는 행이 전달한 대본 UUID입니다.
+    ///   - scriptVersion: Home 카드 또는 행이 전달한 대본 수정 버전입니다.
+    private func handleScriptSelection(scriptID: UUID, scriptVersion: Int) {
+        let selection = Self.makeScriptSelection(
+            scriptID: scriptID,
+            scriptVersion: scriptVersion
+        )
+
+        // 기존 상위 선택 알림 계약을 보존해 ContentView를 외부 조정자와 함께 사용해도 이벤트가 사라지지 않게 합니다.
+        onSelectScript(scriptID, scriptVersion)
+
+        // 프로필·대본 누락 또는 버전 불일치 시 잘못된 태담 실행을 막기 위해 미리보기를 열지 않습니다.
+        guard let route = model.makePreviewRoute(for: selection) else { return }
+
+        navigationPath.append(route)
     }
 
     /// 온보딩 전 MVP 기본 프로필을 멱등적으로 보장한 뒤 저장된 실제 값으로 Home 상태를 갱신합니다.
