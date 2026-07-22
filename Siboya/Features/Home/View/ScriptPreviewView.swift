@@ -90,8 +90,10 @@ struct ScriptPreviewView: View {
                 onClose: flowModel.dismissPreparation,
                 onStart: requestPermissions
             )
-            // Figma와 같이 상단 일부가 보이는 준비자세 sheet 높이를 시스템 detent로 유지합니다.
-            .presentationDetents([.fraction(0.87)])
+            // Figma와 같이 상단 일부가 보이는 준비자세 sheet 높이를 View의 단일 계약으로 유지합니다.
+            .presentationDetents([
+                .fraction(TaedamPreparationView.sheetDetentFraction)
+            ])
             .presentationDragIndicator(.visible)
         }
         .alert(

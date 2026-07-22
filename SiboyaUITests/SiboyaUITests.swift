@@ -53,6 +53,50 @@ final class SiboyaUITests: XCTestCase {
         XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 3))
     }
 
+    /// 미리보기의 준비하기가 준비자세 sheet만 열고 닫기 뒤 같은 미리보기를 유지하는지 검증합니다.
+    @MainActor
+    func testPreparationSheetShowsFigmaContentAndReturnsPreview() throws {
+        // setUp에서 생성한 앱이 없으면 이후의 화면 탐색이 무의미하므로 즉시 실패 처리합니다.
+        guard let app else {
+            XCTFail("UI 테스트 앱을 시작하지 못했습니다.")
+            return
+        }
+
+        // Home 대본 버튼을 통해 실제 navigation과 route 생성 경로를 사용합니다.
+        let homeScriptButton = app.buttons
+            .matching(NSPredicate(format: "label CONTAINS %@", "일요일 아침 냄새"))
+            .firstMatch
+        XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 5))
+        homeScriptButton.tap()
+
+        let prepareButton = app.buttons["준비하기"]
+        XCTAssertTrue(prepareButton.waitForExistence(timeout: 3))
+        prepareButton.tap()
+
+        // Figma에 있는 제목, 태명 안내, 시작과 닫기 control이 sheet에 함께 나타나야 합니다.
+        let title = app.staticTexts["TaedamPreparationTitle"]
+        let instruction = app.staticTexts["TaedamPreparationInstruction"]
+        let startButton = app.buttons["TaedamPreparationStartButton"]
+        let closeButton = app.buttons["TaedamPreparationCloseButton"]
+        XCTAssertTrue(title.waitForExistence(timeout: 3))
+        XCTAssertTrue(instruction.waitForExistence(timeout: 3))
+        XCTAssertTrue(startButton.exists)
+        XCTAssertTrue(closeButton.exists)
+        XCTAssertTrue(instruction.label.contains("교감할 준비가 되면"))
+
+        // xcresult에서 Figma와 비교할 수 있도록 실제 modal 화면을 첨부합니다.
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "TaedamPreparationSheet"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        closeButton.tap()
+
+        // 닫기 뒤에는 세션으로 이동하지 않고 미리보기의 준비하기 버튼이 다시 보여야 합니다.
+        XCTAssertTrue(title.waitForNonExistence(timeout: 3))
+        XCTAssertTrue(prepareButton.waitForExistence(timeout: 3))
+    }
+
     /// 앱 시작 성능을 기존 Xcode 기본 기준으로 계속 측정합니다.
     @MainActor
     func testLaunchPerformance() throws {

@@ -6,120 +6,103 @@
 //
 
 import SwiftUI
-import UIKit
 
-/// 태담을 시작하기 전 사용자의 준비를 안내하고 권한 요청 동작만 상위 흐름에 전달하는 바텀 시트입니다.
+/// 태담 시작 전 자세를 안내하고 닫기·권한 확인 동작을 상위 흐름으로 전달하는 bottom sheet입니다.
 struct TaedamPreparationView: View {
-    /// 등록된 프로필 이미지를 찾을 Asset Catalog 이름입니다.
-    let profileAssetName = "img_profile"
+    /// 안전 영역을 제외한 시스템 최대 detent에서 Figma의 화면 높이 약 87%를 재현하는 비율입니다.
+    static let sheetDetentFraction = 0.95
 
-    /// 실제 사용자 태명을 포함해 표시할 준비 안내 문구입니다.
-    let instructionText: String
+    /// Figma close control이 차지하는 header 높이입니다.
+    static let headerHeight: CGFloat = 44
 
-    /// 권한 시스템 알림을 기다리는 동안 중복 시작을 막기 위한 표시 상태입니다.
+    /// 시스템 glass 여백을 포함했을 때 닫기 control 외곽이 약 44pt가 되게 하는 label 크기입니다.
+    static let closeLabelSize: CGFloat = 22
+
+    /// Header 아래에서 프로필 이미지까지 확보할 세로 간격입니다.
+    static let artworkTopSpacing: CGFloat = 52
+
+    /// 프로필 이미지와 안내 제목 사이의 Figma 기준 간격입니다.
+    static let guidanceTopSpacing: CGFloat = 67
+
+    /// 시작 버튼이 화면 양쪽에서 유지할 여백입니다.
+    static let horizontalPadding: CGFloat = 20
+
+    /// 시작 버튼과 sheet 하단 사이의 Figma 기준 여백입니다.
+    static let bottomPadding: CGFloat = 22
+
+    /// 기존 테스트와 외부 표시 계약이 확인할 기본 프로필 에셋 이름입니다.
+    let profileAssetName = TaedamPreparationArtwork.defaultAssetName
+
+    /// 안내 컴포넌트에 전달할 사용자 태명입니다.
+    let babyNickname: String
+
+    /// 권한 요청 중 시작 버튼의 중복 입력을 막을 상태입니다.
     let isRequestingPermission: Bool
 
-    /// 닫기 버튼이 선택됐을 때 시트를 닫도록 상위 흐름에 전달할 동작입니다.
+    /// 닫기 버튼을 선택했을 때 sheet 상태를 갱신할 상위 callback입니다.
     let onClose: () -> Void
 
-    /// 시작하기 버튼이 선택됐을 때 권한 확인을 요청하도록 상위 흐름에 전달할 동작입니다.
+    /// 시작하기를 선택했을 때 권한 확인을 요청할 상위 callback입니다.
     let onStart: () -> Void
 
-    /// 태명과 화면 상태·사용자 동작을 받아 준비자세 전용 표시 값을 만듭니다.
-    /// - Parameters:
-    ///   - babyNickname: 안내 문구에 주입할 태명입니다.
-    ///   - isRequestingPermission: 권한 요청이 진행 중인지 나타내는 값입니다.
-    ///   - onClose: 시트를 닫을 때 실행할 동작입니다.
-    ///   - onStart: 권한 확인을 시작할 때 실행할 동작입니다.
-    init(
-        babyNickname: String,
-        isRequestingPermission: Bool,
-        onClose: @escaping () -> Void,
-        onStart: @escaping () -> Void
-    ) {
-        // 전달받은 태명을 한 번만 조합해 View 갱신 시에도 안내 문구가 항상 같은 의미를 유지하게 합니다.
-        instructionText = "아내의 배에 손을 얹고\n\(babyNickname)와 교감할 준비가 되면\n시작 버튼을 눌러주세요"
-        self.isRequestingPermission = isRequestingPermission
-        self.onClose = onClose
-        self.onStart = onStart
+    /// 기존 표시 계약과 테스트가 확인할 태명 치환 안내 문구입니다.
+    var instructionText: String {
+        TaedamPreparationGuidance(babyNickname: babyNickname).instructionText
     }
 
-    /// 프로필 에셋이 번들에 존재하는 경우에만 실제 이미지를 표시하기 위한 조회 결과입니다.
-    private var profileImage: UIImage? {
-        UIImage(named: profileAssetName)
+    /// 닫기 동작을 상위 흐름으로 전달해 View가 sheet 상태를 직접 소유하지 않게 합니다.
+    func close() {
+        onClose()
     }
 
-    /// 상단 닫기, 중앙 안내, 하단 시작 버튼을 분리해 Figma의 세로 정보 흐름을 유지합니다.
+    /// 시작 동작을 상위 흐름으로 전달해 View가 권한 API를 직접 호출하지 않게 합니다.
+    func start() {
+        onStart()
+    }
+
+    /// 상단 닫기, Figma 위치의 안내 콘텐츠와 하단 시작 버튼을 하나의 sheet에 조립합니다.
     var body: some View {
         VStack(spacing: 0) {
-            // 닫기 버튼을 우측 상단에 독립 배치해 화면을 닫을 수 있음을 빠르게 찾게 합니다.
+            // 시스템 grabber 아래에 iOS 26 glass 닫기 버튼을 오른쪽 정렬합니다.
             HStack {
                 Spacer()
 
-                Button(action: onClose) {
+                Button(action: close) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color.primary)
-                        .frame(width: 44, height: 44)
-                        .background(Color(.secondarySystemBackground), in: Circle())
+                        .font(.system(size: 17, weight: .medium))
+                        .frame(
+                            width: Self.closeLabelSize,
+                            height: Self.closeLabelSize
+                        )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.glass)
+                .frame(width: 44, height: 44)
                 .accessibilityLabel("준비자세 닫기")
+                .accessibilityIdentifier("TaedamPreparationCloseButton")
             }
-            .padding(.top, 12)
-            .padding(.horizontal, 20)
+            .frame(height: Self.headerHeight)
+            .padding(.horizontal, 16)
 
-            // 프로필 에셋이 없더라도 132pt 영역을 유지해 나머지 안내 요소가 움직이지 않게 합니다.
-            profileArtwork
-                .frame(width: 132, height: 132)
-                .padding(.top, 24)
+            // Figma의 sheet 상단 좌표를 유지하면서 누락 에셋에는 같은 크기의 대체 박스를 표시합니다.
+            TaedamPreparationArtwork(assetName: profileAssetName)
+                .padding(.top, Self.artworkTopSpacing)
 
-            // 제목과 태명 안내를 중앙에 두어 시작 전에 필요한 행동을 차례로 읽게 합니다.
-            Text("태담 준비하기")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(Color.primary)
-                .padding(.top, 24)
+            // 제목과 태명 안내를 이미지 아래의 승인된 간격으로 배치합니다.
+            TaedamPreparationGuidance(babyNickname: babyNickname)
+                .padding(.top, Self.guidanceTopSpacing)
 
-            Text(instructionText)
-                .font(.body)
-                .foregroundStyle(Color.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 16)
-                .padding(.horizontal, 32)
-
+            // 일반 글자 크기에서는 버튼을 하단에 고정하고 큰 글자에서는 남은 공간이 먼저 줄어들게 합니다.
             Spacer(minLength: 24)
 
-            // 권한 요청 중에는 기존 공통 버튼의 비활성·로딩 표현을 사용해 중복 시스템 알림을 예방합니다.
-            PrimaryButton(
-                title: "시작하기",
-                isEnabled: !isRequestingPermission,
+            TaedamPreparationStartButton(
                 isLoading: isRequestingPermission,
-                action: onStart
+                action: start
             )
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Self.horizontalPadding)
+            .padding(.bottom, Self.bottomPadding)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
-    }
-
-    /// 에셋 존재 여부에 따라 실제 프로필 또는 중립색의 같은 크기 플레이스홀더를 만듭니다.
-    @ViewBuilder
-    private var profileArtwork: some View {
-        if let profileImage {
-            // 실제 에셋은 비율을 유지하며 132×132 프레임 안에 맞춰 장식용으로 표시합니다.
-            Image(uiImage: profileImage)
-                .resizable()
-                .scaledToFit()
-                .accessibilityHidden(true)
-        } else {
-            // 개발 중 에셋이 누락돼도 Figma 기준 공간과 버튼 위치를 보존하기 위해 박스로 대체합니다.
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .accessibilityHidden(true)
-        }
     }
 }
 
@@ -131,5 +114,5 @@ struct TaedamPreparationView: View {
         onClose: {},
         onStart: {}
     )
-    .presentationDetents([.fraction(0.87)])
+    .presentationDetents([.fraction(TaedamPreparationView.sheetDetentFraction)])
 }

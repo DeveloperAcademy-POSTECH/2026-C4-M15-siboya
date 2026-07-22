@@ -45,6 +45,37 @@ struct ScriptPreviewViewTests {
         #expect(view.profileAssetName == "img_profile")
     }
 
+    /// 준비자세 sheet가 Figma의 detent와 주요 세로·하단 배치 수치를 사용하는지 검증합니다.
+    @Test
+    func preparationUsesFigmaSheetMetrics() {
+        #expect(TaedamPreparationView.sheetDetentFraction == 0.95)
+        #expect(TaedamPreparationView.headerHeight == 44)
+        #expect(TaedamPreparationView.closeLabelSize == 22)
+        #expect(TaedamPreparationView.artworkTopSpacing == 52)
+        #expect(TaedamPreparationView.guidanceTopSpacing == 67)
+        #expect(TaedamPreparationView.horizontalPadding == 20)
+        #expect(TaedamPreparationView.bottomPadding == 22)
+    }
+
+    /// 준비자세 View가 닫기와 시작 동작을 직접 처리하지 않고 상위 callback으로 한 번씩 전달하는지 검증합니다.
+    @Test
+    func preparationForwardsCloseAndStartActions() {
+        var closeCount = 0
+        var startCount = 0
+        let view = TaedamPreparationView(
+            babyNickname: "꾹꾹이",
+            isRequestingPermission: false,
+            onClose: { closeCount += 1 },
+            onStart: { startCount += 1 }
+        )
+
+        view.close()
+        view.start()
+
+        #expect(closeCount == 1)
+        #expect(startCount == 1)
+    }
+
     /// 이동 데이터가 태담 실행 입력과 선택된 대표 이미지 시리즈를 변경 없이 보관하는지 검증합니다.
     @Test
     func previewRouteKeepsSessionInputAndArtworkSeries() {
