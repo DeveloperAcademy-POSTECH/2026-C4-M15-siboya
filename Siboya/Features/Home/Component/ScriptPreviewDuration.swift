@@ -9,8 +9,20 @@ import SwiftUI
 
 /// Home의 대본 미리보기에서 예상 소요 초를 읽기 쉬운 분 단위로 보여주는 컴포넌트입니다.
 struct ScriptPreviewDuration: View {
-    /// 세로 장식선이 차지하는 고정 두께입니다.
+    /// SSD가 승인한 세로 장식선의 고정 두께입니다.
     static let separatorThickness: CGFloat = 1
+
+    /// Figma에서 양쪽 장식선이 차지하는 세로 길이입니다.
+    static let separatorHeight: CGFloat = 35
+
+    /// Figma에서 장식선과 중앙 텍스트 영역 사이에 둔 간격입니다.
+    static let itemSpacing: CGFloat = 18
+
+    /// 일반 글자 크기에서 중앙 정보 영역이 유지할 최소 너비입니다.
+    static let contentMinimumWidth: CGFloat = 73
+
+    /// 중앙 정보 영역이 텍스트 둘레에 제공하는 Figma 기준 여백입니다.
+    static let contentPadding: CGFloat = 10
 
     /// 번들 대본이 제공하는 선택적 예상 소요 시간입니다.
     let estimatedDurationSeconds: Int?
@@ -24,33 +36,43 @@ struct ScriptPreviewDuration: View {
         return "약 \(minutes)분"
     }
 
-    /// 값이 있을 때 두 텍스트 전체를 양쪽 세로선으로 감싸 가운데 정렬합니다.
+    /// 값이 있을 때 확대된 중앙 텍스트 영역을 양쪽 세로선으로 감싸 가운데 정렬합니다.
     @ViewBuilder
     var body: some View {
         if let durationText {
-            VStack(spacing: 4) {
-                Text("소요시간")
-                    .font(.caption)
-                    .foregroundStyle(Color.secondary)
+            HStack(spacing: Self.itemSpacing) {
+                separator
 
-                Text(durationText)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
+                VStack(spacing: 4) {
+                    Text("소요시간")
+                        .font(.footnote)
+                        .foregroundStyle(Color.secondary)
+
+                    Text(durationText)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.primary)
+                }
+                // 일반 크기에서는 Figma의 73pt를 지키고 접근성 글자 크기에서는 필요한 만큼 확장합니다.
+                .padding(Self.contentPadding)
+                .frame(minWidth: Self.contentMinimumWidth)
+                // 현재 글꼴 메트릭이 작아도 Figma에서 정한 67pt 기본 높이를 유지합니다.
+                .frame(minHeight: 67)
+
+                separator
             }
-            // 텍스트와 선 사이에 여백을 두고 양쪽 선은 텍스트 묶음의 전체 높이를 따릅니다.
-            .padding(.horizontal, 12)
-            .overlay(alignment: .leading) { separator }
-            .overlay(alignment: .trailing) { separator }
             .accessibilityElement(children: .combine)
         }
     }
 
-    /// 부모 텍스트 묶음이 제안한 전체 높이를 채우는 1pt 세로 장식선입니다.
+    /// Figma 높이와 SSD 두께를 함께 적용한 세로 장식선입니다.
     private var separator: some View {
         Rectangle()
             .fill(Color.secondary.opacity(0.3))
-            .frame(width: Self.separatorThickness)
+            .frame(
+                width: Self.separatorThickness,
+                height: Self.separatorHeight
+            )
             .accessibilityHidden(true)
     }
 }

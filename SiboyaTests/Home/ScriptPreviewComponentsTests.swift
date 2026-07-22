@@ -40,10 +40,32 @@ struct ScriptPreviewComponentsTests {
         )
     }
 
-    /// 소요시간 장식선이 가로선이 아닌 1pt 세로선으로 구성되는지 검증합니다.
+    /// 소요시간 영역이 SSD의 선 두께와 Figma의 높이·간격·중앙 크기를 함께 유지하는지 검증합니다.
     @Test @MainActor
-    func durationUsesVerticalSeparatorThickness() {
+    func durationUsesApprovedLayoutMetrics() {
         #expect(ScriptPreviewDuration.separatorThickness == 1)
+        #expect(ScriptPreviewDuration.separatorHeight == 35)
+        #expect(ScriptPreviewDuration.itemSpacing == 18)
+        #expect(ScriptPreviewDuration.contentMinimumWidth == 73)
+        #expect(ScriptPreviewDuration.contentPadding == 10)
+    }
+
+    /// 일반 글자 크기에서 Figma 기본 크기를 확보하고 접근성 글자 크기에서는 잘리지 않게 확장되는지 검증합니다.
+    @Test @MainActor
+    func durationMeetsFigmaSizeAndGrowsForAccessibilityText() {
+        let regularSize = fittingSize(
+            of: ScriptPreviewDuration(estimatedDurationSeconds: 61)
+                .environment(\.dynamicTypeSize, .medium)
+        )
+        let accessibilitySize = fittingSize(
+            of: ScriptPreviewDuration(estimatedDurationSeconds: 61)
+                .environment(\.dynamicTypeSize, .accessibility3)
+        )
+
+        #expect(regularSize.width >= 111)
+        #expect(regularSize.height >= 67)
+        #expect(accessibilitySize.width > regularSize.width)
+        #expect(accessibilitySize.height > regularSize.height)
     }
 
     /// Hero가 주차 문구와 Figma에서 지정한 Thumbnail 규격을 유지하는지 검증합니다.
@@ -80,14 +102,14 @@ struct ScriptPreviewComponentsTests {
     /// 접근성 글자 크기에서는 긴 제목이 다음 영역과 겹치지 않도록 Hero 높이가 확장되는지 검증합니다.
     @Test @MainActor
     func heroGrowsForAccessibilityText() {
-        let regularHeight = fittingHeight(
+        let regularHeight = fittingSize(
             of: makeLongTitleHero()
                 .environment(\.dynamicTypeSize, .medium)
-        )
-        let accessibilityHeight = fittingHeight(
+        ).height
+        let accessibilityHeight = fittingSize(
             of: makeLongTitleHero()
                 .environment(\.dynamicTypeSize, .accessibility3)
-        )
+        ).height
 
         #expect(accessibilityHeight > regularHeight)
     }
@@ -142,13 +164,12 @@ struct ScriptPreviewComponentsTests {
         )
     }
 
-    /// 주어진 SwiftUI View를 402pt 화면 너비에 배치했을 때 필요한 세로 길이를 계산합니다.
-    /// - Parameter view: Dynamic Type 환경이 주입된 미리보기 컴포넌트입니다.
-    /// - Returns: 402×1000pt 제약 안에서 View가 선택한 적정 높이입니다.
+    /// 주어진 SwiftUI View가 402×1000pt 제약 안에서 선택한 적정 크기를 계산합니다.
+    /// - Parameter view: 크기를 측정할 SwiftUI View입니다.
+    /// - Returns: 402×1000pt 제약 안에서 View가 선택한 적정 크기입니다.
     @MainActor
-    private func fittingHeight<Content: View>(of view: Content) -> CGFloat {
+    private func fittingSize<Content: View>(of view: Content) -> CGSize {
         UIHostingController(rootView: view)
             .sizeThatFits(in: CGSize(width: 402, height: 1000))
-            .height
     }
 }
