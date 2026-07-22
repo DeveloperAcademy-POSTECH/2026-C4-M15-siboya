@@ -5,12 +5,20 @@
 //  Created by Codex on 7/22/26.
 //
 
+import SwiftUI
 import Testing
 @testable import Siboya
 
 /// 대본 미리보기와 준비자세 View가 화면 조립에 필요한 표시 데이터를 보존하는지 검증합니다.
 @MainActor
 struct ScriptPreviewViewTests {
+    /// 미리보기 ScrollView가 Hero와 같은 기준으로 상단만 확장하는지 검증합니다.
+    @Test
+    func previewExtendsScrollThroughOnlyTopSafeArea() {
+        #expect(ScriptPreviewView.ignoredSafeAreaEdges.contains(.top))
+        #expect(!ScriptPreviewView.ignoredSafeAreaEdges.contains(.bottom))
+    }
+
     /// 준비자세 안내 문구에 전달받은 태명이 포함되고 프로필 에셋 이름을 유지하는지 검증합니다.
     @Test
     func preparationMessageIncludesResolvedBabyNickname() {

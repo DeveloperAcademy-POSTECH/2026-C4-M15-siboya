@@ -9,6 +9,9 @@ import SwiftUI
 
 /// Home의 대본 미리보기 상단 배경, 대표 이미지, 주차와 제목을 하나의 시각적 영역으로 구성합니다.
 struct ScriptPreviewHero: View {
+    /// Hero 배경과 대표 이미지가 상태바 영역까지 이어지도록 무시할 안전 영역 방향입니다.
+    static let ignoredSafeAreaEdges: Edge.Set = .top
+
     /// Figma에서 지정한 대표 이미지 한 변의 길이입니다.
     static let thumbnailSize: CGFloat = 132
 
@@ -87,6 +90,8 @@ struct ScriptPreviewHero: View {
         .frame(maxWidth: .infinity)
         // 기본 디자인 높이는 유지하되 접근성 글자 크기에서는 제목이 차지하는 만큼 확장합니다.
         .frame(minHeight: Self.backgroundHeight, alignment: .top)
+        // 상위 화면과 단독 Preview 모두에서 Back 배경이 화면 물리적 최상단부터 이어지게 합니다.
+        .ignoresSafeArea(edges: Self.ignoredSafeAreaEdges)
     }
 }
 

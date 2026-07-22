@@ -12,6 +12,13 @@ import UIKit
 
 /// Home의 대본 미리보기 컴포넌트가 표시 값과 사용자 동작 계약을 지키는지 검증합니다.
 struct ScriptPreviewComponentsTests {
+    /// Hero가 화면 최상단까지 확장하되 하단 안전 영역은 침범하지 않는지 검증합니다.
+    @Test @MainActor
+    func heroExtendsThroughOnlyTopSafeArea() {
+        #expect(ScriptPreviewHero.ignoredSafeAreaEdges.contains(.top))
+        #expect(!ScriptPreviewHero.ignoredSafeAreaEdges.contains(.bottom))
+    }
+
     /// 초가 분 단위로 올림되고 값이 없으면 표시 문자열도 없는지 검증합니다.
     @Test @MainActor
     func durationBuildsOptionalRoundedMinuteText() {
