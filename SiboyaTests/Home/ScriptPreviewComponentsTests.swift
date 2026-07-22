@@ -10,7 +10,7 @@ import Testing
 import UIKit
 @testable import Siboya
 
-/// 대본 미리보기 컴포넌트가 표시 값과 사용자 동작 계약을 지키는지 검증합니다.
+/// Home의 대본 미리보기 컴포넌트가 표시 값과 사용자 동작 계약을 지키는지 검증합니다.
 struct ScriptPreviewComponentsTests {
     /// 초가 분 단위로 올림되고 값이 없으면 표시 문자열도 없는지 검증합니다.
     @Test @MainActor

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 예상 소요 초를 사용자가 읽기 쉬운 분 단위로 보여주는 미리보기 컴포넌트입니다.
+/// Home의 대본 미리보기에서 예상 소요 초를 읽기 쉬운 분 단위로 보여주는 컴포넌트입니다.
 struct ScriptPreviewDuration: View {
     /// 번들 대본이 제공하는 선택적 예상 소요 시간입니다.
     let estimatedDurationSeconds: Int?

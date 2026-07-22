@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 대본 문장, 빈칸 문장과 생각힌트를 SSD 순서대로 보여주는 본문 컴포넌트입니다.
+/// Home의 대본 미리보기에서 문장, 빈칸 문장과 생각힌트를 SSD 순서대로 보여주는 본문 컴포넌트입니다.
 struct ScriptPreviewBody: View {
     /// 본문 항목마다 적용할 의미와 시각적 간격을 구분합니다.
     enum ContentRole: Equatable {

@@ -8,7 +8,7 @@
 import SwiftUI
 import UIKit
 
-/// Asset Catalog 이미지를 표시하고 찾지 못하면 같은 영역을 박스로 유지하는 대본 공통 뷰입니다.
+/// Home에서 대본 이미지를 표시하고 찾지 못하면 같은 영역을 박스로 유지하는 공통 뷰입니다.
 struct ScriptArtworkView: View {
     /// Asset Catalog에서 조회할 이미지 이름입니다.
     let assetName: String

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 미리보기 상단 배경, 대표 이미지, 주차와 제목을 하나의 시각적 영역으로 구성합니다.
+/// Home의 대본 미리보기 상단 배경, 대표 이미지, 주차와 제목을 하나의 시각적 영역으로 구성합니다.
 struct ScriptPreviewHero: View {
     /// Figma에서 지정한 대표 이미지 한 변의 길이입니다.
     static let thumbnailSize: CGFloat = 132

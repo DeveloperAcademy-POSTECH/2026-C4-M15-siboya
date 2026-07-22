@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 스크롤 본문 위에 고정될 그라데이션과 준비하기 버튼을 제공하는 하단 컴포넌트입니다.
+/// Home의 대본 미리보기에서 그라데이션과 준비하기 버튼을 제공하는 하단 컴포넌트입니다.
 struct ScriptPreviewBottomBar: View {
     /// 준비자세 모달 등 다음 흐름을 결정할 상위 계층 callback입니다.
     let onPrepare: () -> Void

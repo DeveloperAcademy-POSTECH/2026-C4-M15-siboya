@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// 대본에 등록된 일곱 개 이미지 묶음을 표현하고 표시 위치별 에셋 이름을 만드는 모델입니다.
+/// Home에서 사용하는 일곱 개 대본 이미지 묶음과 표시 위치별 에셋 이름을 만드는 모델입니다.
 enum ScriptArtworkSeries: Int, CaseIterable, Equatable, Sendable {
     /// 첫 번째 `TitleImage` 이미지 묶음입니다.
     case one = 1

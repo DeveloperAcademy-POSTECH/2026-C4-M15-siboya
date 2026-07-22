@@ -25,7 +25,7 @@
 ### Task 1: 대본 공통 이미지 시리즈 모델
 
 **Files:**
-- Create: `Siboya/Features/Taedam/Model/ScriptArtworkSeries.swift`
+- Create: `Siboya/Features/Home/Model/ScriptArtworkSeries.swift`
 - Delete: `Siboya/Features/Home/Model/HomeArtworkSeries.swift`
 - Modify: `Siboya/Features/Home/Model/HomeScriptItem.swift`
 - Modify: `Siboya/Features/Home/Model/HomeViewState.swift`
@@ -109,14 +109,14 @@ Run: Step 2와 동일. Expected: `** TEST SUCCEEDED **`.
 - [ ] **Step 5: 모델 변경 커밋**
 
 ```bash
-git add Siboya/Features/Taedam/Model/ScriptArtworkSeries.swift Siboya/Features/Home/Model/HomeArtworkSeries.swift Siboya/Features/Home/Model/HomeScriptItem.swift Siboya/Features/Home/Model/HomeViewState.swift SiboyaTests/Home/HomeComponentsTests.swift
+git add Siboya/Features/Home/Model/ScriptArtworkSeries.swift Siboya/Features/Home/Model/HomeArtworkSeries.swift Siboya/Features/Home/Model/HomeScriptItem.swift Siboya/Features/Home/Model/HomeViewState.swift SiboyaTests/Home/HomeComponentsTests.swift
 git commit -m "refactor: 대본 이미지 시리즈를 공통 모델로 변경"
 ```
 
 ### Task 2: 대본 공통 이미지 표시 뷰
 
 **Files:**
-- Create: `Siboya/Features/Taedam/Component/ScriptArtworkView.swift`
+- Create: `Siboya/Features/Home/Component/ScriptArtworkView.swift`
 - Delete: `Siboya/Features/Home/Component/HomeArtworkView.swift`
 - Modify: `Siboya/Features/Home/Component/HomeRecommendationCard.swift`
 - Modify: `Siboya/Features/Home/Component/HomeScriptRow.swift`
@@ -192,16 +192,16 @@ Run: Task 1 Step 2 명령. Expected: `** TEST SUCCEEDED **`.
 - [ ] **Step 4: 공통 뷰 변경 커밋**
 
 ```bash
-git add Siboya/Features/Taedam/Component/ScriptArtworkView.swift Siboya/Features/Home/Component/HomeArtworkView.swift Siboya/Features/Home/Component/HomeRecommendationCard.swift Siboya/Features/Home/Component/HomeScriptRow.swift SiboyaTests/Home/HomeComponentsTests.swift
+git add Siboya/Features/Home/Component/ScriptArtworkView.swift Siboya/Features/Home/Component/HomeArtworkView.swift Siboya/Features/Home/Component/HomeRecommendationCard.swift Siboya/Features/Home/Component/HomeScriptRow.swift SiboyaTests/Home/HomeComponentsTests.swift
 git commit -m "refactor: 대본 이미지 뷰를 공통 컴포넌트로 변경"
 ```
 
 ### Task 3: 소요시간과 Hero 컴포넌트
 
 **Files:**
-- Create: `Siboya/Features/Taedam/Component/ScriptPreviewDuration.swift`
-- Create: `Siboya/Features/Taedam/Component/ScriptPreviewHero.swift`
-- Create: `SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift`
+- Create: `Siboya/Features/Home/Component/ScriptPreviewDuration.swift`
+- Create: `Siboya/Features/Home/Component/ScriptPreviewHero.swift`
+- Create: `SiboyaTests/Home/ScriptPreviewComponentsTests.swift`
 
 **Interfaces:**
 - Consumes: `estimatedDurationSeconds`, `ScriptArtworkSeries`, 임신 주차, 제목
@@ -358,15 +358,15 @@ struct ScriptPreviewHero: View {
 Run: Step 2 명령. Expected: `** TEST SUCCEEDED **`.
 
 ```bash
-git add Siboya/Features/Taedam/Component/ScriptPreviewDuration.swift Siboya/Features/Taedam/Component/ScriptPreviewHero.swift SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift
+git add Siboya/Features/Home/Component/ScriptPreviewDuration.swift Siboya/Features/Home/Component/ScriptPreviewHero.swift SiboyaTests/Home/ScriptPreviewComponentsTests.swift
 git commit -m "feat: 대본 미리보기 상단 컴포넌트 추가"
 ```
 
 ### Task 4: 본문과 생각힌트 컴포넌트
 
 **Files:**
-- Create: `Siboya/Features/Taedam/Component/ScriptPreviewBody.swift`
-- Modify: `SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift`
+- Create: `Siboya/Features/Home/Component/ScriptPreviewBody.swift`
+- Modify: `SiboyaTests/Home/ScriptPreviewComponentsTests.swift`
 
 **Interfaces:**
 - Consumes: `[ScriptSentenceDTO]`, `bucketListPrompt`, `bucketListGuide`
@@ -473,15 +473,15 @@ struct ScriptPreviewBody: View {
 Run: Task 3 Step 2 명령. Expected: `** TEST SUCCEEDED **`.
 
 ```bash
-git add Siboya/Features/Taedam/Component/ScriptPreviewBody.swift SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift
+git add Siboya/Features/Home/Component/ScriptPreviewBody.swift SiboyaTests/Home/ScriptPreviewComponentsTests.swift
 git commit -m "feat: 대본 미리보기 본문 컴포넌트 추가"
 ```
 
 ### Task 5: 고정 하단 버튼 컴포넌트
 
 **Files:**
-- Create: `Siboya/Features/Taedam/Component/ScriptPreviewBottomBar.swift`
-- Modify: `SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift`
+- Create: `Siboya/Features/Home/Component/ScriptPreviewBottomBar.swift`
+- Modify: `SiboyaTests/Home/ScriptPreviewComponentsTests.swift`
 
 **Interfaces:**
 - Consumes: `onPrepare: () -> Void`
@@ -542,7 +542,7 @@ struct ScriptPreviewBottomBar: View {
 Run: Task 3 Step 2 명령. Expected: `** TEST SUCCEEDED **`.
 
 ```bash
-git add Siboya/Features/Taedam/Component/ScriptPreviewBottomBar.swift SiboyaTests/Taedam/ScriptPreviewComponentsTests.swift
+git add Siboya/Features/Home/Component/ScriptPreviewBottomBar.swift SiboyaTests/Home/ScriptPreviewComponentsTests.swift
 git commit -m "feat: 대본 미리보기 하단 버튼 컴포넌트 추가"
 ```
 
@@ -550,7 +550,7 @@ git commit -m "feat: 대본 미리보기 하단 버튼 컴포넌트 추가"
 
 **Files:**
 - Verify: `Siboya/Features/Home`
-- Verify: `Siboya/Features/Taedam/Component`
+- Verify: `Siboya/Features/Home/Component`
 - Verify: `SiboyaTests`
 
 **Interfaces:**

@@ -2,7 +2,7 @@
 
 ## 목적
 
-대본·생각힌트 미리보기 화면을 조립하기 전에 Figma와 SSD의 표시 규칙을 독립적인 SwiftUI 컴포넌트로 구현한다. 이번 범위는 순수 표시와 사용자 callback 전달까지이며, 전체 화면 이동·SwiftData 조회·준비자세 모달·권한 요청은 포함하지 않는다.
+Home에서 대본·생각힌트 미리보기 화면을 조립하기 전에 Figma와 SSD의 표시 규칙을 독립적인 SwiftUI 컴포넌트로 구현한다. 이번 범위는 순수 표시와 사용자 callback 전달까지이며, 전체 화면 이동·SwiftData 조회·준비자세 모달·권한 요청은 포함하지 않는다.
 
 ## 기준 자료와 우선순위
 
@@ -98,7 +98,7 @@ ScriptPreviewDTO + ScriptArtworkSeries
 
 ## 완료 조건
 
-1. 네 컴포넌트가 `Siboya/Features/Taedam/Component` 아래에 역할별 파일로 존재한다.
+1. 네 컴포넌트가 `Siboya/Features/Home/Component` 아래에 역할별 파일로 존재한다.
 2. 132pt 대표 이미지는 `TitleImage1~7Thumbnail`, 상단 배경은 `TitleImage1~7Back`을 사용한다.
 3. 생각힌트에는 `💡` 이모지를 유지한다.
 4. Home 화면의 기존 이미지와 선택 동작이 변하지 않는다.
