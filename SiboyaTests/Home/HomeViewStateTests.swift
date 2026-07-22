@@ -197,6 +197,68 @@ struct HomeViewStateTests {
         #expect(state.categories.flatMap(\.items).count == 6)
     }
 
+    /// 선택한 UUID와 버전이 일치할 때 태명 치환 완료 입력과 JSON 배열 순서의 대표 이미지를 만드는지 검증합니다.
+    @Test @MainActor
+    func previewRouteUsesExactVersionAndScriptArrayArtworkIndex() throws {
+        let document = try BundledTaedamScriptLoader.load()
+        let selected = try #require(document.scripts.first)
+        let repository = HomeProfileRepositoryStub(
+            fetchAction: {
+                BabyProfile(nickname: "꾹꾹이", gestationalWeek: 22)
+            }
+        )
+        let model = HomeScreenModel(
+            weeklyContentLoader: { try BundledHomeWeeklyContentLoader.load() },
+            scriptDocumentLoader: { document }
+        )
+
+        model.load(repository: repository)
+
+        let route = try #require(model.makePreviewRoute(
+            for: ScriptSelectionDTO(scriptID: selected.id, scriptVersion: selected.version)
+        ))
+
+        #expect(route.sessionInput.script.scriptID == selected.id)
+        #expect(route.sessionInput.script.scriptVersion == selected.version)
+        #expect(route.sessionInput.babyNickname == "꾹꾹이")
+        #expect(route.artworkSeries == .one)
+    }
+
+    /// 같은 UUID여도 다른 버전이거나 태명이 비어 있으면 잘못된 대본 실행을 막기 위해 route를 만들지 않는지 검증합니다.
+    @Test @MainActor
+    func previewRouteDoesNotResolveDifferentVersionOrMissingProfile() throws {
+        let document = try BundledTaedamScriptLoader.load()
+        let selected = try #require(document.scripts.first)
+        let model = HomeScreenModel(scriptDocumentLoader: { document })
+
+        model.load(repository: HomeProfileRepositoryStub(fetchAction: { nil }))
+
+        #expect(model.makePreviewRoute(
+            for: ScriptSelectionDTO(scriptID: selected.id, scriptVersion: selected.version + 1)
+        ) == nil)
+        #expect(model.makePreviewRoute(
+            for: ScriptSelectionDTO(scriptID: selected.id, scriptVersion: selected.version)
+        ) == nil)
+    }
+
+    /// 저장된 태명 앞뒤 공백은 화면 표시와 대본 치환에서 제거해 일관된 사용자 호칭을 만드는지 검증합니다.
+    @Test @MainActor
+    func previewRouteTrimsCachedBabyNickname() throws {
+        let document = try BundledTaedamScriptLoader.load()
+        let selected = try #require(document.scripts.first)
+        let model = HomeScreenModel(scriptDocumentLoader: { document })
+
+        model.load(repository: HomeProfileRepositoryStub(fetchAction: {
+            BabyProfile(nickname: "  꾹꾹이  ", gestationalWeek: 22)
+        }))
+
+        let route = try #require(model.makePreviewRoute(
+            for: ScriptSelectionDTO(scriptID: selected.id, scriptVersion: selected.version)
+        ))
+
+        #expect(route.sessionInput.babyNickname == "꾹꾹이")
+    }
+
     /// 빈 카테고리나 제목의 대본만 제외하고 유효한 대본의 원래 이미지 순서는 바꾸지 않는지 검증합니다.
     @Test
     func invalidScriptsAreSkippedWithoutShiftingArtworkOrder() {
