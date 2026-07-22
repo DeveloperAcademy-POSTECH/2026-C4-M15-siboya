@@ -1,3 +1,5 @@
+
+
 //
 //  ChecklistRow.swift
 //  Siboya
@@ -55,17 +57,24 @@ struct ChecklistRow: View {
                         Label("삭제", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(.secondary)
-                }
-            }
+                                    Image(systemName: "ellipsis")
+                                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
+                                }
+                                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
+                            }
 
             HStack(spacing: 12) {
-                Label(Self.dateFormatter.string(from: item.createdAt), systemImage: "calendar")
-                Label(item.category, systemImage: "tag")
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "calendar")
+                                Text(Self.dateFormatter.string(from: item.createdAt))
+                            }
+                            HStack(spacing: 4) {
+                                Image(systemName: "tag")
+                                Text(item.category)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 18)

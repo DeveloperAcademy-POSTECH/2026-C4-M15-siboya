@@ -118,10 +118,11 @@ struct TaedamChecklistView: View {
                         Label("주차 수정", systemImage: "calendar")
                     }
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(.primary)
-                }
-            }
+                                    Image(systemName: "slider.horizontal.3")
+                                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
+                                }
+                                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
+                            }
 
             // Title3/Regular
             if let week = babyProfile?.gestationalWeek {
