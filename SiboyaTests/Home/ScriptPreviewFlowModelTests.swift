@@ -111,6 +111,54 @@ struct ScriptPreviewFlowModelTests {
         await firstRequest.value
     }
 
+    /// 권한 시스템 알림이 열려 있는 동안 사용자가 시트를 닫으면 이후 허용 결과가 세션 시작으로 이어지지 않는지 검증합니다.
+    @Test
+    func dismissingPreparationWhilePermissionRequestIsInFlightIgnoresGrantedResult() async {
+        let authorizer = WaitingPermissionAuthorizer()
+        let model = ScriptPreviewFlowModel(authorizer: authorizer)
+        model.presentPreparation()
+
+        let request = Task { @MainActor in
+            await model.requestPermissions()
+        }
+        await authorizer.waitUntilRequestStarts()
+
+        // 사용자가 시스템 권한 응답 전 시트를 닫으면 현재 요청은 더 이상 화면에 결과를 반영하면 안 됩니다.
+        model.dismissPreparation()
+        await authorizer.finish(with: .granted)
+        await request.value
+
+        #expect(!model.isPreparationPresented)
+        #expect(!model.isRequestingPermission)
+        #expect(!model.shouldStartSessionAfterDismissal)
+        #expect(!model.isSessionPresented)
+        #expect(model.permissionAlertIssue == nil)
+    }
+
+    /// 권한 시스템 알림이 열려 있는 동안 사용자가 시트를 닫으면 이후 거부 결과의 경고도 표시하지 않는지 검증합니다.
+    @Test
+    func dismissingPreparationWhilePermissionRequestIsInFlightIgnoresDeniedResult() async {
+        let authorizer = WaitingPermissionAuthorizer()
+        let model = ScriptPreviewFlowModel(authorizer: authorizer)
+        model.presentPreparation()
+
+        let request = Task { @MainActor in
+            await model.requestPermissions()
+        }
+        await authorizer.waitUntilRequestStarts()
+
+        // 닫힌 시트 위에 권한 경고가 나타나지 않도록 요청 결과를 폐기해야 합니다.
+        model.dismissPreparation()
+        await authorizer.finish(with: .denied(.microphone))
+        await request.value
+
+        #expect(!model.isPreparationPresented)
+        #expect(!model.isRequestingPermission)
+        #expect(!model.shouldStartSessionAfterDismissal)
+        #expect(!model.isSessionPresented)
+        #expect(model.permissionAlertIssue == nil)
+    }
+
     /// 태담 전체 화면을 닫으면 다음 대본을 위한 표시 상태가 초기화되는지 검증합니다.
     @Test
     func dismissingSessionClearsFullScreenPresentation() async {
