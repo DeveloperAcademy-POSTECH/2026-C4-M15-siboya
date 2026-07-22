@@ -20,6 +20,28 @@ final class SwiftDataTaedamRepository: TaedamRepository, @unchecked Sendable {
         return try modelContext.fetch(descriptor).first
     }
 
+    func ensureBabyProfile(nickname: String, gestationalWeek: Int) async throws {
+        guard try fetchBabyProfile() == nil else { return }
+
+        let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedNickname.isEmpty else { throw TaedamRepositoryError.emptyNickname }
+
+        let profile = BabyProfile(nickname: trimmedNickname, gestationalWeek: gestationalWeek)
+        modelContext.insert(profile)
+        try modelContext.save()
+    }
+
+    func updateNickname(_ nickname: String) async throws {
+        let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedNickname.isEmpty else { throw TaedamRepositoryError.emptyNickname }
+
+        guard let profile = try fetchBabyProfile() else {
+            throw TaedamRepositoryError.babyProfileNotFound
+        }
+        profile.updateNickname(trimmedNickname)
+        try modelContext.save()
+    }
+
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO {
         let category = command.category.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = command.content.trimmingCharacters(in: .whitespacesAndNewlines)
