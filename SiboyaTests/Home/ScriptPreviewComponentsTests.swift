@@ -33,6 +33,12 @@ struct ScriptPreviewComponentsTests {
         )
     }
 
+    /// 소요시간 장식선이 가로선이 아닌 1pt 세로선으로 구성되는지 검증합니다.
+    @Test @MainActor
+    func durationUsesVerticalSeparatorThickness() {
+        #expect(ScriptPreviewDuration.separatorThickness == 1)
+    }
+
     /// Hero가 주차 문구와 Figma에서 지정한 Thumbnail 규격을 유지하는지 검증합니다.
     @Test @MainActor
     func heroBuildsWeekTextAndThumbnailMetrics() {
