@@ -71,4 +71,17 @@ struct ScriptPreviewComponentsTests {
             .bucketListGuide
         ])
     }
+
+    /// 준비하기 선택이 외부 흐름을 직접 실행하지 않고 상위 callback을 한 번 전달하는지 검증합니다.
+    @Test @MainActor
+    func bottomBarForwardsPrepareOnce() {
+        var prepareCount = 0
+        let bottomBar = ScriptPreviewBottomBar {
+            prepareCount += 1
+        }
+
+        bottomBar.prepare()
+
+        #expect(prepareCount == 1)
+    }
 }
