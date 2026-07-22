@@ -25,7 +25,7 @@ final class SiboyaUITests: XCTestCase {
         app = nil
     }
 
-    /// Home 대본을 선택하면 시스템 BackButton이 나타나고 선택 시 같은 Home 목록으로 돌아오는지 검증합니다.
+    /// Home 대본 버튼을 선택하면 시스템 BackButton이 나타나고 사라진 뒤 같은 Home 버튼으로 돌아오는지 검증합니다.
     @MainActor
     func testPreviewShowsSystemBackButtonAndReturnsHome() throws {
         // setUp에서 생성한 앱이 없으면 이후의 화면 탐색이 무의미하므로 즉시 실패 처리합니다.
@@ -34,18 +34,22 @@ final class SiboyaUITests: XCTestCase {
             return
         }
 
-        let scriptRow = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == %@", "일요일 아침 냄새"))
+        // Preview Hero의 같은 제목 Text와 구분하고 주차 value가 합쳐진 label도 허용하도록 Home 버튼만 찾습니다.
+        let homeScriptButton = app.buttons
+            .matching(NSPredicate(format: "label CONTAINS %@", "일요일 아침 냄새"))
             .firstMatch
-        XCTAssertTrue(scriptRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 5))
 
-        scriptRow.tap()
+        homeScriptButton.tap()
 
         let backButton = app.buttons.matching(identifier: "BackButton").firstMatch
         XCTAssertTrue(backButton.waitForExistence(timeout: 3))
 
         backButton.tap()
-        XCTAssertTrue(scriptRow.waitForExistence(timeout: 3))
+        // 시스템 뒤로가기가 완료되면 Preview에만 있던 BackButton이 없어져야 합니다.
+        XCTAssertFalse(backButton.waitForExistence(timeout: 3))
+        // 같은 Home 버튼이 다시 나타나야 실제 navigation path 복귀를 검증할 수 있습니다.
+        XCTAssertTrue(homeScriptButton.waitForExistence(timeout: 3))
     }
 
     /// 앱 시작 성능을 기존 Xcode 기본 기준으로 계속 측정합니다.
