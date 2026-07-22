@@ -127,18 +127,14 @@ struct TaedamChecklistView: View {
             if let week = babyProfile?.gestationalWeek {
                 Text("태담 \(week)주차")
                     .font(Font.custom("SF Pro", size: 20))
-                    .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
+                    .foregroundColor(Color("PrimaryRed"))
             }
 
-            RoundedRectangle(cornerRadius: 24)
-                .fill(
-                    LinearGradient(
-                        colors: [.orange.opacity(0.5), .pink.opacity(0.3)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .frame(height: 180)
+            Image("TaedamCharacter")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 200)
+                .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.top, 8)
         }
         .padding(.horizontal, 20)
@@ -220,11 +216,15 @@ struct TaedamChecklistView: View {
                 Text(title)
                     .font(.caption2)
             }
-            .foregroundStyle(isSelected ? .orange : .secondary)
+            .foregroundStyle(
+                isSelected ? Color(red: 1, green: 0.56, blue: 0.53) : .secondary
+            )
             .frame(maxWidth: 85)
             .padding(.vertical, 8)
             .background(
-                Capsule().fill(isSelected ? Color.orange.opacity(0.15) : .clear)
+                Capsule().fill(
+                    isSelected ? Color(uiColor: .tertiarySystemFill) : .clear
+                )
             )
         }
     }
