@@ -29,7 +29,7 @@
 | 카운트다운·대본 진행 | `TaedamSessionInputDTO` | 3초 카운트다운, 문장 채우기, 음성 반응 모션 | 버킷리스트 STT 자동 전환 |
 | 버킷리스트 STT | `.bucketList` 줄 | 최대 20초 전사, 수동 정지 | `BucketListDraftDTO` |
 | 버킷리스트 텍스트 수정 | `BucketListDraftDTO` | 키보드 수정·확정 | `SaveBucketListCommandDTO` |
-| 태담 요약 | `SavedBucketListDTO` | 방금 저장한 `BucketListItem` 하나 표시 | `onComplete: () -> Void` |
+| 태담 요약 | 선택한 태담 정보와 최종 `editedText` | 방금 만든 약속 하나 표시 | `onComplete: () -> Void` |
 
 ## 3. 대본·생각힌트 미리보기
 
@@ -184,23 +184,30 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - `SaveBucketListCommandDTO.content`는 사용자가 키보드로 최종 확정한 문장이다.
 - 세션은 `save` 성공 후 즉시 `.completed(bucketListItemID:)`로 전환한다.
 - 한 세션에서 저장을 두 번 이상 요청하지 않는다.
-- 요약 화면은 `SavedBucketListDTO.bucketListItemID`를 이용해 `@Query`를 구성한다.
-- 요약 화면은 쿼리 결과 중 해당 ID의 `BucketListItem` 하나만 표시한다. 목록, 최근 항목 또는 같은 카테고리의 다른 항목을 함께 표시하지 않는다.
-- 요약 셀에는 카테고리, 버킷리스트 내용과 수행 상태만 표시한다.
+- 저장 성공 후 요약 화면에는 `TaedamSessionInputDTO.script`의 `targetGestationalWeek`, `title`,
+  `artworkAssetName`과 사용자가 확정한 `editedText`를 직접 전달한다.
+- 요약 화면은 일회성 화면이므로 SwiftData 또는 Repository를 다시 조회하지 않는다.
+- 요약 셀에는 해당 세션에서 최종 확정한 약속 하나만 표시한다.
 - 태담 점수, 발화 평가, 그래프, 주파수·음량 수치, 녹음 시간과 오디오 재생 UI는 표시하지 않는다.
-- `@Query`가 빈 배열을 반환하면 저장된 항목을 찾을 수 없는 상태로 처리한다.
 - 상위 화면에는 `onComplete: () -> Void`만 전달한다. 상위 화면은 완료 시 현재 화면을 닫고 별도 항목을 강조하거나 추가 이동하지 않는다.
 
-## 9. 런타임 시퀀스
+```swift
+TaedamResultView(
+    targetGestationalWeek: sessionInput.script.targetGestationalWeek,
+    title: sessionInput.script.title,
+    artworkAssetName: sessionInput.script.artworkAssetName,
+    bucketListContent: editedText,
+    onComplete: onComplete
+)
+```
+
+## 8. 런타임 시퀀스
 
 ```mermaid
 sequenceDiagram
     actor User as 사용자
-    participant Home as Home
     participant Preview as 대본 미리보기
-    participant Preparation as 준비자세 모달
     participant Permission as 마이크·Speech 권한
-    participant Settings as 설정 앱
     participant Screen as 태담 화면
     participant Progress as 대본 진행
     participant Motion as 음성 반응
@@ -210,67 +217,51 @@ sequenceDiagram
     participant Data as SwiftData
     participant Summary as 태담 요약
 
-    User->>Home: 추천 카드 또는 대본 선택
-    Home->>Preview: ScriptSelectionDTO
-    Preview->>Preview: ScriptPreviewDTO + BabyProfile 조회
-    User->>Preview: 준비하기
-    Preview->>Preparation: 준비자세 모달 표시
-    alt 사용자가 모달 닫기
-        User->>Preparation: 닫기
-        Preparation-->>Preview: 미리보기 상태 유지
-    else 사용자가 시작하기
-        User->>Preparation: 시작하기
-        Preparation->>Permission: 권한 상태 확인·요청
-        alt 필요한 권한 모두 허용
-            Permission-->>Preparation: granted
-            Preparation->>Screen: 모달 닫기 + TaedamSessionInputDTO
-            Screen->>Progress: 3초 카운트다운
-            Progress-->>Screen: 3, 2, 1
-            Screen->>Motion: 음성 반응 시작
-            loop 일반 대본
-                Progress-->>Screen: currentLineProgress
-                Motion-->>Screen: normalizedVoiceMotion
-                opt 일반 대본 문장 탭
-                    User->>Screen: 이전·현재·다음 문장 선택
-                    Screen->>Progress: 현재 Task 취소 후 선택 문장부터 재개
-                end
-            end
-            Progress-->>Screen: 마지막 문장 완료 + bucketListGuide + STT placeholder
-            Screen->>Motion: stopMonitoring()
-            Screen->>Speech: 20초 STT 자동 시작
-            Speech-->>Screen: 부분 전사문
-            alt 사용자가 20초 전 정지
-                User->>Screen: 정지
-                Screen->>Speech: finish()
-            else 20초 경과
-                Speech-->>Screen: 자동 finish()
-            end
-            Speech-->>Screen: BucketListDraftDTO
-            Screen->>Keyboard: 키보드 텍스트 수정
-            User->>Keyboard: 문장 수정·확정
-            Keyboard->>Repository: SaveBucketListCommandDTO
-            Repository->>Data: BucketListItem 하나 insert
-            Repository-->>Keyboard: SavedBucketListDTO
-            Keyboard->>Summary: bucketListItemID
-            Summary->>Data: @Query by id
-            Data-->>Summary: BucketListItem 하나
-        else 권한 거부·제한
-            Permission-->>Preparation: denied or restricted
-            Preparation-->>User: Figma 권한 Alert 표시
-            alt 설정 선택
-                User->>Preparation: 설정
-                Preparation->>Settings: openSettingsURLString
-                Settings-->>Preparation: 앱 복귀
-                Preparation-->>User: 준비자세 유지·자동 시작 안 함
-            else 닫기 선택
-                User->>Preparation: 닫기
-                Preparation-->>User: Alert만 닫고 준비자세 유지
+    User->>Preview: 태담 시작
+    Preview->>Permission: 권한 상태 확인·요청
+    alt 필요한 권한 모두 허용
+        Permission-->>Preview: granted
+        Preview->>Screen: 태담 화면 진입
+        Screen->>Progress: 3초 카운트다운
+        Progress-->>Screen: 3, 2, 1
+        Screen->>Motion: 음성 반응 시작
+        loop 일반 대본
+            Progress-->>Screen: currentLineProgress
+            Motion-->>Screen: normalizedVoiceMotion
+            opt 일반 대본 문장 탭
+                User->>Screen: 이전·현재·다음 문장 선택
+                Screen->>Progress: 현재 Task 취소 후 선택 문장부터 재개
             end
         end
+        Progress-->>Screen: 마지막 문장 완료 + bucketListGuide + STT placeholder
+        Screen->>Motion: stopMonitoring()
+        Screen->>Speech: 20초 STT 자동 시작
+        Speech-->>Screen: 부분 전사문
+        alt 사용자가 정지
+            User->>Screen: 정지
+            Screen->>Speech: finish()
+        else 최초 발화 후 1.5초 연속 무음
+            Speech-->>Screen: silence 자동 종료 이벤트
+            Screen->>Speech: finish()
+        else 20초 경과
+            Speech-->>Screen: maximumDuration 자동 종료 이벤트
+            Screen->>Speech: finish()
+        end
+        Speech-->>Screen: BucketListDraftDTO
+        Screen->>Keyboard: 키보드 텍스트 수정
+        User->>Keyboard: 문장 수정·확정
+        Keyboard->>Repository: SaveBucketListCommandDTO
+        Repository->>Data: BucketListItem 하나 insert
+        Repository-->>Keyboard: SavedBucketListDTO
+        Keyboard->>Summary: 주차, 제목, 이미지 이름, editedText
+        Summary-->>User: 방금 만든 약속 하나
+    else 권한 거부·제한
+        Permission—>>Preview: denied or restricted
+        Preview—>>User: 권한 설명·설정 이동 안내
     end
 ```
 
-## 10. 핵심 불변 조건
+## 9. 핵심 불변 조건
 
 1. 미리보기의 `준비하기`는 준비자세 모달만 열며 권한 요청이나 카운트다운을 시작하지 않는다.
 2. 닫기 버튼 또는 grabber 드래그로 준비자세 모달을 닫으면 미리보기 상태를 유지하고 권한 요청, 오디오 입력과 진행 Task를 시작하지 않는다.
