@@ -289,7 +289,7 @@ Expected: 커밋에는 새 컴포넌트와 테스트만 포함되고 사용자 �
 
 **Interfaces:**
 - Consumes: Task 1의 세 컴포넌트, `babyNickname`, `isRequestingPermission`, `onClose`, `onStart`
-- Produces: `TaedamPreparationView.sheetDetentFraction == 0.87`, Figma 배치 상수, 실제 Preview → Preparation → Preview UI 경로
+- Produces: `TaedamPreparationView.sheetDetentFraction == 0.95`, Figma 배치 상수, 실제 Preview → Preparation → Preview UI 경로
 
 - [ ] **Step 1: View 배치와 callback 실패 테스트 작성**
 
@@ -299,8 +299,9 @@ Expected: 커밋에는 새 컴포넌트와 테스트만 포함되고 사용자 �
     /// 준비자세 sheet가 Figma의 detent와 주요 세로·하단 배치 수치를 사용하는지 검증합니다.
     @Test
     func preparationUsesFigmaSheetMetrics() {
-        #expect(TaedamPreparationView.sheetDetentFraction == 0.87)
+        #expect(TaedamPreparationView.sheetDetentFraction == 0.95)
         #expect(TaedamPreparationView.headerHeight == 44)
+        #expect(TaedamPreparationView.closeLabelSize == 22)
         #expect(TaedamPreparationView.artworkTopSpacing == 52)
         #expect(TaedamPreparationView.guidanceTopSpacing == 67)
         #expect(TaedamPreparationView.horizontalPadding == 20)
@@ -346,11 +347,14 @@ import SwiftUI
 
 /// 태담 시작 전 자세를 안내하고 닫기·권한 확인 동작을 상위 흐름으로 전달하는 bottom sheet입니다.
 struct TaedamPreparationView: View {
-    /// Figma의 757/874pt sheet 높이를 시스템 detent로 표현한 비율입니다.
-    static let sheetDetentFraction = 0.87
+    /// 안전 영역을 제외한 시스템 최대 detent에서 Figma의 화면 높이 약 87%를 재현하는 비율입니다.
+    static let sheetDetentFraction = 0.95
 
     /// Figma close control이 차지하는 header 높이입니다.
     static let headerHeight: CGFloat = 44
+
+    /// 시스템 glass 여백을 포함했을 때 닫기 control 외곽이 약 44pt가 되게 하는 label 크기입니다.
+    static let closeLabelSize: CGFloat = 22
 
     /// Header 아래에서 프로필 이미지까지 확보할 세로 간격입니다.
     static let artworkTopSpacing: CGFloat = 52
@@ -404,7 +408,10 @@ struct TaedamPreparationView: View {
                 Button(action: close) {
                     Image(systemName: "xmark")
                         .font(.system(size: 17, weight: .medium))
-                        .frame(width: 36, height: 36)
+                        .frame(
+                            width: Self.closeLabelSize,
+                            height: Self.closeLabelSize
+                        )
                 }
                 .buttonStyle(.glass)
                 .frame(width: 44, height: 44)

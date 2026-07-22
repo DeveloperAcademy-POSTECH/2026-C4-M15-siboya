@@ -69,9 +69,9 @@ View는 마이크·Speech API와 카운트다운을 직접 호출하지 않는�
 
 `TaedamPreparationView`는 `Siboya/Features/Home/View`에 유지한다.
 
-- 시스템 `.sheet`와 `.fraction(0.87)` detent를 사용한다.
+- 시스템 `.sheet`와 `.fraction(0.95)` detent를 사용한다. 시스템 fraction은 안전 영역을 제외한 최대 detent를 기준으로 하므로, 이 값이 전체 화면에서 Figma의 약 87% 높이를 재현한다.
 - 시스템 dim과 drag indicator를 유지한다.
-- 우측 상단 닫기는 iOS 26 glass button과 `xmark`를 사용하며 터치 영역은 `44×44pt`다.
+- 우측 상단 닫기는 iOS 26 glass button과 `xmark`를 사용한다. 시스템 chrome 여백과 `22pt` label을 조합해 외곽과 터치 영역을 약 `44×44pt`로 유지한다.
 - header 아래 `52pt` 뒤에 `TaedamPreparationArtwork`를 배치한다.
 - 이미지 아래 `67pt` 뒤에 `TaedamPreparationGuidance`를 배치한다.
 - 시작 버튼은 좌우 `20pt`, 하단 `22pt` 여백으로 고정한다.
