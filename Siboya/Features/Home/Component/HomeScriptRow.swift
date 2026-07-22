@@ -18,7 +18,7 @@ struct HomeScriptRow: View {
         Button(action: select) {
             HStack(spacing: 9) {
                 // 목록에서 빠르게 대본을 구분할 수 있도록 정사각형 대표 이미지를 표시합니다.
-                HomeArtworkView(
+                ScriptArtworkView(
                     assetName: item.rowArtworkAssetName,
                     cornerRadius: 17
                 )

@@ -112,7 +112,7 @@ struct HomeComponentsTests {
     @Test
     @MainActor
     func artworkIgnoresBlankAssetName() {
-        let artwork = HomeArtworkView(assetName: "  \n", cornerRadius: 17)
+        let artwork = ScriptArtworkView(assetName: "  \n", cornerRadius: 17)
 
         #expect(artwork.resolvedAssetName == nil)
         #expect(artwork.resolvedImage == nil)
@@ -122,7 +122,7 @@ struct HomeComponentsTests {
     @Test
     @MainActor
     func artworkUsesPlaceholderWhenAssetDoesNotExist() {
-        let artwork = HomeArtworkView(
+        let artwork = ScriptArtworkView(
             assetName: "missing-\(UUID().uuidString)",
             cornerRadius: 17
         )

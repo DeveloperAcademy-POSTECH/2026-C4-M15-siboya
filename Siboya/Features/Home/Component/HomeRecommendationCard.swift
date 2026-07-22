@@ -21,7 +21,7 @@ struct HomeRecommendationCard: View {
         Button(action: select) {
             ZStack(alignment: .bottomLeading) {
                 // 추천 대본의 대표 이미지를 카드 배경 전체에 표시합니다.
-                HomeArtworkView(
+                ScriptArtworkView(
                     assetName: item.cardArtworkAssetName,
                     cornerRadius: 20
                 )
