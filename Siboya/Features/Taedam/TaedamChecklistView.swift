@@ -4,8 +4,8 @@
 //
 //  SCRUM-26 태담 체크박스 리스트
 //  BabyProfile / BucketListItem 실제 SwiftData 모델 연결.
-//  태명 변경: TaedamRepository.updateNickname 연결 완료.
-//  주차 수정 / 내용 수정: Repository 메서드·편집 UX 확정 전이라 TODO.
+//  태명 변경 / 주차 수정: TaedamRepository.updateNickname·updateGestationalWeek 연결 완료.
+//  내용 수정: 편집 UX(인라인 vs 상세화면) 확정 전이라 TODO.
 //
 
 import SwiftUI
@@ -31,6 +31,11 @@ struct TaedamChecklistView: View {
     @State private var isEditingNickname = false
     @State private var draftNickname = ""
     @FocusState private var isNicknameFieldFocused: Bool
+
+    @State private var isEditingWeek = false
+    @State private var draftWeek = 1
+
+    private let weekRange = Array(1...42)
 
     private var babyProfile: BabyProfile? { babyProfiles.first }
 
@@ -66,6 +71,10 @@ struct TaedamChecklistView: View {
             }
         }
         .background(Color(.systemBackground))
+        .sheet(isPresented: $isEditingWeek) {
+            weekPickerSheet
+                .presentationDetents([.height(360)])
+        }
         .alert(
             "오류",
             isPresented: Binding(
@@ -106,7 +115,7 @@ struct TaedamChecklistView: View {
                         Label("태명 변경", systemImage: "pencil")
                     }
                     Button {
-                        // TODO: 주차 수정 — TaedamRepository에 updateGestationalWeek 추가되면 연결
+                        startEditingWeek()
                     } label: {
                         Label("주차 수정", systemImage: "calendar")
                     }
@@ -136,6 +145,43 @@ struct TaedamChecklistView: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
+    }
+
+    // MARK: 주차 수정 시트
+
+    private var weekPickerSheet: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button("취소") {
+                    isEditingWeek = false
+                }
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text("현재 주수")
+                    .font(.system(size: 17, weight: .semibold))
+
+                Spacer()
+
+                Button("완료") {
+                    commitWeekChange()
+                }
+                .fontWeight(.semibold)
+                .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 8)
+
+            Picker("주차", selection: $draftWeek) {
+                ForEach(weekRange, id: \.self) { week in
+                    Text(week == draftWeek ? "\(week) 주차" : "\(week)")
+                        .tag(week)
+                }
+            }
+            .pickerStyle(.wheel)
+        }
     }
 
     // MARK: Bottom Tab Bar
@@ -208,6 +254,24 @@ struct TaedamChecklistView: View {
                 errorMessage = "태명 변경에 실패했어요. 다시 시도해주세요."
             }
             isEditingNickname = false
+        }
+    }
+
+    // MARK: Actions — 주차 수정
+
+    private func startEditingWeek() {
+        draftWeek = babyProfile?.gestationalWeek ?? 1
+        isEditingWeek = true
+    }
+
+    private func commitWeekChange() {
+        Task {
+            do {
+                try await repository.updateGestationalWeek(draftWeek)
+            } catch {
+                errorMessage = "주차 수정에 실패했어요. 다시 시도해주세요."
+            }
+            isEditingWeek = false
         }
     }
 
