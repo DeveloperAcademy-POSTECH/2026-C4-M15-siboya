@@ -586,3 +586,85 @@ Expected: `** BUILD SUCCEEDED **`.
 Run: `git status --short`, `git diff --check`, `git diff --cached --name-status`.
 
 Expected: 사용자 소유의 `project.pbxproj`와 `img_profile.imageset`은 보존되고 구현 파일에는 공백 오류가 없다.
+
+### Task 7: 소요시간 세로 장식선 수정
+
+**Files:**
+- Modify: `Siboya/Features/Home/Component/ScriptPreviewDuration.swift`
+- Modify: `SiboyaTests/Home/ScriptPreviewComponentsTests.swift`
+
+**Interfaces:**
+- Consumes: 기존 `estimatedDurationSeconds`와 `durationText`
+- Produces: `소요시간`과 `약 N분` 전체를 양옆에서 감싸는 자동 높이 1pt 세로 separator
+
+- [ ] **Step 1: 세로 separator 두께 계약의 실패 테스트 작성**
+
+```swift
+/// 소요시간 장식선이 가로선이 아닌 1pt 세로선으로 구성되는지 검증합니다.
+@Test @MainActor
+func durationUsesVerticalSeparatorThickness() {
+    #expect(ScriptPreviewDuration.separatorThickness == 1)
+}
+```
+
+- [ ] **Step 2: 새 레이아웃 계약이 없어 테스트가 실패하는지 확인**
+
+Run: `xcodebuild test -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests/ScriptPreviewComponentsTests/durationUsesVerticalSeparatorThickness`
+
+Expected: FAIL with `type 'ScriptPreviewDuration' has no member 'separatorThickness'`.
+
+- [ ] **Step 3: 텍스트 묶음 전체에 세로 separator 오버레이 적용**
+
+```swift
+/// Home의 대본 미리보기에서 예상 소요 초를 읽기 쉬운 분 단위로 보여주는 컴포넌트입니다.
+struct ScriptPreviewDuration: View {
+    /// 세로 장식선이 차지하는 고정 두께입니다.
+    static let separatorThickness: CGFloat = 1
+
+    /// 값이 있을 때 두 텍스트 전체를 양쪽 세로선으로 감싸 가운데 정렬합니다.
+    @ViewBuilder
+    var body: some View {
+        if let durationText {
+            VStack(spacing: 4) {
+                Text("소요시간")
+                    .font(.caption)
+                    .foregroundStyle(Color.secondary)
+
+                Text(durationText)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.primary)
+            }
+            .padding(.horizontal, 12)
+            .overlay(alignment: .leading) { separator }
+            .overlay(alignment: .trailing) { separator }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    /// 부모 텍스트 묶음이 제안한 전체 높이를 채우는 1pt 세로 장식선입니다.
+    private var separator: some View {
+        Rectangle()
+            .fill(Color.secondary.opacity(0.3))
+            .frame(width: Self.separatorThickness)
+            .accessibilityHidden(true)
+    }
+}
+```
+
+- [ ] **Step 4: 집중 테스트와 정적 검증 실행**
+
+Run: `xcodebuild test -project Siboya.xcodeproj -scheme Siboya -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5' -only-testing:SiboyaTests/ScriptPreviewComponentsTests`
+
+Expected: `** TEST SUCCEEDED **`.
+
+Run: `swiftlint lint --strict`
+
+Expected: exit code 0, 새 warning/error 없음.
+
+- [ ] **Step 5: 구현 변경 커밋**
+
+```bash
+git add Siboya/Features/Home/Component/ScriptPreviewDuration.swift SiboyaTests/Home/ScriptPreviewComponentsTests.swift
+git commit -m "fix: 소요시간 장식선을 세로로 수정"
+```
