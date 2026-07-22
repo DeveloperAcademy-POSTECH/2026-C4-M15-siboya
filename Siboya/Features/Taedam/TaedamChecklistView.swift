@@ -87,9 +87,10 @@ struct TaedamChecklistView: View {
                 }
             }
 
-            Text("임신 28주차")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.orange)
+            // Title3/Regular
+            Text("태담 28주차")
+              .font(Font.custom("SF Pro", size: 20))
+              .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
 
             RoundedRectangle(cornerRadius: 24)
                 .fill(
@@ -221,6 +222,6 @@ private struct ChecklistRow: View {
     }
 }
 
-//#Preview {
-//    TaedamChecklistView()
-//}
+#Preview {
+    TaedamChecklistView()
+}
