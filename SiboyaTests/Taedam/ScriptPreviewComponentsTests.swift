@@ -45,4 +45,30 @@ struct ScriptPreviewComponentsTests {
         #expect(ScriptPreviewHero.thumbnailSize == 132)
         #expect(ScriptPreviewHero.thumbnailCornerRadius == 32)
     }
+
+    /// 문장을 재정렬하지 않고 빈칸 문장과 생각힌트를 뒤에 붙이는지 검증합니다.
+    @Test @MainActor
+    func bodyPreservesSentenceOrderBeforePromptAndGuide() {
+        let body = ScriptPreviewBody(
+            sentences: [
+                ScriptSentenceDTO(index: 9, text: "먼저 전달된 문장"),
+                ScriptSentenceDTO(index: 1, text: "나중에 전달된 문장")
+            ],
+            bucketListPrompt: "빈칸 문장",
+            bucketListGuide: "생각힌트"
+        )
+
+        #expect(body.contentItems.map(\.text) == [
+            "먼저 전달된 문장",
+            "나중에 전달된 문장",
+            "빈칸 문장",
+            "생각힌트"
+        ])
+        #expect(body.contentItems.map(\.role) == [
+            .sentence,
+            .sentence,
+            .bucketListPrompt,
+            .bucketListGuide
+        ])
+    }
 }
