@@ -18,8 +18,17 @@ struct ScriptPreviewHero: View {
     /// Figma에서 지정한 대표 이미지 모서리 반경입니다.
     static let thumbnailCornerRadius: CGFloat = 32
 
-    /// 상단 배경이 차지하는 Figma 기준 높이입니다.
-    private static let backgroundHeight: CGFloat = 396
+    /// Figma에서 대표 이미지가 화면 최상단부터 떨어진 거리입니다.
+    static let foregroundTopSpacing: CGFloat = 140
+
+    /// Figma에서 대표 이미지와 주차 문구 사이의 간격입니다.
+    static let thumbnailToWeekSpacing: CGFloat = 16
+
+    /// Figma에서 주차 문구와 제목 사이의 간격입니다.
+    static let weekToTitleSpacing: CGFloat = 6
+
+    /// 상단 배경이 차지하는 Figma 기준 높이이며 장식 레이어 크기만 결정합니다.
+    static let backgroundHeight: CGFloat = 396
 
     /// 표시 위치별 에셋 이름을 제공하는 대본 이미지 시리즈입니다.
     let artworkSeries: ScriptArtworkSeries
@@ -38,8 +47,46 @@ struct ScriptPreviewHero: View {
         "\(targetGestationalWeek)주차"
     }
 
-    /// Back 이미지를 상단에 두고 Thumbnail과 텍스트를 전면에 배치합니다.
+    /// 배경은 레이아웃 높이에서 분리하고 Thumbnail·텍스트는 Figma 좌표로 세로 배치합니다.
     var body: some View {
+        VStack(spacing: 0) {
+            // 396px 1x 에셋을 디자인의 132pt 대표 이미지 프레임에 맞춰 축소합니다.
+            ScriptArtworkView(
+                assetName: artworkSeries.thumbnailAssetName,
+                cornerRadius: Self.thumbnailCornerRadius
+            )
+            .frame(
+                width: Self.thumbnailSize,
+                height: Self.thumbnailSize
+            )
+            .padding(.top, Self.foregroundTopSpacing)
+
+            Text(weekText)
+                .font(.headline)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.primaryRed)
+                .padding(.top, Self.thumbnailToWeekSpacing)
+
+            Text(title)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(Color.primary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, Self.weekToTitleSpacing)
+        }
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity)
+        // 장식 배경은 전경의 자연 높이를 늘리지 않아 상위 8pt 간격이 실제 제목 끝에서 시작됩니다.
+        .background(alignment: .top) {
+            background
+        }
+        // 상위 화면과 단독 Preview 모두에서 Back 배경이 화면 물리적 최상단부터 이어지게 합니다.
+        .ignoresSafeArea(edges: Self.ignoredSafeAreaEdges)
+    }
+
+    /// Hero 높이에 영향을 주지 않고 상단 배경과 시스템 배경 전환 그라데이션을 그립니다.
+    private var background: some View {
         ZStack(alignment: .top) {
             // 배경 이미지를 Hero 최상단에서 시작해 선택한 대본의 시각적 맥락을 제공합니다.
             ScriptArtworkView(
@@ -47,8 +94,6 @@ struct ScriptPreviewHero: View {
                 cornerRadius: 0,
                 imageAlignment: backgroundArtworkAlignment
             )
-            .frame(maxWidth: .infinity)
-            .frame(height: Self.backgroundHeight)
 
             // 아래 본문이 자연스럽게 이어지도록 시스템 배경색으로 점차 전환합니다.
             LinearGradient(
@@ -56,42 +101,10 @@ struct ScriptPreviewHero: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .frame(height: Self.backgroundHeight)
             .accessibilityHidden(true)
-
-            VStack(spacing: 0) {
-                // 396px 1x 에셋을 디자인의 132pt 대표 이미지 프레임에 맞춰 축소합니다.
-                ScriptArtworkView(
-                    assetName: artworkSeries.thumbnailAssetName,
-                    cornerRadius: Self.thumbnailCornerRadius
-                )
-                .frame(
-                    width: Self.thumbnailSize,
-                    height: Self.thumbnailSize
-                )
-                .padding(.top, 76)
-
-                Text(weekText)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.primaryRed)
-                    .padding(.top, 16)
-
-                Text(title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundStyle(Color.primary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
-            }
-            .padding(.horizontal, 20)
         }
         .frame(maxWidth: .infinity)
-        // 기본 디자인 높이는 유지하되 접근성 글자 크기에서는 제목이 차지하는 만큼 확장합니다.
-        .frame(minHeight: Self.backgroundHeight, alignment: .top)
-        // 상위 화면과 단독 Preview 모두에서 Back 배경이 화면 물리적 최상단부터 이어지게 합니다.
-        .ignoresSafeArea(edges: Self.ignoredSafeAreaEdges)
+        .frame(height: Self.backgroundHeight)
     }
 }
 

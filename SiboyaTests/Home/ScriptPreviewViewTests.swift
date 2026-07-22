@@ -25,6 +25,12 @@ struct ScriptPreviewViewTests {
         #expect(!ScriptPreviewView.ignoredSafeAreaEdges.contains(.bottom))
     }
 
+    /// Hero 제목의 레이아웃 경계 다음에 소요시간이 Figma 기준 8pt만큼 떨어지는지 검증합니다.
+    @Test
+    func previewUsesEightPointHeroToDurationSpacing() {
+        #expect(ScriptPreviewView.heroToDurationSpacing == 8)
+    }
+
     /// 준비자세 안내 문구에 전달받은 태명이 포함되고 프로필 에셋 이름을 유지하는지 검증합니다.
     @Test
     func preparationMessageIncludesResolvedBabyNickname() {

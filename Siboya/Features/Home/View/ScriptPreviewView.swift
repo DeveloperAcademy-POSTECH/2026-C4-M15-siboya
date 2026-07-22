@@ -16,6 +16,9 @@ struct ScriptPreviewView: View {
     /// 상위 화면 설정과 무관하게 시스템 뒤로가기 버튼을 제공하도록 요청할 navigation bar 상태입니다.
     static let navigationBarVisibility: Visibility = .visible
 
+    /// Hero 제목과 소요시간 정보 사이에 유지할 Figma 기준 간격입니다.
+    static let heroToDurationSpacing: CGFloat = 8
+
     /// 미리보기와 태담 실행이 같은 대본 입력을 유지하도록 보관하는 이동 데이터입니다.
     let route: ScriptPreviewRoute
 
@@ -50,7 +53,7 @@ struct ScriptPreviewView: View {
                 ScriptPreviewDuration(
                     estimatedDurationSeconds: route.sessionInput.script.estimatedDurationSeconds
                 )
-                .padding(.top, 8)
+                .padding(.top, Self.heroToDurationSpacing)
 
                 // 번들 데이터 순서를 유지한 대본과 빈칸·생각힌트를 읽기 영역에 표시합니다.
                 ScriptPreviewBody(

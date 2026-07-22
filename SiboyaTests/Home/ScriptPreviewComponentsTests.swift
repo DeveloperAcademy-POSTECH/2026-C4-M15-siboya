@@ -82,6 +82,24 @@ struct ScriptPreviewComponentsTests {
         #expect(ScriptPreviewHero.thumbnailCornerRadius == 32)
     }
 
+    /// Hero 전경이 Figma의 세로 좌표를 사용하고 장식 배경이 전경 레이아웃 높이를 늘리지 않는지 검증합니다.
+    @Test @MainActor
+    func heroUsesFigmaForegroundSpacingWithoutBackgroundLayoutGap() {
+        let regularHeight = fittingSize(
+            of: ScriptPreviewHero(
+                artworkSeries: .one,
+                targetGestationalWeek: 22,
+                title: "일요일 아침 냄새"
+            )
+            .environment(\.dynamicTypeSize, .medium)
+        ).height
+
+        #expect(ScriptPreviewHero.foregroundTopSpacing == 140)
+        #expect(ScriptPreviewHero.thumbnailToWeekSpacing == 16)
+        #expect(ScriptPreviewHero.weekToTitleSpacing == 6)
+        #expect(regularHeight < ScriptPreviewHero.backgroundHeight)
+    }
+
     /// Hero 배경은 일러스트 상단이 잘리지 않도록 위쪽 기준으로 채우고, 일반 공통 이미지는 기존 중앙 기준을 유지하는지 검증합니다.
     @Test @MainActor
     func heroUsesTopArtworkAlignmentWhileDefaultArtworkStaysCentered() {
