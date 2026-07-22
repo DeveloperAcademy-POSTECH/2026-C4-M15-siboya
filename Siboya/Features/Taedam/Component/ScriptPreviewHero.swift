@@ -81,7 +81,8 @@ struct ScriptPreviewHero: View {
             .padding(.horizontal, 20)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: Self.backgroundHeight, alignment: .top)
+        // 기본 디자인 높이는 유지하되 접근성 글자 크기에서는 제목이 차지하는 만큼 확장합니다.
+        .frame(minHeight: Self.backgroundHeight, alignment: .top)
     }
 }
 

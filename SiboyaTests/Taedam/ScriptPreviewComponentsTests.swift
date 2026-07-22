@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Testing
+import UIKit
 @testable import Siboya
 
 /// 대본 미리보기 컴포넌트가 표시 값과 사용자 동작 계약을 지키는지 검증합니다.
@@ -46,6 +47,21 @@ struct ScriptPreviewComponentsTests {
         #expect(ScriptPreviewHero.thumbnailCornerRadius == 32)
     }
 
+    /// 접근성 글자 크기에서는 긴 제목이 다음 영역과 겹치지 않도록 Hero 높이가 확장되는지 검증합니다.
+    @Test @MainActor
+    func heroGrowsForAccessibilityText() {
+        let regularHeight = fittingHeight(
+            of: makeLongTitleHero()
+                .environment(\.dynamicTypeSize, .medium)
+        )
+        let accessibilityHeight = fittingHeight(
+            of: makeLongTitleHero()
+                .environment(\.dynamicTypeSize, .accessibility3)
+        )
+
+        #expect(accessibilityHeight > regularHeight)
+    }
+
     /// 문장을 재정렬하지 않고 빈칸 문장과 생각힌트를 뒤에 붙이는지 검증합니다.
     @Test @MainActor
     func bodyPreservesSentenceOrderBeforePromptAndGuide() {
@@ -83,5 +99,26 @@ struct ScriptPreviewComponentsTests {
         bottomBar.prepare()
 
         #expect(prepareCount == 1)
+    }
+
+    /// 접근성 높이 검증에서 같은 긴 제목 Hero를 재사용해 글자 크기만 비교합니다.
+    /// - Returns: 402pt 화면 너비에서 측정할 긴 제목 Hero입니다.
+    @MainActor
+    private func makeLongTitleHero() -> ScriptPreviewHero {
+        ScriptPreviewHero(
+            artworkSeries: .seven,
+            targetGestationalWeek: 22,
+            title: "함께 맞이하고 싶은 평화로운 일요일 아침의 긴 이야기"
+        )
+    }
+
+    /// 주어진 SwiftUI View를 402pt 화면 너비에 배치했을 때 필요한 세로 길이를 계산합니다.
+    /// - Parameter view: Dynamic Type 환경이 주입된 미리보기 컴포넌트입니다.
+    /// - Returns: 402×1000pt 제약 안에서 View가 선택한 적정 높이입니다.
+    @MainActor
+    private func fittingHeight<Content: View>(of view: Content) -> CGFloat {
+        UIHostingController(rootView: view)
+            .sizeThatFits(in: CGSize(width: 402, height: 1000))
+            .height
     }
 }
