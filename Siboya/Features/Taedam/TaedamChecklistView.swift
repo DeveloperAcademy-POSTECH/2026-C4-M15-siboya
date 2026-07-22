@@ -2,37 +2,41 @@
 //  TaedamChecklistView.swift
 //  Siboya
 //
-//  실제 BucketListItem /
+//  SCRUM-26 태담 체크박스 리스트
+//  BabyProfile / BucketListItem 실제 SwiftData 모델 연결.
+//  태명 변경: TaedamRepository.updateNickname 연결 완료.
+//  주차 수정 / 내용 수정: Repository 메서드·편집 UX 확정 전이라 TODO.
 //
 
 import SwiftUI
-
-// MARK: - Mock Model (실제 계약 확정 전 임시 타입)
-
-struct MockChecklistItem: Identifiable {
-    let id = UUID()
-    var title: String
-    var date: String
-    var tag: String
-}
-
-// MARK: - Mock Data
-
-private let mockItems: [MockChecklistItem] = [
-    MockChecklistItem(title: "메론빵 만들어주기", date: "Apr 8", tag: "멀리멀리 대모험"),
-    MockChecklistItem(title: "돗자리를 깔고 누워 하늘을 같이 보며 가장 반짝이는 별 하나를 찾아내고 싶어", date: "Apr 7", tag: "멀리멀리 대모험"),
-    MockChecklistItem(title: "놀이터 벤치에 나란히 앉아서 시원한 아이스크림 먹기", date: "Apr 6", tag: "멀리멀리 대모험"),
-    MockChecklistItem(title: "무릎에 너를 앉히고 나직한 목소리로 재미있는 모험 이야기 들려주기", date: "Apr 5", tag: "멀리멀리 대모험"),
-    MockChecklistItem(title: "사랑한다고 말하기", date: "Apr 8", tag: "일상공유")
-]
+import SwiftData
 
 // MARK: - Main View
 
 struct TaedamChecklistView: View {
 
-    @State private var items: [MockChecklistItem] = mockItems
-    @State private var expandedItemID: MockChecklistItem.ID?
+    @Query private var babyProfiles: [BabyProfile]
+    @Query(
+        sort: \BucketListItem.createdAt,
+        order: .reverse
+    )
+    private var bucketListItems: [BucketListItem]
+
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var expandedItemID: UUID?
     @State private var selectedTab: Tab = .promise
+    @State private var errorMessage: String?
+
+    @State private var isEditingNickname = false
+    @State private var draftNickname = ""
+    @FocusState private var isNicknameFieldFocused: Bool
+
+    private var babyProfile: BabyProfile? { babyProfiles.first }
+
+    private var repository: TaedamRepository {
+        SwiftDataTaedamRepository(modelContext: modelContext)
+    }
 
     enum Tab {
         case taedam
@@ -43,23 +47,36 @@ struct TaedamChecklistView: View {
         VStack(spacing: 0) {
             header
 
-            List {
-                ForEach(items) { item in
-                    ChecklistRow(
-                        item: item,
-                        isExpanded: expandedItemID == item.id,
-                        onTap: { toggleExpand(item.id) },
-                        onDelete: { delete(item.id) }
-                    )
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+            ZStack(alignment: .bottom) {
+                List {
+                    ForEach(bucketListItems, id: \.id) { item in
+                        ChecklistRow(
+                            item: item,
+                            isExpanded: expandedItemID == item.id,
+                            onTap: { toggleExpand(item.id) },
+                            onDelete: { delete(item.id) }
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                    }
                 }
-            }
-            .listStyle(.plain)
+                .listStyle(.plain)
 
-            bottomTabBar
+                bottomTabBar
+            }
         }
         .background(Color(.systemBackground))
+        .alert(
+            "오류",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )
+        ) {
+            Button("확인") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
+        }
     }
 
     // MARK: Header
@@ -67,17 +84,29 @@ struct TaedamChecklistView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("꾹꾹이")
-                    .font(.system(size: 28, weight: .bold))
+                if isEditingNickname {
+                    TextField("태명", text: $draftNickname)
+                        .font(.system(size: 28, weight: .bold))
+                        .focused($isNicknameFieldFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            commitNicknameChange()
+                        }
+                } else {
+                    Text(babyProfile?.nickname ?? "태명 미설정")
+                        .font(.system(size: 28, weight: .bold))
+                }
+
                 Spacer()
+
                 Menu {
                     Button {
-                        // TODO: 태명 변경 — 데이터 계약 확정 후 구현
+                        startEditingNickname()
                     } label: {
                         Label("태명 변경", systemImage: "pencil")
                     }
                     Button {
-                        // TODO: 주차 수정 — 데이터 계약 확정 후 구현
+                        // TODO: 주차 수정 — TaedamRepository에 updateGestationalWeek 추가되면 연결
                     } label: {
                         Label("주차 수정", systemImage: "calendar")
                     }
@@ -88,9 +117,11 @@ struct TaedamChecklistView: View {
             }
 
             // Title3/Regular
-            Text("태담 28주차")
-              .font(Font.custom("SF Pro", size: 20))
-              .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
+            if let week = babyProfile?.gestationalWeek {
+                Text("태담 \(week)주차")
+                    .font(Font.custom("SF Pro", size: 20))
+                    .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
+            }
 
             RoundedRectangle(cornerRadius: 24)
                 .fill(
@@ -154,42 +185,79 @@ struct TaedamChecklistView: View {
         }
     }
 
-    // MARK: Actions (\)
+    // MARK: Actions — 태명 변경
 
-    private func toggleExpand(_ id: MockChecklistItem.ID) {
+    private func startEditingNickname() {
+        draftNickname = babyProfile?.nickname ?? ""
+        isEditingNickname = true
+        DispatchQueue.main.async {
+            isNicknameFieldFocused = true
+        }
+    }
+
+    private func commitNicknameChange() {
+        let trimmed = draftNickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            isEditingNickname = false
+            return
+        }
+        Task {
+            do {
+                try await repository.updateNickname(trimmed)
+            } catch {
+                errorMessage = "태명 변경에 실패했어요. 다시 시도해주세요."
+            }
+            isEditingNickname = false
+        }
+    }
+
+    // MARK: Actions — 리스트
+
+    private func toggleExpand(_ id: UUID) {
         withAnimation(.easeInOut(duration: 0.2)) {
             expandedItemID = (expandedItemID == id) ? nil : id
         }
     }
 
-    private func delete(_ id: MockChecklistItem.ID) {
-        items.removeAll { $0.id == id }
+    private func delete(_ id: UUID) {
+        Task {
+            do {
+                try await repository.delete(bucketListItemID: id)
+            } catch {
+                errorMessage = "삭제에 실패했어요. 다시 시도해주세요."
+            }
+        }
     }
 }
 
 // MARK: - Row
 
 private struct ChecklistRow: View {
-    let item: MockChecklistItem
+    let item: BucketListItem
     let isExpanded: Bool
     let onTap: () -> Void
     let onDelete: () -> Void
-    
-    @State private var showMenu = false
-    
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d"
+        return formatter
+    }()
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
-                Text(item.title)
+                Text(item.content)
                     .font(.system(size: 15, weight: .medium))
                     .lineLimit(isExpanded ? nil : 1)
                     .onTapGesture(perform: onTap)
-                
+
                 Spacer()
-                
+
                 Menu {
                     Button {
-                        // TODO: 내용 수정
+                        // TODO: 내용 수정 — 인라인 편집 vs 상세화면 이동 확정되면 updateContent(command:) 연결
                     } label: {
                         Label("내용 수정", systemImage: "pencil")
                     }
@@ -201,10 +269,10 @@ private struct ChecklistRow: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            
+
             HStack(spacing: 12) {
-                Label(item.date, systemImage: "calendar")
-                Label(item.tag, systemImage: "tag")
+                Label(Self.dateFormatter.string(from: item.createdAt), systemImage: "calendar")
+                Label(item.category, systemImage: "tag")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -222,6 +290,23 @@ private struct ChecklistRow: View {
     }
 }
 
+// MARK: - Preview
+
 #Preview {
-    TaedamChecklistView()
+    // swiftlint:disable:next force_try
+    let container = try! ModelContainer(
+        for: BabyProfile.self, BucketListItem.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let context = container.mainContext
+    context.insert(BabyProfile(nickname: "꾹꾹이", gestationalWeek: 28))
+    context.insert(BucketListItem(category: "멀리멀리 대모험", content: "메론빵 만들어주기"))
+    context.insert(BucketListItem(
+        category: "멀리멀리 대모험",
+        content: "돗자리를 깔고 누워 하늘을 같이 보며 가장 반짝이는 별 하나를 찾아내고 싶어"
+    ))
+    context.insert(BucketListItem(category: "일상공유", content: "사랑한다고 말하기"))
+
+    return TaedamChecklistView()
+        .modelContainer(container)
 }
