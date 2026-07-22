@@ -44,6 +44,18 @@ final class ScriptPreviewFlowModel {
         isPreparationPresented = true
     }
 
+    /// 닫기 버튼 또는 drag dismiss로 준비자세 시트만 닫고 세션 시작 여부는 별도 상태로 유지합니다.
+    func dismissPreparation() {
+        // 권한 승인 직후에는 이미 예약된 세션 시작이 있으므로 그 플래그는 지우지 않아 onDismiss 전환을 보존합니다.
+        isPreparationPresented = false
+    }
+
+    /// 사용자가 닫기나 설정을 선택한 권한 안내를 해제해 같은 경고가 다시 열리지 않게 합니다.
+    func dismissPermissionAlert() {
+        // 시트는 계속 표시해 사용자가 설정을 확인한 뒤 다시 시작하기를 선택할 수 있게 합니다.
+        permissionAlertIssue = nil
+    }
+
     /// 진행 중이 아닌 경우에만 권한을 요청하고 결과에 따라 시트 유지 또는 시작 예약을 처리합니다.
     func requestPermissions() async {
         // 시스템 권한 알림은 하나씩만 표시되어야 하므로 빠른 중복 탭을 무시합니다.

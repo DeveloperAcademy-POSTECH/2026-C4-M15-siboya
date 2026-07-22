@@ -61,6 +61,37 @@ struct ScriptPreviewFlowModelTests {
         #expect(!model.isSessionPresented)
     }
 
+    /// 권한 안내를 닫으면 준비자세 시트는 유지하면서 같은 경고가 다시 나타나지 않도록 비우는지 검증합니다.
+    @Test
+    func dismissingPermissionAlertKeepsPreparationSheetWithoutStartingSession() async {
+        let model = ScriptPreviewFlowModel(
+            authorizer: PermissionAuthorizerStub(result: .denied(.speechRecognition))
+        )
+        model.presentPreparation()
+        await model.requestPermissions()
+
+        model.dismissPermissionAlert()
+
+        #expect(model.permissionAlertIssue == nil)
+        #expect(model.isPreparationPresented)
+        #expect(!model.isSessionPresented)
+    }
+
+    /// 사용자가 drag dismiss나 닫기 버튼으로 시트를 닫으면 세션 시작 예약 없이 미리보기 상태로 돌아가는지 검증합니다.
+    @Test
+    func dismissingPreparationClosesOnlyTheSheet() {
+        let model = ScriptPreviewFlowModel(
+            authorizer: PermissionAuthorizerStub(result: .granted)
+        )
+        model.presentPreparation()
+
+        model.dismissPreparation()
+
+        #expect(!model.isPreparationPresented)
+        #expect(!model.shouldStartSessionAfterDismissal)
+        #expect(!model.isSessionPresented)
+    }
+
     /// 권한 요청이 진행 중일 때 다시 시작을 눌러도 시스템 권한 요청을 한 번만 수행하는지 검증합니다.
     @Test
     func repeatedPermissionRequestsWhileRequestIsInFlightAreIgnored() async {
