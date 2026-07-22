@@ -50,6 +50,14 @@ struct ScriptPreviewComponentsTests {
         #expect(ScriptPreviewDuration.contentPadding == 10)
     }
 
+    /// 소요시간 두 텍스트가 Figma의 4pt 간격과 tertiary/secondary 의미 색상을 사용하는지 검증합니다.
+    @Test @MainActor
+    func durationUsesFigmaTextHierarchy() {
+        #expect(ScriptPreviewDuration.textSpacing == 4)
+        #expect(ScriptPreviewDuration.labelColor == Color(.tertiaryLabel))
+        #expect(ScriptPreviewDuration.durationColor == Color.secondary)
+    }
+
     /// 일반 글자 크기에서 Figma 기본 크기를 확보하고 접근성 글자 크기에서는 잘리지 않게 확장되는지 검증합니다.
     @Test @MainActor
     func durationMeetsFigmaSizeAndGrowsForAccessibilityText() {

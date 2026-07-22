@@ -24,6 +24,15 @@ struct ScriptPreviewDuration: View {
     /// 중앙 정보 영역이 텍스트 둘레에 제공하는 Figma 기준 여백입니다.
     static let contentPadding: CGFloat = 10
 
+    /// Figma에서 소요시간 레이블과 시간 값 사이에 둔 세로 간격입니다.
+    static let textSpacing: CGFloat = 4
+
+    /// 부가 정보인 소요시간 레이블에 적용하는 iOS tertiary 의미 색상입니다.
+    static let labelColor = Color(.tertiaryLabel)
+
+    /// 핵심 정보인 시간 값에 적용하는 SwiftUI secondary 의미 색상입니다.
+    static let durationColor = Color.secondary
+
     /// 번들 대본이 제공하는 선택적 예상 소요 시간입니다.
     let estimatedDurationSeconds: Int?
 
@@ -43,15 +52,15 @@ struct ScriptPreviewDuration: View {
             HStack(spacing: Self.itemSpacing) {
                 separator
 
-                VStack(spacing: 4) {
+                VStack(spacing: Self.textSpacing) {
                     Text("소요시간")
                         .font(.footnote)
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(Self.labelColor)
 
                     Text(durationText)
                         .font(.title3)
                         .fontWeight(.semibold)
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(Self.durationColor)
                 }
                 // 일반 크기에서는 Figma의 73pt를 지키고 접근성 글자 크기에서는 필요한 만큼 확장합니다.
                 .padding(Self.contentPadding)
