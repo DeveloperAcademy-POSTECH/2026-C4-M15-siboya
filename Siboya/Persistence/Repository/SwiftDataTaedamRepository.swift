@@ -50,6 +50,14 @@ final class SwiftDataTaedamRepository: TaedamRepository, @unchecked Sendable {
         profile.updateNickname(trimmedNickname)
         try modelContext.save()
     }
+    
+    func updateGestationalWeek(_ gestationalWeek: Int) async throws {
+            guard let profile = try fetchBabyProfile() else {
+                throw TaedamRepositoryError.babyProfileNotFound
+            }
+            profile.updateGestationalWeek(gestationalWeek)
+            try modelContext.save()
+        }
 
     /// 유효한 분류와 내용을 가진 버킷리스트 항목을 저장하고 생성된 식별자를 반환합니다.
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO {

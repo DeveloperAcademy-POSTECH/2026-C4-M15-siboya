@@ -14,9 +14,9 @@ final class BabyProfile {
 
     /// 화면에 표시할 태명으로, 외부에서는 전용 변경 함수로만 수정합니다.
     private(set) var nickname: String
-
+  
     /// 홈과 태담 콘텐츠 선택에 사용하는 현재 임신 주수입니다.
-    var gestationalWeek: Int
+    private(set) var gestationalWeek: Int
 
     /// 저장할 프로필의 식별자·태명·임신 주수를 받아 새 모델을 만듭니다.
     /// - Parameters:
@@ -37,5 +37,9 @@ final class BabyProfile {
     /// - Parameter newNickname: 공백 검증을 마친 새 태명입니다.
     func updateNickname(_ newNickname: String) {
         nickname = newNickname
+    }
+
+    func updateGestationalWeek(_ newWeek: Int) {
+        gestationalWeek = newWeek
     }
 }

@@ -336,6 +336,9 @@ private final class HomeProfileRepositoryStub: TaedamRepository, @unchecked Send
     /// Home 읽기 테스트에서는 태명 수정이 필요하지 않아 아무 작업도 하지 않습니다.
     func updateNickname(_ nickname: String) async throws {}
 
+    /// Home 읽기 테스트에서는 임신 주차 수정이 필요하지 않아 아무 작업도 하지 않습니다.
+    func updateGestationalWeek(_ gestationalWeek: Int) async throws {}
+
     /// Home 읽기 테스트에서 예기치 않은 버킷리스트 저장 호출을 오류로 드러냅니다.
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO {
         throw HomeScreenModelTestError.loadingFailed

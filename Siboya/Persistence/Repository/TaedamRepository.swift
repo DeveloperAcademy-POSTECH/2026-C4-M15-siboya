@@ -30,7 +30,8 @@ protocol TaedamRepository: Sendable {
     /// 이미 저장된 프로필의 태명을 유효한 새 값으로 변경합니다.
     func updateNickname(_ nickname: String) async throws
 
-    /// 사용자가 작성한 버킷리스트 항목을 저장하고 이후 작업에 사용할 식별자를 반환합니다.
+    func updateGestationalWeek(_ gestationalWeek: Int) async throws
+
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
 
     /// 지정한 버킷리스트 항목의 내용만 변경합니다.
