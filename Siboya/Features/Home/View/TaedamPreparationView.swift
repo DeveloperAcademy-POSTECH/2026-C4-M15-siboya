@@ -42,6 +42,9 @@ struct TaedamPreparationView: View {
     /// 안내 컴포넌트에 전달할 사용자 태명입니다.
     let babyNickname: String
 
+    /// 권한을 확인하는 동안 시작 버튼의 중복 입력을 막고 처리 상태를 표시합니다.
+    let isStarting: Bool
+
     /// 닫기 버튼을 선택했을 때 sheet 상태를 갱신할 상위 callback입니다.
     let onClose: () -> Void
 
@@ -85,6 +88,8 @@ struct TaedamPreparationView: View {
 
                 PrimaryButton(
                     title: "시작하기",
+                    isEnabled: !isStarting,
+                    isLoading: isStarting,
                     action: start
                 )
                 .accessibilityIdentifier("TaedamPreparationStartButton")
@@ -129,6 +134,7 @@ struct TaedamPreparationView: View {
 #Preview("준비자세") {
     TaedamPreparationView(
         babyNickname: "꾹꾹이",
+        isStarting: false,
         onClose: {},
         onStart: {}
     )

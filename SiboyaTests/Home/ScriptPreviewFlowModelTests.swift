@@ -67,4 +67,62 @@ struct ScriptPreviewFlowModelTests {
 
         #expect(!model.isSessionPresented)
     }
+
+    /// 두 음성 권한이 허용된 경우에만 준비자세 sheet를 닫고 세션 시작을 예약하는지 검증합니다.
+    @Test
+    func authorizedRequestSchedulesSession() async {
+        let model = ScriptPreviewFlowModel()
+        model.presentPreparation()
+
+        await model.requestSessionStart {
+            TaedamSpeechAuthorization(
+                microphone: .authorized,
+                speechRecognition: .authorized
+            )
+        }
+
+        #expect(model.shouldStartSessionAfterDismissal)
+        #expect(!model.isPreparationPresented)
+        #expect(model.authorizationIssue == nil)
+    }
+
+    /// 마이크 권한이 거부되면 준비자세를 유지하고 설정 안내 상태를 제공하는지 검증합니다.
+    @Test
+    func deniedMicrophoneKeepsPreparationPresented() async {
+        let model = ScriptPreviewFlowModel()
+        model.presentPreparation()
+
+        await model.requestSessionStart {
+            TaedamSpeechAuthorization(
+                microphone: .denied,
+                speechRecognition: .authorized
+            )
+        }
+
+        #expect(model.isPreparationPresented)
+        #expect(!model.shouldStartSessionAfterDismissal)
+        #expect(model.authorizationIssue == .microphone)
+    }
+
+    /// Report 닫힘 중에는 최종 문장을 유지하고 닫힘 완료 시 명시적으로 초기화하는지 검증합니다.
+    @Test
+    func resultContentLivesUntilSessionDismissal() {
+        let model = ScriptPreviewFlowModel()
+        model.presentPreparation()
+        model.startSession()
+        model.handlePreparationDismissed()
+
+        model.presentResult(bucketListContent: "같이 바다에 가고 싶어")
+
+        #expect(model.resultBucketListContent == "같이 바다에 가고 싶어")
+
+        model.dismissResult()
+
+        #expect(model.resultBucketListContent == "같이 바다에 가고 싶어")
+        #expect(!model.isSessionPresented)
+
+        model.clearResult()
+
+        #expect(model.resultBucketListContent == nil)
+    }
 }

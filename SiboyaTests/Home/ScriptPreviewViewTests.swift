@@ -36,6 +36,7 @@ struct ScriptPreviewViewTests {
     func preparationMessageIncludesResolvedBabyNickname() {
         let view = TaedamPreparationView(
             babyNickname: "꾹꾹이",
+            isStarting: false,
             onClose: {},
             onStart: {}
         )
@@ -66,6 +67,7 @@ struct ScriptPreviewViewTests {
         var startCount = 0
         let view = TaedamPreparationView(
             babyNickname: "꾹꾹이",
+            isStarting: false,
             onClose: { closeCount += 1 },
             onStart: { startCount += 1 }
         )
@@ -84,7 +86,12 @@ struct ScriptPreviewViewTests {
             sessionInput: .mock,
             artworkSeries: .seven
         )
-        let view = ScriptPreviewView(route: route)
+        let view = ScriptPreviewView(
+            route: route,
+            saveBucketList: { _ in
+                SavedBucketListDTO(bucketListItemID: UUID())
+            }
+        )
 
         #expect(view.route == route)
         #expect(view.route.artworkSeries == .seven)

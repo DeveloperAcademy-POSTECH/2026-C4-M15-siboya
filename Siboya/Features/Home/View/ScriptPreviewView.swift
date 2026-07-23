@@ -6,6 +6,15 @@
 //
 
 import SwiftUI
+import UIKit
+
+/// 태담에서 확정한 소원을 저장하는 앱 조립 계층의 비동기 동작입니다.
+typealias SaveBucketListAction =
+    @MainActor (SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
+
+/// 준비자세 화면에서 마이크와 Speech 권한을 확인·요청하는 비동기 동작입니다.
+typealias RequestTaedamAuthorizationAction =
+    @MainActor () async -> TaedamSpeechAuthorization
 
 /// 선택한 대본을 미리 보여주고 준비자세 안내를 거쳐 기존 태담 화면으로 연결하는 화면입니다.
 struct ScriptPreviewView: View {
@@ -24,10 +33,36 @@ struct ScriptPreviewView: View {
     /// 준비자세 시트와 전체 화면 전환 순서를 관찰하는 화면 전용 상태 모델입니다.
     @State private var flowModel: ScriptPreviewFlowModel
 
+    /// Report 닫힘 애니메이션이 끝난 뒤에만 NavigationStack을 Home으로 초기화합니다.
+    @State private var shouldCompleteAfterSessionDismissal = false
+
+    /// 최종 수정 문장을 저장한 뒤에만 Report 화면으로 전환하기 위한 동작입니다.
+    private let saveBucketList: SaveBucketListAction
+
+    /// 실제 세션 진입 직전에 시스템 음성 권한을 확인하는 동작입니다.
+    private let requestAuthorization: RequestTaedamAuthorizationAction
+
+    /// Report 완료 후 앱 루트가 Home으로 복귀하도록 알리는 동작입니다.
+    private let onFlowComplete: () -> Void
+
     /// 제목·본문·태명·대표 이미지 시리즈를 포함한 이동 데이터로 화면을 초기화합니다.
-    /// - Parameter route: 미리보기와 태담 실행에 함께 사용할 데이터입니다.
-    init(route: ScriptPreviewRoute) {
+    /// - Parameters:
+    ///   - route: 미리보기와 태담 실행에 함께 사용할 데이터입니다.
+    ///   - saveBucketList: 최종 수정 문장을 영구 저장하는 동작입니다.
+    ///   - requestAuthorization: 마이크와 Speech 권한을 확인·요청하는 동작입니다.
+    ///   - onFlowComplete: 결과 화면 완료 후 앱 루트에 알릴 동작입니다.
+    init(
+        route: ScriptPreviewRoute,
+        saveBucketList: @escaping SaveBucketListAction,
+        requestAuthorization: @escaping RequestTaedamAuthorizationAction = {
+            await TaedamSpeechAuthorizationService().requestAuthorization()
+        },
+        onFlowComplete: @escaping () -> Void = {}
+    ) {
         self.route = route
+        self.saveBucketList = saveBucketList
+        self.requestAuthorization = requestAuthorization
+        self.onFlowComplete = onFlowComplete
         // View가 다시 계산돼도 동일한 흐름 모델을 관찰하도록 State의 초기값으로 한 번만 만듭니다.
         _flowModel = State(initialValue: ScriptPreviewFlowModel())
     }
@@ -80,22 +115,50 @@ struct ScriptPreviewView: View {
         ) {
             TaedamPreparationView(
                 babyNickname: route.sessionInput.babyNickname,
+                isStarting: flowModel.isRequestingAuthorization,
                 onClose: flowModel.dismissPreparation,
-                onStart: flowModel.startSession
+                onStart: requestSessionStart
             )
             // Figma와 같이 상단 일부가 보이는 준비자세 sheet 높이를 View의 단일 계약으로 유지합니다.
             .presentationDetents([
                 .fraction(TaedamPreparationView.sheetDetentFraction)
             ])
             .presentationDragIndicator(.visible)
+            .alert(
+                authorizationAlertTitle,
+                isPresented: authorizationIssueBinding
+            ) {
+                Button("닫기", role: .cancel) {
+                    flowModel.dismissAuthorizationIssue()
+                }
+                Button("설정") {
+                    openAppSettings()
+                }
+            } message: {
+                Text(authorizationAlertMessage)
+            }
         }
-        .fullScreenCover(isPresented: sessionBinding) {
-            // 준비자세 sheet 닫힘이 끝난 뒤 기존 태담 화면을 같은 실행 입력으로 표시합니다.
-            TaedamScreen(
-                input: route.sessionInput,
-                onBack: flowModel.dismissSession,
-                onFinish: flowModel.dismissSession
-            )
+        .fullScreenCover(
+            isPresented: sessionBinding,
+            onDismiss: handleSessionDismissed
+        ) {
+            if let bucketListContent = flowModel.resultBucketListContent {
+                // 저장에 성공한 한 문장과 선택 route의 표시 정보를 SwiftData 재조회 없이 Report에 전달합니다.
+                TaedamResultView(
+                    targetGestationalWeek: route.sessionInput.script.targetGestationalWeek,
+                    title: route.sessionInput.script.title,
+                    artworkAssetName: route.artworkSeries.thumbnailAssetName,
+                    bucketListContent: bucketListContent,
+                    onComplete: completeFlow
+                )
+            } else {
+                // 준비자세 sheet 닫힘이 끝난 뒤 같은 실행 입력으로 태담 화면을 표시합니다.
+                TaedamScreen(
+                    input: route.sessionInput,
+                    onBack: flowModel.dismissSession,
+                    onFinish: saveAndPresentResult
+                )
+            }
         }
     }
 
@@ -125,6 +188,88 @@ struct ScriptPreviewView: View {
         )
     }
 
+    /// 권한 문제 상태를 SwiftUI Alert 표시 여부와 연결합니다.
+    private var authorizationIssueBinding: Binding<Bool> {
+        Binding(
+            get: { flowModel.authorizationIssue != nil },
+            set: { isPresented in
+                if !isPresented {
+                    flowModel.dismissAuthorizationIssue()
+                }
+            }
+        )
+    }
+
+    /// 현재 거부된 권한에 맞는 Alert 제목입니다.
+    private var authorizationAlertTitle: String {
+        switch flowModel.authorizationIssue {
+        case .microphone:
+            "마이크 권한이 필요해요"
+        case .speechRecognition:
+            "음성 인식 권한이 필요해요"
+        case nil:
+            "음성 권한이 필요해요"
+        }
+    }
+
+    /// 현재 거부된 권한에 맞는 설정 안내 문구입니다.
+    private var authorizationAlertMessage: String {
+        switch flowModel.authorizationIssue {
+        case .microphone:
+            "설정에서 Siboya의 마이크 접근을 허용해 주세요."
+        case .speechRecognition:
+            "설정에서 Siboya의 음성 인식 접근을 허용해 주세요."
+        case nil:
+            ""
+        }
+    }
+
+    /// 준비자세 시작 요청을 권한 확인과 세션 예약 순서로 실행합니다.
+    private func requestSessionStart() {
+        Task {
+            await flowModel.requestSessionStart(using: requestAuthorization)
+        }
+    }
+
+    /// 사용자가 최종 수정한 문장을 저장한 뒤 같은 전체 화면을 Report로 전환합니다.
+    /// - Parameter bucketListContent: 공백을 정리한 최종 소원 문장입니다.
+    @MainActor
+    private func saveAndPresentResult(
+        bucketListContent: String
+    ) async throws {
+        let command = SaveBucketListCommandDTO(
+            category: route.sessionInput.script.category,
+            content: bucketListContent
+        )
+        _ = try await saveBucketList(command)
+        flowModel.presentResult(bucketListContent: bucketListContent)
+    }
+
+    /// 결과 화면 완료 시 전체 화면을 닫고 앱 루트의 태담 Home 복귀를 요청합니다.
+    private func completeFlow() {
+        shouldCompleteAfterSessionDismissal = true
+        flowModel.dismissResult()
+    }
+
+    /// 전체 화면 닫힘 완료 후에만 미리보기 push를 제거해 화면 전환 충돌과 순간적인 화면 교체를 막습니다.
+    private func handleSessionDismissed() {
+        guard shouldCompleteAfterSessionDismissal else { return }
+
+        shouldCompleteAfterSessionDismissal = false
+        flowModel.clearResult()
+        onFlowComplete()
+    }
+
+    /// 사용자가 직접 권한을 바꿀 수 있도록 앱별 설정 화면을 엽니다.
+    private func openAppSettings() {
+        guard let settingsURL = URL(
+            string: UIApplication.openSettingsURLString
+        ) else {
+            return
+        }
+
+        UIApplication.shared.open(settingsURL)
+    }
 }
 
 // 실제 route 데이터로 Hero·본문·고정 하단 바의 세로 흐름을 확인합니다.
@@ -134,7 +279,10 @@ struct ScriptPreviewView: View {
             route: ScriptPreviewRoute(
                 sessionInput: .mock,
                 artworkSeries: .one
-            )
+            ),
+            saveBucketList: { _ in
+                SavedBucketListDTO(bucketListItemID: UUID())
+            }
         )
     }
 }

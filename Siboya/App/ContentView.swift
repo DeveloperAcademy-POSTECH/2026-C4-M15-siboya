@@ -19,6 +19,9 @@ struct ContentView: View {
     /// Home에서 선택한 대본 route를 차례로 보관해 뒤로 가기 후에도 동일한 Home 상태를 유지합니다.
     @State private var navigationPath = NavigationPath()
 
+    /// 태담 Home과 저장된 소원 목록 사이의 앱 루트 탭 선택 상태입니다.
+    @State private var selectedTab: SiboyaTab = .taedam
+
     /// 대본 선택을 이후 미리보기 화면 조정자에게 전달할 동작입니다.
     private let onSelectScript: (UUID, Int) -> Void
 
@@ -37,17 +40,37 @@ struct ContentView: View {
         self.onSelectPromiseTab = onSelectPromiseTab
     }
 
-    /// Home을 NavigationStack 루트로 두고 성공적으로 해석한 대본 route만 미리보기 화면으로 이동시킵니다.
+    /// 태담 Home과 소원 목록을 공통 탭 바로 전환하고 태담 상세 흐름에서는 탭 바를 숨깁니다.
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            HomeView(
-                state: model.state,
-                onSelectScript: handleScriptSelection,
-                onSelectPromiseTab: onSelectPromiseTab
-            )
-            .navigationDestination(for: ScriptPreviewRoute.self) { route in
-                // 선택 시 만든 route를 그대로 전달해 미리보기 이후 돌아와도 같은 실행 입력을 유지합니다.
-                ScriptPreviewView(route: route)
+        Group {
+            switch selectedTab {
+            case .taedam:
+                NavigationStack(path: $navigationPath) {
+                    HomeView(
+                        state: model.state,
+                        onSelectScript: handleScriptSelection
+                    )
+                    .navigationDestination(for: ScriptPreviewRoute.self) { route in
+                        ScriptPreviewView(
+                            route: route,
+                            saveBucketList: saveBucketList,
+                            onFlowComplete: completeTaedamFlow
+                        )
+                    }
+                }
+
+            case .wish:
+                // Summary의 @Query가 공용 ModelContainer를 관찰해 저장 직후 목록을 자동 갱신합니다.
+                TaedamChecklistView()
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if shouldShowRootTabBar {
+                HomeBottomTabBar(
+                    selectedTab: selectedTab,
+                    onSelectTaedam: selectTaedamTab,
+                    onSelectPromise: selectWishTab
+                )
             }
         }
         .task {
@@ -84,6 +107,37 @@ struct ContentView: View {
         guard let route = model.makePreviewRoute(for: selection) else { return }
 
         navigationPath.append(route)
+    }
+
+    /// 최종 수정 문장을 현재 태담 카테고리와 함께 SwiftData에 한 번 저장합니다.
+    @MainActor
+    private func saveBucketList(
+        command: SaveBucketListCommandDTO
+    ) async throws -> SavedBucketListDTO {
+        let repository = SwiftDataTaedamRepository(modelContext: modelContext)
+        return try await repository.save(command: command)
+    }
+
+    /// 결과 화면 완료 시 전체 화면 흐름과 미리보기 push를 닫고 태담 Home으로 돌아갑니다.
+    private func completeTaedamFlow() {
+        navigationPath = NavigationPath()
+        selectedTab = .taedam
+    }
+
+    /// Home 루트와 소원 탭에서만 공통 탭 바를 표시합니다.
+    private var shouldShowRootTabBar: Bool {
+        selectedTab == .wish || navigationPath.isEmpty
+    }
+
+    /// 태담 탭 선택을 앱 루트 상태에 반영합니다.
+    private func selectTaedamTab() {
+        selectedTab = .taedam
+    }
+
+    /// 소원 탭 선택을 외부 알림 계약과 앱 루트 상태에 함께 반영합니다.
+    private func selectWishTab() {
+        onSelectPromiseTab()
+        selectedTab = .wish
     }
 
     /// 온보딩 전 MVP 기본 프로필을 멱등적으로 보장한 뒤 저장된 실제 값으로 Home 상태를 갱신합니다.
