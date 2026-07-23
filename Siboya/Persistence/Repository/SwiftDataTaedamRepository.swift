@@ -41,6 +41,14 @@ final class SwiftDataTaedamRepository: TaedamRepository, @unchecked Sendable {
         profile.updateNickname(trimmedNickname)
         try modelContext.save()
     }
+    
+    func updateGestationalWeek(_ gestationalWeek: Int) async throws {
+            guard let profile = try fetchBabyProfile() else {
+                throw TaedamRepositoryError.babyProfileNotFound
+            }
+            profile.updateGestationalWeek(gestationalWeek)
+            try modelContext.save()
+        }
 
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO {
         let category = command.category.trimmingCharacters(in: .whitespacesAndNewlines)

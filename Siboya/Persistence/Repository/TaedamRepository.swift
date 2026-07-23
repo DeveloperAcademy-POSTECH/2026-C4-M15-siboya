@@ -17,6 +17,7 @@ protocol TaedamRepository: Sendable {
     func fetchBabyProfile() throws -> BabyProfile?
     func ensureBabyProfile(nickname: String, gestationalWeek: Int) async throws
     func updateNickname(_ nickname: String) async throws
+    func updateGestationalWeek(_ gestationalWeek: Int) async throws
     func save(command: SaveBucketListCommandDTO) async throws -> SavedBucketListDTO
     func updateContent(command: UpdateBucketListContentCommandDTO) async throws
     func toggleCompletion(bucketListItemID: UUID) async throws
