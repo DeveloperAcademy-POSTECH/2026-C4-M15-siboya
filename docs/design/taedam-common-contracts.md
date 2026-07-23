@@ -95,7 +95,7 @@
     struct HomeWeeklyContentDocument: Decodable, Sendable {
         let weeks: [HomeWeeklyContent]
     }
-    
+
     struct HomeWeeklyContent: Decodable, Sendable {
         let gestationalWeek: Int
         let headline: String
@@ -178,7 +178,7 @@
     struct TaedamScriptDocument: Decodable, Sendable {
         let scripts: [TaedamScriptContent]
     }
-    
+
     struct TaedamScriptContent: Decodable, Sendable {
         let id: UUID
         let version: Int
@@ -189,7 +189,7 @@
         let bucketListPrompt: String
         let bucketListGuide: String
     }
-    
+
     struct ScriptMetadataContent: Decodable, Sendable {
         let targetGestationalWeek: Int
         let artworkAssetName: String
@@ -219,19 +219,19 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
     struct TaedamCategorySelectionDTO: Equatable, Sendable {
         let category: String
     }
-    
+
     struct ScriptSelectionDTO: Equatable, Sendable {
         let scriptID: UUID
         let scriptVersion: Int
     }
-    
+
     struct ScriptSentenceDTO: Identifiable, Equatable, Sendable {
         let index: Int
         let text: String
-        
+
         var id: Int { index }
     }
-    
+
     struct ScriptPreviewDTO: Equatable, Sendable {
         let scriptID: UUID
         let scriptVersion: Int
@@ -244,7 +244,7 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         let bucketListPrompt: String
         let bucketListGuide: String
     }
-    
+
     struct BabyProfileDTO: Identifiable, Equatable, Sendable {
         let id: UUID
         let nickname: String
@@ -263,20 +263,20 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         case script(sentenceIndex: Int)
         case bucketList
     }
-    
+
     struct TaedamLineDTO: Identifiable, Equatable, Sendable {
         let index: Int
         let kind: TaedamLineKindDTO
         let text: String
-        
+
         var id: Int { index }
     }
-    
+
     struct TaedamSessionInputDTO: Equatable, Sendable {
         let script: ScriptPreviewDTO
         let babyNickname: String
     }
-    
+
     enum TaedamScreenPhase: Equatable, Sendable {
         case ready
         case countingDown(remainingSeconds: Int)
@@ -308,7 +308,7 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         case completed(bucketListItemID: UUID)
         case failed(message: String)
     }
-    
+
     struct TaedamSessionStateDTO: Equatable, Sendable {
         let phase: TaedamSessionPhaseDTO
         let currentLine: TaedamLineDTO?
@@ -316,12 +316,12 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         let liveBucketListTranscript: String
         let normalizedVoiceMotion: Double
     }
-    
+
     struct VoiceMotionSampleDTO: Equatable, Sendable {
         let normalizedValue: Double
         let isVoiceActive: Bool
     }
-    
+
     struct BucketListDraftDTO: Equatable, Sendable {
         let rawTranscript: String
         var editedText: String
@@ -342,11 +342,11 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         let category: String
         let content: String
     }
-    
+
     struct SavedBucketListDTO: Sendable {
         let bucketListItemID: UUID
     }
-    
+
     struct UpdateBucketListContentCommandDTO: Sendable {
         let bucketListItemID: UUID
         let content: String
@@ -362,7 +362,7 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
     String nickname
     Int gestationalWeek
     }
-    
+
     BUCKET_LIST_ITEM {
     UUID id PK
     String category
@@ -397,13 +397,13 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
 ```swift
     import Foundation
     import SwiftData
-    
+
     @Model
     final class BabyProfile {
         @Attribute(.unique) var id: UUID
         private(set) var nickname: String
         var gestationalWeek: Int
-        
+
         init(
              id: UUID = UUID(),
              nickname: String,
@@ -413,12 +413,12 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
                  self.nickname = nickname
                  self.gestationalWeek = gestationalWeek
              }
-        
+
         func updateNickname(_ newNickname: String) {
             nickname = newNickname
         }
     }
-    
+
     @Model
     final class BucketListItem {
         @Attribute(.unique) var id: UUID
@@ -426,7 +426,7 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
         private(set) var content: String
         private(set) var isCompleted: Bool
         var createdAt: Date
-        
+
         init(
              id: UUID = UUID(),
              category: String,
@@ -440,11 +440,11 @@ Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 �
                  self.isCompleted = isCompleted
                  self.createdAt = createdAt
              }
-        
+
         func updateContent(_ newContent: String) {
             content = newContent
         }
-        
+
         func toggleCompletion() {
             isCompleted.toggle()
         }
@@ -470,32 +470,32 @@ develop의 아래 문장은 SCRUM-24가 병합되는 시점에는 오래된 설�
         func fetchScripts() async throws -> [ScriptPreviewDTO]
         func fetchScript(selection: ScriptSelectionDTO) async throws -> ScriptPreviewDTO
     }
-    
+
     protocol TaedamScriptProgressing: Sendable {
         var states: AsyncStream<TaedamSessionStateDTO> { get }
-        
+
         func prepare(input: TaedamSessionInputDTO) async
         func start() async
         func selectLine(at index: Int) async throws
         func beginEditingBucketListDraft() async throws
         func cancel() async
     }
-    
+
     protocol VoiceMotionMonitoring: Sendable {
         var samples: AsyncStream<VoiceMotionSampleDTO> { get }
-        
+
         func startMonitoring() async throws
         func stopMonitoring() async
     }
-    
+
     protocol BucketListTranscribing: Sendable {
         var partialTranscripts: AsyncStream<String> { get }
-        
+
         func start(duration: Duration) async throws
         func finish() async throws -> BucketListDraftDTO
         func cancel() async
     }
-    
+
     protocol TaedamRepository: Sendable {
         func fetchBabyProfile() throws -> BabyProfile?
         func ensureBabyProfile(nickname: String, gestationalWeek: Int) async throws

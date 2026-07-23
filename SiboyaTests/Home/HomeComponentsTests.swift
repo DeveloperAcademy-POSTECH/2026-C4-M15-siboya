@@ -47,6 +47,38 @@ struct HomeComponentsTests {
         #expect(accessibilityHeight > regularHeight)
     }
 
+    /// 탭바 상단은 뒤 콘텐츠를 노출하고 하단은 시스템 배경으로 이어져 단색 흰 띠가 되지 않는지 검증합니다.
+    @Test @MainActor
+    func bottomTabBarBackgroundFadesFromContentToSystemBackground() throws {
+        // Figma는 탭바 높이의 절반까지 투명 상태를 유지하고 하단 바깥 지점까지 배경색을 보간합니다.
+        #expect(HomeBottomTabBar.backgroundFadeStartY == 0.5)
+        #expect(HomeBottomTabBar.backgroundFadeEndY == 1.1684)
+
+        let renderer = ImageRenderer(
+            content: HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+                // 투명 gradient가 실제로 뒤 콘텐츠를 드러내는지 판별하기 위한 대비색입니다.
+                .background(Color.red)
+                .frame(width: 402)
+        )
+        renderer.scale = 1
+
+        let image = try #require(renderer.uiImage)
+        // Core Graphics의 원점은 좌하단이므로 이미지 상단은 큰 y, 하단은 작은 y 좌표로 읽습니다.
+        let visualTopPixel = try #require(
+            pixelComponents(
+                in: image,
+                at: CGPoint(x: 4, y: image.size.height - 2)
+            )
+        )
+        let visualBottomPixel = try #require(
+            pixelComponents(in: image, at: CGPoint(x: 4, y: 1))
+        )
+
+        // 상단보다 하단의 녹색 채널이 충분히 커야 흰 시스템 배경으로 실제 보간됐다고 판단합니다.
+        #expect(visualTopPixel.green < visualBottomPixel.green)
+        #expect(visualBottomPixel.green - visualTopPixel.green > 0.3)
+    }
+
     /// 하단 탭 바의 태담과 약속 버튼이 각각 대응하는 상위 동작을 한 번씩 전달하는지 검증합니다.
     @Test @MainActor
     func bottomTabBarForwardsEachTabSelection() {
@@ -64,23 +96,27 @@ struct HomeComponentsTests {
         #expect(promiseSelectionCount == 1)
     }
 
-    /// 첫 번째 이미지 시리즈가 행과 추천 카드에서 각각 올바른 에셋 이름을 만드는지 검증합니다.
+    /// 첫 번째 이미지 시리즈가 네 표시 위치에 맞는 에셋 이름을 만드는지 검증합니다.
     @Test
     func firstArtworkSeriesBuildsRoleSpecificAssetNames() {
-        let series = HomeArtworkSeries.cycling(forZeroBasedIndex: 0)
+        let series = ScriptArtworkSeries.cycling(forZeroBasedIndex: 0)
 
         #expect(series.rowAssetName == "TitleImage1")
         #expect(series.cardAssetName == "TitleImage1Card")
+        #expect(series.thumbnailAssetName == "TitleImage1Thumbnail")
+        #expect(series.backgroundAssetName == "TitleImage1Back")
     }
 
-    /// 일곱 번째 뒤의 항목이 다시 첫 번째 이미지로 돌아와 임의 중복 규칙이 결정적으로 유지되는지 검증합니다.
+    /// 일곱 번째 뒤의 항목이 다시 첫 번째 이미지 묶음으로 순환하는지 검증합니다.
     @Test
     func artworkSeriesCyclesAfterSeventhItem() {
-        let seventhSeries = HomeArtworkSeries.cycling(forZeroBasedIndex: 6)
-        let eighthSeries = HomeArtworkSeries.cycling(forZeroBasedIndex: 7)
+        let seventhSeries = ScriptArtworkSeries.cycling(forZeroBasedIndex: 6)
+        let eighthSeries = ScriptArtworkSeries.cycling(forZeroBasedIndex: 7)
 
         #expect(seventhSeries.rowAssetName == "TitleImage7")
         #expect(seventhSeries.cardAssetName == "TitleImage7Card")
+        #expect(seventhSeries.thumbnailAssetName == "TitleImage7Thumbnail")
+        #expect(seventhSeries.backgroundAssetName == "TitleImage7Back")
         #expect(eighthSeries == .one)
     }
 
@@ -108,7 +144,7 @@ struct HomeComponentsTests {
     @Test
     @MainActor
     func artworkIgnoresBlankAssetName() {
-        let artwork = HomeArtworkView(assetName: "  \n", cornerRadius: 17)
+        let artwork = ScriptArtworkView(assetName: "  \n", cornerRadius: 17)
 
         #expect(artwork.resolvedAssetName == nil)
         #expect(artwork.resolvedImage == nil)
@@ -118,7 +154,7 @@ struct HomeComponentsTests {
     @Test
     @MainActor
     func artworkUsesPlaceholderWhenAssetDoesNotExist() {
-        let artwork = HomeArtworkView(
+        let artwork = ScriptArtworkView(
             assetName: "missing-\(UUID().uuidString)",
             cornerRadius: 17
         )

@@ -167,7 +167,7 @@ enum HomeViewStateBuilder {
     /// - Returns: 제목과 카테고리가 유효하면 Home 대본 항목을, 아니면 `nil`을 반환합니다.
     private static func makeItem(
         from script: TaedamScriptContent,
-        artworkSeries: HomeArtworkSeries
+        artworkSeries: ScriptArtworkSeries
     ) -> HomeScriptItem? {
         guard nonemptyTrimmed(script.category) != nil,
               let title = nonemptyTrimmed(script.title) else {

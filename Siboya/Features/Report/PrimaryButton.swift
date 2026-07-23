@@ -24,14 +24,17 @@ struct PrimaryButton: View {
                         .font(.headline)
                 }
             }
+            // 버튼 레이블 자체를 시각적 캡슐 크기로 확장해 빈 여백도 터치 영역에 포함합니다.
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 56)
+            .foregroundStyle(.white)
+            .background(
+                isEnabled ? Color.primaryRed : Color.gray.opacity(0.4),
+                in: Capsule()
+            )
+            .contentShape([.interaction, .accessibility], Capsule())
         }
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 56)
-        .foregroundStyle(.white)
-        .background(
-            isEnabled ? Color.primaryRed : Color.gray.opacity(0.4),
-            in: Capsule()
-        )
+        .buttonStyle(.plain)
         .disabled(!isEnabled || isLoading)
         .accessibilityLabel(title)
         .accessibilityValue(isLoading ? "처리 중" : "")

@@ -62,6 +62,7 @@ HomeViewState
 - 추천 영역은 `이번주 추천`, 주차별 headline, 230pt `HomeRecommendationCard`로 구성한다.
 - 카테고리는 기존 `HomeCategorySection`을 사용한다.
 - `HomeBottomTabBar`는 safe-area inset으로 화면 하단에 유지한다. 태담은 선택 상태이고 약속 버튼은 상위 콜백만 호출한다. 탭 제목은 semantic font를 사용하고 48pt를 최소 높이로 삼아 접근성 글자 크기에서 확장한다.
+- 탭바 배경은 Figma의 95pt 하단 영역처럼 상단 절반까지 콘텐츠가 비치는 투명 상태에서 시작해 하단의 adaptive system background로 이어지는 단일 세로 gradient를 사용한다. 투명 gradient 뒤에 불투명 배경을 다시 두지 않으며, 하단 safe area까지 같은 fade를 확장한다.
 - 추천 카드와 행 선택은 기존 계약대로 `(scriptID, scriptVersion)`을 상위 콜백에 전달한다. 현재 범위에서는 아직 없는 미리보기 화면을 직접 생성하지 않는다.
 
 ## 오류·빈 상태
@@ -89,4 +90,5 @@ HomeViewState
 - 추천 연결 실패, 프로필 누락과 빈 대본이 다른 정상 영역을 제거하지 않는다.
 - 추천 카드 높이는 계속 230pt다.
 - 다크 모드의 화면 배경이 어둡게 렌더링되고, 접근성 글자 크기에서 하단 탭 높이가 확장된다.
+- 하단 탭바의 상단은 뒤 콘텐츠가 비치고 하단은 system background로 페이드되어 흰색 단색 띠로 보이지 않는다.
 - 집중 테스트, 전체 테스트와 iOS Simulator 빌드가 통과한다.
