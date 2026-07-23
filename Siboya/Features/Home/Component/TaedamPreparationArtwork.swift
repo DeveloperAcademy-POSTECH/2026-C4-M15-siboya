@@ -6,9 +6,8 @@
 //
 
 import SwiftUI
-import UIKit
 
-/// 준비자세 sheet에서 프로필 일러스트 또는 같은 크기의 대체 박스를 표시합니다.
+/// 준비자세 sheet에서 Asset Catalog의 프로필 일러스트를 표시합니다.
 struct TaedamPreparationArtwork: View {
     /// Figma가 지정한 프로필 일러스트 너비입니다.
     static let width: CGFloat = 90
@@ -28,23 +27,13 @@ struct TaedamPreparationArtwork: View {
         self.assetName = assetName
     }
 
-    /// 이미지 존재 여부와 무관하게 Figma의 90×88pt 레이아웃을 유지합니다.
-    @ViewBuilder
+    /// `defaultAssetName`의 `img_profile` 이미지를 Figma의 90×88pt 영역에 표시합니다.
     var body: some View {
-        if let image = UIImage(named: assetName) {
-            // 실제 일러스트 비율을 바꾸지 않고 지정된 프레임 안에 온전히 표시합니다.
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: Self.width, height: Self.height)
-                .accessibilityHidden(true)
-        } else {
-            // 아직 등록되지 않은 에셋도 화면 배치를 바꾸지 않도록 같은 크기의 박스로 대체합니다.
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .frame(width: Self.width, height: Self.height)
-                .accessibilityHidden(true)
-        }
+        Image(assetName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: Self.width, height: Self.height)
+            .accessibilityHidden(true)
     }
 }
 
