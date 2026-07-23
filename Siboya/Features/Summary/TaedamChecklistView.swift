@@ -11,62 +11,52 @@ import SwiftUI
 import SwiftData
 
 struct TaedamChecklistView: View {
-
+    
     @Query private var babyProfiles: [BabyProfile]
     @Query(
         sort: \BucketListItem.createdAt,
         order: .reverse
     )
     private var bucketListItems: [BucketListItem]
-
+    
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = TaedamChecklistViewModel()
-
+    
     @State private var expandedItemID: UUID?
-    @State private var selectedTab: Tab = .promise
-
+    
     @State private var isEditingNickname = false
     @State private var draftNickname = ""
     @FocusState private var isNicknameFieldFocused: Bool
-
+    
     @State private var isEditingWeek = false
     @State private var draftWeek = 1
-
+    
     private let weekRange = Array(1...42)
-
+    
     private var babyProfile: BabyProfile? { babyProfiles.first }
-
+    
     private var repository: TaedamRepository {
         SwiftDataTaedamRepository(modelContext: modelContext)
     }
-
-    enum Tab {
-        case taedam
-        case promise
-    }
-
+    
     var body: some View {
         VStack(spacing: 0) {
             header
-
-            ZStack(alignment: .bottom) {
-                List {
-                    ForEach(bucketListItems, id: \.id) { item in
-                        ChecklistRow(
-                            item: item,
-                            isExpanded: expandedItemID == item.id,
-                            onTap: { toggleExpand(item.id) },
-                            onDelete: { delete(item.id) },
-                            onCommitEdit: { newContent in updateContent(item.id, newContent) }
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
-                    }
+            
+            List {
+                ForEach(bucketListItems, id: \.id) { item in
+                    ChecklistRow(
+                        item: item,
+                        isExpanded: expandedItemID == item.id,
+                        onTap: { toggleExpand(item.id) },
+                        onDelete: { delete(item.id) },
+                        onCommitEdit: { newContent in updateContent(item.id, newContent) }
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                 }
-                .listStyle(.plain)
-
-                bottomTabBar
             }
+            .listStyle(.plain)
         }
         .background(Color(.systemBackground))
         .sheet(isPresented: $isEditingWeek) {
@@ -85,9 +75,9 @@ struct TaedamChecklistView: View {
             Text(viewModel.errorMessage ?? "")
         }
     }
-
+    
     // MARK: Header
-
+    
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -103,9 +93,9 @@ struct TaedamChecklistView: View {
                     Text(babyProfile?.nickname ?? "태명 미설정")
                         .font(.system(size: 28, weight: .bold))
                 }
-
+                
                 Spacer()
-
+                
                 Menu {
                     Button {
                         startEditingNickname()
@@ -118,19 +108,19 @@ struct TaedamChecklistView: View {
                         Label("주차 수정", systemImage: "calendar")
                     }
                 } label: {
-                                    Image(systemName: "slider.horizontal.3")
-                                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
-                                }
-                                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
-                            }
-
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
+                }
+                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
+            }
+            
             // Title3/Regular
             if let week = babyProfile?.gestationalWeek {
-                Text("태담 \(week)주차")
+                Text("임신 \(week)주차")
                     .font(Font.custom("SF Pro", size: 20))
                     .foregroundColor(Color("PrimaryRed"))
             }
-
+            
             Image("TaedamCharacter")
                 .resizable()
                 .scaledToFit()
@@ -141,9 +131,9 @@ struct TaedamChecklistView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
     }
-
+    
     // MARK: 주차 수정 시트
-
+    
     private var weekPickerSheet: some View {
         VStack(spacing: 0) {
             HStack {
@@ -151,24 +141,24 @@ struct TaedamChecklistView: View {
                     isEditingWeek = false
                 }
                 .foregroundStyle(.secondary)
-
+                
                 Spacer()
-
+                
                 Text("현재 주수")
                     .font(.system(size: 17, weight: .semibold))
-
+                
                 Spacer()
-
+                
                 Button("완료") {
                     commitWeekChange()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(Color(red: 1, green: 0.41, blue: 0.38))
+                .foregroundColor(Color("PrimaryRed"))
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
             .padding(.bottom, 8)
-
+            
             Picker("주차", selection: $draftWeek) {
                 ForEach(weekRange, id: \.self) { week in
                     Text(week == draftWeek ? "\(week) 주차" : "\(week)")
@@ -178,60 +168,9 @@ struct TaedamChecklistView: View {
             .pickerStyle(.wheel)
         }
     }
-
-    // MARK: Bottom Tab Bar
-
-    private var bottomTabBar: some View {
-        HStack(alignment: .top, spacing: 0) {
-            Spacer()
-            tabBarContent
-            Spacer()
-        }
-        .padding(.horizontal, 25)
-        .padding(.top, 16)
-        .frame(maxWidth: .infinity, alignment: .top)
-    }
-
-    @ViewBuilder
-    private var tabBarContent: some View {
-        let buttons = HStack(spacing: 12) {
-            tabButton(title: "태담", systemImage: "heart.fill", tab: .taedam)
-            tabButton(title: "약속", systemImage: "lightbulb.fill", tab: .promise)
-        }
-        .padding(8)
-
-        if #available(iOS 26.0, *) {
-            buttons.glassEffect(.regular, in: Capsule())
-        } else {
-            buttons.background(Capsule().fill(Color(.secondarySystemBackground)))
-        }
-    }
-
-    private func tabButton(title: String, systemImage: String, tab: Tab) -> some View {
-        let isSelected = selectedTab == tab
-        return Button {
-            selectedTab = tab
-        } label: {
-            VStack(spacing: 2) {
-                Image(systemName: systemImage)
-                Text(title)
-                    .font(.caption2)
-            }
-            .foregroundStyle(
-                isSelected ? Color(red: 1, green: 0.56, blue: 0.53) : .secondary
-            )
-            .frame(maxWidth: 85)
-            .padding(.vertical, 8)
-            .background(
-                Capsule().fill(
-                    isSelected ? Color(uiColor: .tertiarySystemFill) : .clear
-                )
-            )
-        }
-    }
-
+    
     // MARK: Actions — 태명 변경
-
+    
     private func startEditingNickname() {
         draftNickname = babyProfile?.nickname ?? ""
         isEditingNickname = true
@@ -239,7 +178,7 @@ struct TaedamChecklistView: View {
             isNicknameFieldFocused = true
         }
     }
-
+    
     private func commitNicknameChange() {
         let nickname = draftNickname
         isEditingNickname = false
@@ -247,14 +186,14 @@ struct TaedamChecklistView: View {
             await viewModel.updateNickname(nickname, using: repository)
         }
     }
-
+    
     // MARK: Actions — 주차 수정
-
+    
     private func startEditingWeek() {
         draftWeek = babyProfile?.gestationalWeek ?? 1
         isEditingWeek = true
     }
-
+    
     private func commitWeekChange() {
         let week = draftWeek
         isEditingWeek = false
@@ -262,21 +201,21 @@ struct TaedamChecklistView: View {
             await viewModel.updateGestationalWeek(week, using: repository)
         }
     }
-
+    
     // MARK: Actions — 리스트
-
+    
     private func toggleExpand(_ id: UUID) {
         withAnimation(.easeInOut(duration: 0.2)) {
             expandedItemID = (expandedItemID == id) ? nil : id
         }
     }
-
+    
     private func delete(_ id: UUID) {
         Task {
             await viewModel.delete(bucketListItemID: id, using: repository)
         }
     }
-
+    
     private func updateContent(_ id: UUID, _ content: String) {
         Task {
             await viewModel.updateContent(bucketListItemID: id, content: content, using: repository)
@@ -300,7 +239,7 @@ struct TaedamChecklistView: View {
         content: "돗자리를 깔고 누워 하늘을 같이 보며 가장 반짝이는 별 하나를 찾아내고 싶어"
     ))
     context.insert(BucketListItem(category: "일상공유", content: "사랑한다고 말하기"))
-
+    
     return TaedamChecklistView()
         .modelContainer(container)
 }

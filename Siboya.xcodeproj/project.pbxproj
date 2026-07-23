@@ -38,7 +38,7 @@
 				Core/Services/Audio/.gitkeep,
 				Core/Utilities/.gitkeep,
 				Features/Report/.gitkeep,
-				Features/Taedam/.gitkeep,
+				Features/Summary/.gitkeep,
 				Persistence/Stores/.gitkeep,
 				Resources/Fonts/.gitkeep,
 				SupportingFiles/.gitkeep,

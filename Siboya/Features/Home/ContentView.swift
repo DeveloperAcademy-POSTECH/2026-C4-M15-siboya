@@ -12,7 +12,8 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
-        Text("Siboya")
+//        Text("Siboya")
+        TaedamChecklistView()
             .task {
                 let repository = SwiftDataTaedamRepository(modelContext: modelContext)
                 try? await repository.ensureBabyProfile(nickname: "꾹꾹이", gestationalWeek: 22)
