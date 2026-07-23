@@ -27,7 +27,7 @@ struct HomeBottomTabBar: View {
     /// 스크롤 콘텐츠와 탭 바가 자연스럽게 분리되도록 상단 그라데이션과 캡슐형 버튼을 구성합니다.
     var body: some View {
         HStack(spacing: 0) {
-            // 현재 화면인 태담 탭은 선택 배경과 PrimaryRed 색으로 강조합니다.
+            // 현재 화면인 태담 탭은 선택 배경과 브랜드 대표색으로 강조합니다.
             tabButton(
                 title: "태담",
                 systemImage: "heart.fill",
@@ -56,7 +56,7 @@ struct HomeBottomTabBar: View {
         .background {
             // 하나의 투명→시스템 배경 gradient를 사용해 상단에서 실제 스크롤 콘텐츠가 비치게 합니다.
             LinearGradient(
-                colors: [.clear, Color(.systemBackground)],
+                colors: [.clear, Color.background],
                 startPoint: UnitPoint(x: 0.5, y: Self.backgroundFadeStartY),
                 endPoint: UnitPoint(x: 0.5, y: Self.backgroundFadeEndY)
             )
@@ -88,7 +88,7 @@ struct HomeBottomTabBar: View {
                     .font(.caption2.weight(.semibold))
             }
             .foregroundStyle(
-                isSelected ? Color("PrimaryRed") : Color.primary
+                isSelected ? Color.brandPrimary : Color.textPrimary
             )
             .frame(minWidth: 94, minHeight: 48)
             .background {

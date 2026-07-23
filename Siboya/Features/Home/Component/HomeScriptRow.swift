@@ -28,7 +28,7 @@ struct HomeScriptRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
                         .font(.body)
-                        .foregroundStyle(Color.primary)
+                        .foregroundStyle(Color.textPrimary)
                         .multilineTextAlignment(.leading)
 
                     Text(item.gestationalWeekText)

@@ -33,7 +33,7 @@ struct TaedamPreparationGuidance: View {
             Text("태담 준비하기")
                 .font(.system(size: Self.titleFontSize, weight: .bold))
                 .tracking(0.38)
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(Color.textPrimary)
                 .accessibilityIdentifier("TaedamPreparationTitle")
 
             Text(instructionText)

@@ -14,19 +14,19 @@ struct SavedBucketListSnackbar: View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accent)
                 .accessibilityHidden(true)
 
             Text(message)
                 .font(.headline)
-                .foregroundStyle(.blue)
+                .foregroundStyle(Color.accent)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 20)
         .frame(minHeight: 64)
         .background(
-            Color(.systemGray6),
+            Color.background,
             in: RoundedRectangle(
                 cornerRadius: 14,
                 style: .continuous
@@ -43,9 +43,9 @@ struct SavedBucketListSnackbar: View {
     }
 }
 
-#Preview {
+#Preview("Snackbar - Dark") {
     ZStack {
-        Color.black
+        Color.background
             .ignoresSafeArea()
 
         SavedBucketListSnackbar(
@@ -53,4 +53,5 @@ struct SavedBucketListSnackbar: View {
         )
         .padding(24)
     }
+    .preferredColorScheme(.dark)
 }

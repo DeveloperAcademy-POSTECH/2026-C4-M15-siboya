@@ -29,7 +29,7 @@ struct PrimaryButton: View {
             .frame(minHeight: 56)
             .foregroundStyle(.white)
             .background(
-                isEnabled ? Color.primaryRed : Color.gray.opacity(0.4),
+                isEnabled ? Color.brandPrimary : Color.textDisabled,
                 in: Capsule()
             )
             .contentShape([.interaction, .accessibility], Capsule())

@@ -47,7 +47,7 @@ struct TaedamScreen: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            Color.white
+            Color.background
                 .ignoresSafeArea()
 
             TaedamAmbientBackground(
@@ -126,12 +126,12 @@ private extension TaedamScreen {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color.textPrimary)
                     .frame(width: 40, height: 40)
-                    .background(.white.opacity(0.94), in: Circle())
-                    .shadow(color: .black.opacity(0.08), radius: 12, y: 5)
+                    .contentShape([.interaction, .accessibility], Circle())
             }
             .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: Circle())
             .accessibilityLabel("뒤로 가기")
 
             Spacer()
@@ -152,15 +152,15 @@ private extension TaedamScreen {
                 }
                 .foregroundStyle(
                     canFinish
-                        ? Color(red: 0.95, green: 0.29, blue: 0.26)
-                        : Color.secondary
+                        ? Color.brandPrimary
+                        : Color.textDisabled
                 )
                 .padding(.horizontal, 15)
                 .frame(minWidth: 54, minHeight: 40)
-                .background(.white.opacity(0.94), in: Capsule())
-                .shadow(color: .black.opacity(0.07), radius: 12, y: 5)
+                .contentShape([.interaction, .accessibility], Capsule())
             }
             .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: Capsule())
             .disabled(!canFinish)
             .accessibilityLabel("태담 완료")
         }
@@ -260,10 +260,10 @@ private extension TaedamScreen {
                 } label: {
                     Label("말하기 완료", systemImage: "stop.fill")
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.background)
                         .padding(.horizontal, 20)
                         .frame(height: 48)
-                        .background(.black, in: Capsule())
+                        .background(Color.textPrimary, in: Capsule())
                         .shadow(color: .black.opacity(0.14), radius: 14, y: 6)
                 }
                 .buttonStyle(.plain)
@@ -286,7 +286,7 @@ private extension TaedamScreen {
 
     private func countdownOverlay(value: Int) -> some View {
         ZStack {
-            Color.white.opacity(0.78)
+            Color.background.opacity(0.78)
                 .ignoresSafeArea()
                 .background(.ultraThinMaterial)
 
@@ -298,7 +298,7 @@ private extension TaedamScreen {
 
                 Text(value, format: .number)
                     .font(.system(size: 76, weight: .bold, design: .rounded))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color.textPrimary)
                     .contentTransition(.numericText())
                     .animation(.snappy, value: value)
                     .accessibilityLabel("태담 시작 (value)초 전")
@@ -393,6 +393,7 @@ private extension TaedamScreen {
     }
 }
 
-#Preview {
-    TaedamScreen(input: .mock)
+#Preview("Taedam") { TaedamScreen(input: .mock) }
+#Preview("Taedam - Dark") {
+    TaedamScreen(input: .mock).preferredColorScheme(.dark)
 }

@@ -32,12 +32,12 @@ struct ResultHeaderView: View {
 
             Text("\(content.targetGestationalWeek)주차")
                 .font(.title3)
-                .foregroundStyle(Color.primaryRed)
+                .foregroundStyle(Color.brandPrimary)
 
             Text(content.title)
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
         }

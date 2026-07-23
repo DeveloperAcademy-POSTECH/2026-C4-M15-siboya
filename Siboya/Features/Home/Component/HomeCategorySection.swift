@@ -29,7 +29,7 @@ struct HomeCategorySection: View {
                 Text(title)
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(Color.textPrimary)
 
                 VStack(spacing: 0) {
                     // 원본 배열의 순서와 행 위치를 함께 사용해 행 사이에만 구분선을 넣습니다.

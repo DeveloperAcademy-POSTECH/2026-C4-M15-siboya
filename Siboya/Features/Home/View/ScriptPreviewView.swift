@@ -97,7 +97,7 @@ struct ScriptPreviewView: View {
         }
         // 상위 스크롤 컨테이너도 상단까지 확장해 Hero의 ignoresSafeArea가 NavigationStack에서 잘리지 않게 합니다.
         .ignoresSafeArea(edges: Self.ignoredSafeAreaEdges)
-        .background(Color(.systemBackground))
+        .background(Color.background)
         // 스크롤과 겹치지 않으며 접근성 안전 영역에도 맞추기 위해 공통 하단 바를 safe area inset으로 고정합니다.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ScriptPreviewBottomBar {
@@ -285,4 +285,19 @@ struct ScriptPreviewView: View {
             }
         )
     }
+}
+
+#Preview("대본 미리보기 - Dark") {
+    NavigationStack {
+        ScriptPreviewView(
+            route: ScriptPreviewRoute(
+                sessionInput: .mock,
+                artworkSeries: .one
+            ),
+            saveBucketList: { _ in
+                SavedBucketListDTO(bucketListItemID: UUID())
+            }
+        )
+    }
+    .preferredColorScheme(.dark)
 }
