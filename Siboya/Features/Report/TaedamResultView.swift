@@ -36,16 +36,17 @@ struct TaedamResultView: View {
     var body: some View {
         ZStack {
             resultBackground
+
             resultContent
-        }
-        .safeAreaInset(edge: .bottom) {
-            PrimaryButton(
-                title: "완료",
-                action: onComplete
-            )
-            .accessibilityIdentifier("taedam-result-complete")
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
+                .safeAreaInset(edge: .bottom) {
+                    PrimaryButton(
+                        title: "완료",
+                        action: onComplete
+                    )
+                    .accessibilityIdentifier("taedam-result-complete")
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                }
         }
         .overlay(alignment: .bottom) {
             if isSnackbarPresented {
@@ -64,16 +65,22 @@ struct TaedamResultView: View {
     }
 
     private var resultBackground: some View {
-        ZStack {
-            Color.background
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                Color.background
 
-            Image("Taedam-BG")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .opacity(colorScheme == .dark ? 0.18 : 0.38)
+                Image("Taedam-BG")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height
+                    )
+                    .clipped()
+                    .opacity(colorScheme == .dark ? 0.18 : 0.38)
+            }
         }
+        .ignoresSafeArea()
     }
 
     private var resultContent: some View {

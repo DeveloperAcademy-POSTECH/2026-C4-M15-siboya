@@ -78,7 +78,14 @@ struct ChecklistRow: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color.background)
+        .background(
+            Color(
+                red: 64.0 / 255.0,
+                green: 64.0 / 255.0,
+                blue: 64.0 / 255.0
+            )
+            .opacity(26.0 / 255.0)
+        )
         .cornerRadius(16)
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onDelete) {

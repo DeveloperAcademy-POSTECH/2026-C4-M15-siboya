@@ -54,10 +54,12 @@ struct TaedamChecklistView: View {
                     )
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                    .listRowBackground(Color.clear)
                 }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .background(Color.background)
         }
         .foregroundStyle(Color.textPrimary)
         .background(Color.background)
