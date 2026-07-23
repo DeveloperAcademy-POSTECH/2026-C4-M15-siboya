@@ -64,13 +64,13 @@ struct ScriptPreviewHero: View {
             Text(weekText)
                 .font(.headline)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.primaryRed)
+                .foregroundStyle(Color.brandPrimary)
                 .padding(.top, Self.thumbnailToWeekSpacing)
 
             Text(title)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(Color.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, Self.weekToTitleSpacing)
@@ -97,7 +97,7 @@ struct ScriptPreviewHero: View {
 
             // 아래 본문이 자연스럽게 이어지도록 시스템 배경색으로 점차 전환합니다.
             LinearGradient(
-                colors: [.clear, Color(.systemBackground)],
+                colors: [.clear, Color.background],
                 startPoint: .top,
                 endPoint: .bottom
             )

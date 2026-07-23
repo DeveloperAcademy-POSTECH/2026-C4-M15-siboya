@@ -68,7 +68,7 @@ struct TaedamScriptLineView: View {
             } else {
                 Text(line.text)
                     .taedamScriptTextStyle()
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -87,21 +87,17 @@ struct TaedamScriptLineView: View {
                     .font(TaedamBucketListGuideTypography.font)
                     .tracking(TaedamBucketListGuideTypography.tracking)
                     .lineSpacing(TaedamBucketListGuideTypography.lineSpacing)
-                    .foregroundStyle(
-                        Color(
-                            red: 60.0 / 255.0,
-                            green: 60.0 / 255.0,
-                            blue: 67.0 / 255.0
-                        )
-                        .opacity(0.6)
-                    )
+                    .foregroundStyle(Color.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 22)
             .padding(.horizontal, 16)
-            .background(Color.black.opacity(0.025), in: RoundedRectangle(cornerRadius: 12))
+            .background(
+                Color.textPrimary.opacity(0.025),
+                in: RoundedRectangle(cornerRadius: 12)
+            )
             .contentShape(Rectangle())
             .onTapGesture {
                 bucketListEditorFocus.wrappedValue = false
@@ -116,14 +112,7 @@ struct TaedamScriptLineView: View {
             } else {
                 Text(bucketListText)
                     .taedamScriptTextStyle()
-                    .foregroundStyle(
-                        Color(
-                            red: 38.0 / 255.0,
-                            green: 38.0 / 255.0,
-                            blue: 38.0 / 255.0
-                        )
-                        .opacity(0.2)
-                    )
+                    .foregroundStyle(Color.textPrimary.opacity(0.2))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -185,7 +174,7 @@ private struct KaraokeText: View, Animatable {
             let opacity = KaraokeAnimation.inactiveTextOpacity +
                 ((1 - KaraokeAnimation.inactiveTextOpacity) * characterProgress)
             var character = AttributedString(String(item.element))
-            character.foregroundColor = .black.opacity(opacity)
+            character.foregroundColor = Color.textPrimary.opacity(opacity)
             result.append(character)
         }
     }

@@ -31,7 +31,7 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             // 라이트 모드에서는 Figma의 밝은 배경을 유지하고 다크 모드에서는 텍스트 대비를 함께 보존합니다.
-            Color(.systemBackground)
+            Color.background
                 .ignoresSafeArea()
 
             ScrollView(.vertical) {
@@ -41,7 +41,7 @@ struct HomeView: View {
                         Text(babyNickname)
                             .font(.largeTitle)
                             .fontWeight(.bold)
-                            .foregroundStyle(Color.primary)
+                            .foregroundStyle(Color.textPrimary)
                             .accessibilityAddTraits(.isHeader)
                     }
 
@@ -85,12 +85,12 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("이번주 추천")
                 .font(.body)
-                .foregroundStyle(Color("PrimaryRed"))
+                .foregroundStyle(Color.brandPrimary)
 
             Text(recommendation.headline)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundStyle(Color.primary)
+                .foregroundStyle(Color.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HomeRecommendationCard(

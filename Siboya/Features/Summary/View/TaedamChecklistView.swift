@@ -54,11 +54,15 @@ struct TaedamChecklistView: View {
                     )
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                    .listRowBackground(Color.clear)
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.background)
         }
-        .background(Color(.systemBackground))
+        .foregroundStyle(Color.textPrimary)
+        .background(Color.background)
         .sheet(isPresented: $isEditingWeek) {
             weekPickerSheet
                 .presentationDetents([.height(360)])
@@ -92,6 +96,7 @@ struct TaedamChecklistView: View {
                 } else {
                     Text(babyProfile?.nickname ?? "태명 미설정")
                         .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(Color.textPrimary)
                 }
                 
                 Spacer()
@@ -109,16 +114,16 @@ struct TaedamChecklistView: View {
                     }
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
+                        .foregroundStyle(Color.secondary)
                 }
-                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
+                .tint(Color.secondary)
             }
             
             // Title3/Regular
             if let week = babyProfile?.gestationalWeek {
                 Text("임신 \(week)주차")
                     .font(Font.custom("SF Pro", size: 20))
-                    .foregroundColor(Color("PrimaryRed"))
+                    .foregroundStyle(Color.brandPrimary)
             }
             
             Image("TaedamCharacter")
@@ -153,7 +158,7 @@ struct TaedamChecklistView: View {
                     commitWeekChange()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(Color("PrimaryRed"))
+                .foregroundStyle(Color.brandPrimary)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -167,6 +172,7 @@ struct TaedamChecklistView: View {
             }
             .pickerStyle(.wheel)
         }
+        .background(Color.background)
     }
     
     // MARK: Actions — 태명 변경
@@ -225,7 +231,19 @@ struct TaedamChecklistView: View {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("소원 목록") {
+    TaedamChecklistView()
+        .modelContainer(makeChecklistPreviewContainer())
+}
+
+#Preview("소원 목록 - Dark") {
+    TaedamChecklistView()
+        .modelContainer(makeChecklistPreviewContainer())
+        .preferredColorScheme(.dark)
+}
+
+@MainActor
+private func makeChecklistPreviewContainer() -> ModelContainer {
     // swiftlint:disable:next force_try
     let container = try! ModelContainer(
         for: BabyProfile.self, BucketListItem.self,
@@ -239,7 +257,6 @@ struct TaedamChecklistView: View {
         content: "돗자리를 깔고 누워 하늘을 같이 보며 가장 반짝이는 별 하나를 찾아내고 싶어"
     ))
     context.insert(BucketListItem(category: "일상공유", content: "사랑한다고 말하기"))
-    
-    return TaedamChecklistView()
-        .modelContainer(container)
+
+    return container
 }

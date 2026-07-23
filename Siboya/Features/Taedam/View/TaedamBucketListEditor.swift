@@ -31,7 +31,7 @@ struct TaedamBucketListEditor: View {
             axis: .vertical
         )
         .taedamScriptTextStyle()
-        .foregroundStyle(.black)
+        .foregroundStyle(Color.textPrimary)
         .lineLimit(3...7)
         .textFieldStyle(.plain)
         .focused(focus)
@@ -40,12 +40,12 @@ struct TaedamBucketListEditor: View {
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
         .background(
-            Color.white,
+            Color.background,
             in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                .stroke(Color.textPrimary.opacity(0.08), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.06), radius: 16, y: 6)
         .task {

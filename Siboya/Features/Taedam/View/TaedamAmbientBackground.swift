@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 화면 하단에서 계속 흐르는 색상과 음성에 반응하는 흰색 표면을 그립니다.
+/// 화면 하단에서 계속 흐르는 색상과 색상 모드에 관계없이 흰색으로 음성에 반응하는 표면을 그립니다.
 struct TaedamAmbientBackground: View {
     let normalizedVoiceMotion: Double
     let isVoiceActive: Bool
@@ -53,7 +53,7 @@ struct TaedamAmbientBackground: View {
                 level: amplifiedLevel * 0.72,
                 phase: phase + 1.7
             )
-            .fill(.white.opacity(0.72))
+            .fill(Color.white.opacity(0.72))
             .frame(height: TaedamAmbientMetrics.surfaceHeight)
             .scaleEffect(x: 1.08, y: 1, anchor: .bottom)
             .blur(radius: 18)
@@ -62,7 +62,7 @@ struct TaedamAmbientBackground: View {
                 level: amplifiedLevel,
                 phase: phase
             )
-            .fill(.white)
+            .fill(Color.white)
             .frame(height: TaedamAmbientMetrics.surfaceHeight)
             .scaleEffect(x: 1.05, y: 1, anchor: .bottom)
             .blur(radius: 4)
@@ -204,5 +204,14 @@ private enum TaedamAmbientMetrics {
         normalizedVoiceMotion: 0.82,
         isVoiceActive: true
     )
-    .background(.white)
+    .background(Color.background)
+}
+
+#Preview("Voice Active - Dark") {
+    TaedamAmbientBackground(
+        normalizedVoiceMotion: 0.82,
+        isVoiceActive: true
+    )
+    .background(Color.background)
+    .preferredColorScheme(.dark)
 }

@@ -24,7 +24,7 @@ struct SavedBucketListCard: View {
 
             Text(content)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityLabel("저장된 약속")
                 .accessibilityValue(content)
@@ -33,7 +33,7 @@ struct SavedBucketListCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .background(
-            Color(.systemBackground).opacity(0.96),
+            Color.background.opacity(0.96),
             in: RoundedRectangle(
                 cornerRadius: 28,
                 style: .continuous
@@ -54,7 +54,7 @@ struct SavedBucketListCard: View {
                 .accessibilityHidden(true)
         }
         .font(.subheadline)
-        .foregroundStyle(Color.primaryRed)
+        .foregroundStyle(Color.brandPrimary)
     }
 }
 

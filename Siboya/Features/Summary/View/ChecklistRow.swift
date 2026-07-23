@@ -38,6 +38,7 @@ struct ChecklistRow: View {
                 } else {
                     Text(item.content)
                         .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(Color.textPrimary)
                         .lineLimit(isExpanded ? nil : 1)
                         .onTapGesture(perform: onTap)
                 }
@@ -54,29 +55,37 @@ struct ChecklistRow: View {
                         Label("삭제", systemImage: "trash")
                     }
                 } label: {
-                                    Image(systemName: "ellipsis")
-                                        .foregroundStyle(Color(red: 0.45, green: 0.45, blue: 0.45))
-                                }
-                                .tint(Color(red: 0.45, green: 0.45, blue: 0.45))
-                            }
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(Color.secondary)
+                }
+                .tint(Color.secondary)
+            }
 
             HStack(spacing: 12) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "calendar")
-                                Text(Self.dateFormatter.string(from: item.createdAt))
-                            }
-                            HStack(spacing: 4) {
-                                Image(systemName: "tag")
-                                Text(item.category)
-                            }
-                        }
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                    Text(Self.dateFormatter.string(from: item.createdAt))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "tag")
+                    Text(item.category)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .background(Color(red: 1, green: 1, blue: 1))
+        .background(
+            Color(
+                red: 64.0 / 255.0,
+                green: 64.0 / 255.0,
+                blue: 64.0 / 255.0
+            )
+            .opacity(26.0 / 255.0)
+        )
         .cornerRadius(16)
         .swipeActions(edge: .trailing) {
             Button(role: .destructive, action: onDelete) {

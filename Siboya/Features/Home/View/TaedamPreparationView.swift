@@ -126,7 +126,7 @@ struct TaedamPreparationView: View {
             .accessibilityIdentifier("TaedamPreparationCloseButton")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.background)
     }
 }
 
@@ -139,4 +139,14 @@ struct TaedamPreparationView: View {
         onStart: {}
     )
     .presentationDetents([.fraction(TaedamPreparationView.sheetDetentFraction)])
+}
+
+#Preview("준비자세 - Dark") {
+    TaedamPreparationView(
+        babyNickname: "꾹꾹이",
+        isStarting: false,
+        onClose: {},
+        onStart: {}
+    )
+    .preferredColorScheme(.dark)
 }

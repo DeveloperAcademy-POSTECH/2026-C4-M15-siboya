@@ -30,7 +30,7 @@ struct HomeRecommendationCard: View {
                 LinearGradient(
                     colors: [
                         .clear,
-                        Color(.systemBackground).opacity(0.96)
+                        Color.background.opacity(0.96)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -40,7 +40,7 @@ struct HomeRecommendationCard: View {
                 Text(item.title)
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(Color.textPrimary)
                     .multilineTextAlignment(.leading)
                     .padding(20)
             }

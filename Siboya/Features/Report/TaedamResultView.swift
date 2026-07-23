@@ -10,6 +10,7 @@ import SwiftUI
 /// 방금 완료한 태담 정보와 사용자가 확정한 약속 하나를 보여주는 일회성 결과 화면입니다.
 struct TaedamResultView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @State private var isSnackbarPresented = false
 
     private let headerContent: ResultHeaderContent
@@ -35,16 +36,17 @@ struct TaedamResultView: View {
     var body: some View {
         ZStack {
             resultBackground
+
             resultContent
-        }
-        .safeAreaInset(edge: .bottom) {
-            PrimaryButton(
-                title: "완료",
-                action: onComplete
-            )
-            .accessibilityIdentifier("taedam-result-complete")
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
+                .safeAreaInset(edge: .bottom) {
+                    PrimaryButton(
+                        title: "완료",
+                        action: onComplete
+                    )
+                    .accessibilityIdentifier("taedam-result-complete")
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                }
         }
         .overlay(alignment: .bottom) {
             if isSnackbarPresented {
@@ -63,16 +65,22 @@ struct TaedamResultView: View {
     }
 
     private var resultBackground: some View {
-        ZStack {
-            Color(.systemBackground)
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                Color.background
 
-            Image("Taedam-BG")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
-                .opacity(0.38)
+                Image("Taedam-BG")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height
+                    )
+                    .clipped()
+                    .opacity(colorScheme == .dark ? 0.18 : 0.38)
+            }
         }
+        .ignoresSafeArea()
     }
 
     private var resultContent: some View {
@@ -80,8 +88,7 @@ struct TaedamResultView: View {
             VStack(spacing: 0) {
                 ResultHeaderView(content: headerContent)
 
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.2))
+                Color.clear
                     .frame(width: 1, height: 36)
 
                 SavedBucketListCard(content: bucketListContent)
@@ -149,4 +156,15 @@ struct TaedamResultView: View {
         bucketListContent: "일요일 아침마다 아빠가 직접 부드러운 계란말이와 따뜻한 빵을 준비해서 온 가족이 천천히 아침을 먹고 싶어.",
         onComplete: {}
     )
+}
+
+#Preview("Long Promise - Dark") {
+    TaedamResultView(
+        targetGestationalWeek: 22,
+        title: "일요일 아침 냄새",
+        artworkAssetName: "TitleImage",
+        bucketListContent: "일요일 아침마다 아빠가 직접 부드러운 계란말이를 준비해 주고 싶어.",
+        onComplete: {}
+    )
+    .preferredColorScheme(.dark)
 }

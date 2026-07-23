@@ -11,25 +11,38 @@ import UIKit
 
 /// Home 모델과 컴포넌트가 표시 및 선택 계약을 지키는지 검증합니다.
 struct HomeComponentsTests {
-    /// 다크 모드 Home의 빈 상단 배경이 밝은 고정색으로 남지 않고 어두운 시스템 배경으로 렌더링되는지 검증합니다.
+    /// Home 배경이 컬러 시스템의 라이트·다크 값을 각각 사용해 명암을 반전하는지 검증합니다.
     @Test @MainActor
     func homeBackgroundAdaptsToDarkMode() throws {
-        let renderer = ImageRenderer(
+        let lightRenderer = ImageRenderer(
+            content: HomeView(state: .empty)
+                .environment(\.colorScheme, .light)
+                .frame(width: 402, height: 874)
+        )
+        lightRenderer.scale = 1
+
+        let darkRenderer = ImageRenderer(
             content: HomeView(state: .empty)
                 .environment(\.colorScheme, .dark)
                 .frame(width: 402, height: 874)
         )
-        renderer.scale = 1
+        darkRenderer.scale = 1
 
-        let image = try #require(renderer.uiImage)
-        let components = try #require(
-            pixelComponents(in: image, at: CGPoint(x: 201, y: 100))
+        let lightImage = try #require(lightRenderer.uiImage)
+        let darkImage = try #require(darkRenderer.uiImage)
+        let lightComponents = try #require(
+            pixelComponents(in: lightImage, at: CGPoint(x: 201, y: 100))
+        )
+        let darkComponents = try #require(
+            pixelComponents(in: darkImage, at: CGPoint(x: 201, y: 100))
         )
 
-        // 세 색상 채널이 모두 낮아야 다크 모드의 어두운 시스템 배경으로 판단합니다.
-        #expect(components.red < 0.2)
-        #expect(components.green < 0.2)
-        #expect(components.blue < 0.2)
+        #expect(lightComponents.red > 0.9)
+        #expect(lightComponents.green > 0.9)
+        #expect(lightComponents.blue > 0.9)
+        #expect(darkComponents.red < 0.2)
+        #expect(darkComponents.green < 0.2)
+        #expect(darkComponents.blue < 0.2)
     }
 
     /// 접근성 글자 크기에서는 하단 탭이 48pt에 잘리지 않고 내용 높이에 맞춰 확장되는지 검증합니다.

@@ -17,7 +17,7 @@ struct ScriptPreviewBottomBar: View {
         VStack(spacing: 0) {
             // 스크롤 끝과 고정 버튼이 갑자기 끊겨 보이지 않도록 시스템 배경으로 전환합니다.
             LinearGradient(
-                colors: [.clear, Color(.systemBackground)],
+                colors: [.clear, Color.background],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -30,7 +30,7 @@ struct ScriptPreviewBottomBar: View {
             )
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
-            .background(Color(.systemBackground))
+            .background(Color.background)
         }
     }
 
