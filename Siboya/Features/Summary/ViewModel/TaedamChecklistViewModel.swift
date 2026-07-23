@@ -1,4 +1,3 @@
-//
 //  TaedamChecklistViewModel.swift
 //  Siboya
 //

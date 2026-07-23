@@ -1,4 +1,3 @@
-//
 //  ChecklistRow.swift
 //  Siboya
 //
