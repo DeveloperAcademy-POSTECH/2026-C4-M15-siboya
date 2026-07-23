@@ -36,11 +36,19 @@ struct HomeComponentsTests {
     @Test @MainActor
     func bottomTabBarGrowsForAccessibilityText() {
         let regularHeight = fittingHeight(
-            of: HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+            of: HomeBottomTabBar(
+                selectedTab: .taedam,
+                onSelectTaedam: {},
+                onSelectPromise: {}
+            )
                 .environment(\.dynamicTypeSize, .medium)
         )
         let accessibilityHeight = fittingHeight(
-            of: HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+            of: HomeBottomTabBar(
+                selectedTab: .taedam,
+                onSelectTaedam: {},
+                onSelectPromise: {}
+            )
                 .environment(\.dynamicTypeSize, .accessibility5)
         )
 
@@ -55,7 +63,11 @@ struct HomeComponentsTests {
         #expect(HomeBottomTabBar.backgroundFadeEndY == 1.1684)
 
         let renderer = ImageRenderer(
-            content: HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+            content: HomeBottomTabBar(
+                selectedTab: .taedam,
+                onSelectTaedam: {},
+                onSelectPromise: {}
+            )
                 // 투명 gradient가 실제로 뒤 콘텐츠를 드러내는지 판별하기 위한 대비색입니다.
                 .background(Color.red)
                 .frame(width: 402)
@@ -85,6 +97,7 @@ struct HomeComponentsTests {
         var taedamSelectionCount = 0
         var promiseSelectionCount = 0
         let tabBar = HomeBottomTabBar(
+            selectedTab: .taedam,
             onSelectTaedam: { taedamSelectionCount += 1 },
             onSelectPromise: { promiseSelectionCount += 1 }
         )

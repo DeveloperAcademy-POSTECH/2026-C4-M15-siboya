@@ -49,7 +49,7 @@ struct TaedamResultView: View {
         .overlay(alignment: .bottom) {
             if isSnackbarPresented {
                 SavedBucketListSnackbar(
-                    message: "약속 탭에 저장되었어요"
+                    message: "소원 탭에 저장되었어요"
                 )
                 .padding(.horizontal, 24)
                 .padding(.bottom, 92)
@@ -124,7 +124,7 @@ struct TaedamResultView: View {
         }
 
         AccessibilityNotification
-            .Announcement("약속 탭에 저장되었어요")
+            .Announcement("소원 탭에 저장되었어요")
             .post()
 
         do {

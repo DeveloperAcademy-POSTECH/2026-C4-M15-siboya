@@ -15,28 +15,16 @@ struct HomeView: View {
     /// 추천 카드 또는 대본 행 선택 시 UUID와 버전을 상위 화면에 전달하는 동작입니다.
     let onSelectScript: (UUID, Int) -> Void
 
-    /// 현재 태담 탭을 다시 선택했을 때 상위 탭 조정자에게 알리는 동작입니다.
-    let onSelectTaedamTab: () -> Void
-
-    /// 약속 탭을 선택했을 때 상위 탭 조정자에게 알리는 동작입니다.
-    let onSelectPromiseTab: () -> Void
-
     /// 표시 상태와 선택 콜백을 주입하되 미연결 화면에서도 빈 동작으로 안전하게 미리 볼 수 있게 합니다.
     /// - Parameters:
     ///   - state: Home이 표시할 태명, 추천과 카테고리 목록입니다.
     ///   - onSelectScript: 대본 UUID와 버전을 미리보기 흐름에 전달할 콜백입니다.
-    ///   - onSelectTaedamTab: 태담 탭 재선택을 처리할 콜백입니다.
-    ///   - onSelectPromiseTab: 약속 탭 전환을 처리할 콜백입니다.
     init(
         state: HomeViewState,
-        onSelectScript: @escaping (UUID, Int) -> Void = { _, _ in },
-        onSelectTaedamTab: @escaping () -> Void = {},
-        onSelectPromiseTab: @escaping () -> Void = {}
+        onSelectScript: @escaping (UUID, Int) -> Void = { _, _ in }
     ) {
         self.state = state
         self.onSelectScript = onSelectScript
-        self.onSelectTaedamTab = onSelectTaedamTab
-        self.onSelectPromiseTab = onSelectPromiseTab
     }
 
     /// 하나의 세로 스크롤 안에 모든 Home 콘텐츠를 두고 탭 바만 safe area에 고정합니다.
@@ -74,13 +62,6 @@ struct HomeView: View {
                 .padding(.bottom, 32)
             }
             .scrollIndicators(.hidden)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            // 스크롤 위치와 관계없이 태담·약속 탭을 항상 화면 하단에서 선택할 수 있게 합니다.
-            HomeBottomTabBar(
-                onSelectTaedam: onSelectTaedamTab,
-                onSelectPromise: onSelectPromiseTab
-            )
         }
     }
 

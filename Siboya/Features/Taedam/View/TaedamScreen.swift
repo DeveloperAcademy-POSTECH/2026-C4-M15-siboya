@@ -13,11 +13,13 @@ struct TaedamScreen: View {
     @State private var bucketListInputModel: TaedamBucketListInputModel
     @State private var normalizedVoiceMotion = 0.0
     @State private var isVoiceActive = false
+    @State private var isFinishing = false
+    @State private var finishErrorMessage: String?
     @FocusState private var isBucketListEditorFocused: Bool
 
     private let voiceMotionMonitor: any VoiceMotionMonitoring
     private let onBack: () -> Void
-    private let onFinish: () -> Void
+    private let onFinish: (String) async throws -> Void
     private let onBucketListReached: () -> Void
     private let onReplayScriptFromBucketList: () -> Void
 
@@ -26,7 +28,7 @@ struct TaedamScreen: View {
         transcriber: (any BucketListTranscribing)? = nil,
         voiceMotionMonitor: (any VoiceMotionMonitoring)? = nil,
         onBack: @escaping () -> Void = {},
-        onFinish: @escaping () -> Void = {},
+        onFinish: @escaping (String) async throws -> Void = { _ in },
         onBucketListReached: @escaping () -> Void = {},
         onReplayScriptFromBucketList: @escaping () -> Void = {}
     ) {
@@ -103,8 +105,20 @@ struct TaedamScreen: View {
             normalizedVoiceMotion = sample.normalizedValue
             isVoiceActive = sample.isVoiceActive
         }
+        .alert(
+            "저장할 수 없어요",
+            isPresented: finishErrorBinding
+        ) {
+            Button("확인", role: .cancel) {
+                finishErrorMessage = nil
+            }
+        } message: {
+            Text(finishErrorMessage ?? "")
+        }
     }
+}
 
+private extension TaedamScreen {
     private var toolbar: some View {
         HStack {
             Button {
@@ -123,17 +137,31 @@ struct TaedamScreen: View {
             Spacer()
 
             Button {
-                closeScreen(action: onFinish)
+                Task {
+                    await finishScreen()
+                }
             } label: {
-                Text("완료")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Color(red: 0.95, green: 0.29, blue: 0.26))
-                    .padding(.horizontal, 15)
-                    .frame(height: 40)
-                    .background(.white.opacity(0.94), in: Capsule())
-                    .shadow(color: .black.opacity(0.07), radius: 12, y: 5)
+                Group {
+                    if isFinishing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Text("완료")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                }
+                .foregroundStyle(
+                    canFinish
+                        ? Color(red: 0.95, green: 0.29, blue: 0.26)
+                        : Color.secondary
+                )
+                .padding(.horizontal, 15)
+                .frame(minWidth: 54, minHeight: 40)
+                .background(.white.opacity(0.94), in: Capsule())
+                .shadow(color: .black.opacity(0.07), radius: 12, y: 5)
             }
             .buttonStyle(.plain)
+            .disabled(!canFinish)
             .accessibilityLabel("태담 완료")
         }
         .padding(.horizontal, 20)
@@ -281,6 +309,32 @@ struct TaedamScreen: View {
 }
 
 private extension TaedamScreen {
+    /// 키보드 편집 상태에서 공백을 제외한 최종 문장이 있을 때만 저장을 허용합니다.
+    var canFinish: Bool {
+        bucketListInputModel.phase == .editing &&
+            !finalBucketListContent.isEmpty &&
+            !isFinishing
+    }
+
+    /// 저장과 Report에 전달할 사용자의 최종 수정 문장입니다.
+    var finalBucketListContent: String {
+        bucketListInputModel.editedText.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+    }
+
+    /// 저장 실패 Alert를 optional 오류 문장과 연결합니다.
+    var finishErrorBinding: Binding<Bool> {
+        Binding(
+            get: { finishErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    finishErrorMessage = nil
+                }
+            }
+        )
+    }
+
     func bucketListDisplayText(for line: TaedamLineDTO) -> String {
         guard line.kind == .bucketList else { return line.text }
 
@@ -298,6 +352,23 @@ private extension TaedamScreen {
             await stopVoiceMotionMonitoring()
             action()
         }
+    }
+
+    /// 사용자가 확정한 문장을 한 번 저장하고, 성공한 경우에만 상위 흐름이 Report를 표시하게 합니다.
+    func finishScreen() async {
+        guard canFinish else { return }
+
+        let bucketListContent = finalBucketListContent
+        isBucketListEditorFocused = false
+        isFinishing = true
+
+        do {
+            try await onFinish(bucketListContent)
+        } catch {
+            finishErrorMessage = "소원을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+        }
+
+        isFinishing = false
     }
 
     func observeVoiceMotion() async {

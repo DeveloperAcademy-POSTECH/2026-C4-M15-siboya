@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Home 하단에 고정되어 현재 태담 탭과 약속 탭 이동 동작을 제공하는 탭 바입니다.
+/// Home 하단에 고정되어 현재 태담 탭과 소원 탭 이동 동작을 제공하는 탭 바입니다.
 struct HomeBottomTabBar: View {
     /// Figma에서 탭바 높이의 절반까지 뒤 콘텐츠를 그대로 노출하는 gradient 시작 지점입니다.
     static let backgroundFadeStartY: CGFloat = 0.5
@@ -15,10 +15,13 @@ struct HomeBottomTabBar: View {
     /// 시스템 배경색 보간이 화면 아래까지 부드럽게 이어지도록 둔 Figma의 gradient 종료 지점입니다.
     static let backgroundFadeEndY: CGFloat = 1.1684
 
+    /// 앱 루트가 관리하는 현재 탭으로 선택 색상과 접근성 상태를 결정합니다.
+    let selectedTab: SiboyaTab
+
     /// 이미 선택된 태담 탭을 다시 눌렀을 때 상위 화면에 알릴 동작입니다.
     let onSelectTaedam: () -> Void
 
-    /// 사용자가 약속 탭을 눌렀을 때 상위 화면에 알릴 동작입니다.
+    /// 사용자가 소원 탭을 눌렀을 때 상위 화면에 알릴 동작입니다.
     let onSelectPromise: () -> Void
 
     /// 스크롤 콘텐츠와 탭 바가 자연스럽게 분리되도록 상단 그라데이션과 캡슐형 버튼을 구성합니다.
@@ -28,15 +31,15 @@ struct HomeBottomTabBar: View {
             tabButton(
                 title: "태담",
                 systemImage: "heart.fill",
-                isSelected: true,
+                isSelected: selectedTab == .taedam,
                 action: selectTaedam
             )
 
-            // 아직 선택되지 않은 약속 탭은 상위 라우터가 화면을 바꿀 수 있도록 콜백만 전달합니다.
+            // 소원 탭은 상위 라우터가 저장된 버킷리스트 화면으로 전환할 수 있도록 콜백을 전달합니다.
             tabButton(
-                title: "약속",
+                title: "소원",
                 systemImage: "lightbulb.max.fill",
-                isSelected: false,
+                isSelected: selectedTab == .wish,
                 action: selectPromise
             )
         }
@@ -107,7 +110,7 @@ struct HomeBottomTabBar: View {
         onSelectTaedam()
     }
 
-    /// 약속 버튼 선택을 상위 조정자에게 전달해 이후 탭 전환 구현과 분리합니다.
+    /// 소원 버튼 선택을 상위 조정자에게 전달해 탭 전환 구현과 분리합니다.
     func selectPromise() {
         onSelectPromise()
     }
@@ -117,7 +120,11 @@ struct HomeBottomTabBar: View {
 #Preview("Home bottom tab bar") {
     VStack {
         Spacer()
-        HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+        HomeBottomTabBar(
+            selectedTab: .taedam,
+            onSelectTaedam: {},
+            onSelectPromise: {}
+        )
     }
 }
 
@@ -125,7 +132,11 @@ struct HomeBottomTabBar: View {
 #Preview("Home bottom tab bar with accessibility text") {
     VStack {
         Spacer()
-        HomeBottomTabBar(onSelectTaedam: {}, onSelectPromise: {})
+        HomeBottomTabBar(
+            selectedTab: .wish,
+            onSelectTaedam: {},
+            onSelectPromise: {}
+        )
     }
     .environment(\.dynamicTypeSize, .accessibility5)
 }
