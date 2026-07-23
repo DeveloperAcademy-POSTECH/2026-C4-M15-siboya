@@ -36,27 +36,4 @@ struct TaedamPreparationComponentsTests {
         #expect(TaedamPreparationGuidance.instructionFontSize == 22)
     }
 
-    /// 시작 버튼이 52pt 높이를 유지하고 로딩 여부에 따라 입력 가능 상태를 계산하는지 검증합니다.
-    @Test
-    func startButtonUsesFigmaHeightAndLoadingState() {
-        let idleButton = TaedamPreparationStartButton(isLoading: false, action: {})
-        let loadingButton = TaedamPreparationStartButton(isLoading: true, action: {})
-
-        #expect(TaedamPreparationStartButton.height == 52)
-        #expect(idleButton.isEnabled)
-        #expect(!loadingButton.isEnabled)
-    }
-
-    /// 시작 버튼이 권한 확인을 소유하지 않고 전달받은 callback을 한 번 호출하는지 검증합니다.
-    @Test
-    func startButtonForwardsActionOnce() {
-        var startCount = 0
-        let button = TaedamPreparationStartButton(isLoading: false) {
-            startCount += 1
-        }
-
-        button.start()
-
-        #expect(startCount == 1)
-    }
 }

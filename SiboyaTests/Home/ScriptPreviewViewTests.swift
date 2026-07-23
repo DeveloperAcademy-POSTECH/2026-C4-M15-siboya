@@ -36,7 +36,6 @@ struct ScriptPreviewViewTests {
     func preparationMessageIncludesResolvedBabyNickname() {
         let view = TaedamPreparationView(
             babyNickname: "꾹꾹이",
-            isRequestingPermission: false,
             onClose: {},
             onStart: {}
         )
@@ -67,7 +66,6 @@ struct ScriptPreviewViewTests {
         var startCount = 0
         let view = TaedamPreparationView(
             babyNickname: "꾹꾹이",
-            isRequestingPermission: false,
             onClose: { closeCount += 1 },
             onStart: { startCount += 1 }
         )
@@ -86,23 +84,9 @@ struct ScriptPreviewViewTests {
             sessionInput: .mock,
             artworkSeries: .seven
         )
-        let view = ScriptPreviewView(
-            route: route,
-            authorizer: PermissionAuthorizerStub(result: .granted)
-        )
+        let view = ScriptPreviewView(route: route)
 
         #expect(view.route == route)
         #expect(view.route.artworkSeries == .seven)
-    }
-}
-
-/// 시스템 권한 창 없이 허용 결과를 반환해 View의 주입 경로만 확인하는 테스트 대역입니다.
-private struct PermissionAuthorizerStub: TaedamPermissionAuthorizing {
-    /// 각 테스트가 재현할 권한 확인 결과입니다.
-    let result: TaedamPermissionResult
-
-    /// View가 흐름 모델에 전달한 권한 서비스의 결과를 비동기로 반환합니다.
-    func requestRequiredPermissions() async -> TaedamPermissionResult {
-        result
     }
 }

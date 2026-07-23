@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 태담 시작 전 자세를 안내하고 닫기·권한 확인 동작을 상위 흐름으로 전달하는 bottom sheet입니다.
+/// 태담 시작 전 자세를 안내하고 닫기·시작 동작을 상위 흐름으로 전달하는 bottom sheet입니다.
 struct TaedamPreparationView: View {
     /// 안전 영역을 제외한 시스템 최대 detent에서 Figma의 화면 높이 약 87%를 재현하는 비율입니다.
     static let sheetDetentFraction = 0.95
@@ -42,13 +42,10 @@ struct TaedamPreparationView: View {
     /// 안내 컴포넌트에 전달할 사용자 태명입니다.
     let babyNickname: String
 
-    /// 권한 요청 중 시작 버튼의 중복 입력을 막을 상태입니다.
-    let isRequestingPermission: Bool
-
     /// 닫기 버튼을 선택했을 때 sheet 상태를 갱신할 상위 callback입니다.
     let onClose: () -> Void
 
-    /// 시작하기를 선택했을 때 권한 확인을 요청할 상위 callback입니다.
+    /// 시작하기를 선택했을 때 다음 화면 전환을 요청할 상위 callback입니다.
     let onStart: () -> Void
 
     /// 기존 표시 계약과 테스트가 확인할 태명 치환 안내 문구입니다.
@@ -61,7 +58,7 @@ struct TaedamPreparationView: View {
         onClose()
     }
 
-    /// 시작 동작을 상위 흐름으로 전달해 View가 권한 API를 직접 호출하지 않게 합니다.
+    /// 시작 동작을 상위 흐름으로 전달해 View가 화면 전환 상태를 직접 소유하지 않게 합니다.
     func start() {
         onStart()
     }
@@ -86,10 +83,11 @@ struct TaedamPreparationView: View {
                 // 일반 글자 크기에서는 버튼을 하단에 고정하고 큰 글자에서는 남은 공간이 먼저 줄어들게 합니다.
                 Spacer(minLength: 24)
 
-                TaedamPreparationStartButton(
-                    isLoading: isRequestingPermission,
+                PrimaryButton(
+                    title: "시작하기",
                     action: start
                 )
+                .accessibilityIdentifier("TaedamPreparationStartButton")
                 .padding(.horizontal, Self.horizontalPadding)
                 .padding(.bottom, Self.bottomPadding)
             }
@@ -131,7 +129,6 @@ struct TaedamPreparationView: View {
 #Preview("준비자세") {
     TaedamPreparationView(
         babyNickname: "꾹꾹이",
-        isRequestingPermission: false,
         onClose: {},
         onStart: {}
     )
