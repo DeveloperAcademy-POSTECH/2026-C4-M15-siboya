@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "taedamicon.png",
+      "filename" : "TaeDam.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "taedamicon 1.png",
+      "filename" : "TaeDam 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "taedamicon 2.png",
+      "filename" : "TaeDam 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
