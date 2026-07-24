@@ -13,7 +13,9 @@ struct TaedamScriptLineView: View {
     let currentLineIndex: Int?
     let progress: Double
     let bucketListGuide: String
-    let bucketListText: String
+    let bucketListSpeechPlaceholder: String
+    let bucketListTranscript: String
+    let showsBucketListSpeechPlaceholder: Bool
     @Binding var editedBucketListText: String
     let isBucketListEditing: Bool
     let bucketListEditorFocus: FocusState<Bool>.Binding
@@ -103,18 +105,52 @@ struct TaedamScriptLineView: View {
                 bucketListEditorFocus.wrappedValue = false
             }
 
-            if isBucketListEditing {
-                TaedamBucketListEditor(
-                    text: $editedBucketListText,
-                    placeholder: line.text,
-                    focus: bucketListEditorFocus
-                )
-            } else {
-                Text(bucketListText)
-                    .taedamScriptTextStyle()
-                    .foregroundStyle(Color.textPrimary.opacity(0.2))
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 12) {
+                // 버킷리스트 고정 도입문도 일반 대본과 같은 Karaoke 진행률로 채웁니다.
+                KaraokeText(text: line.text, progress: progress)
+                    .animation(
+                        .linear(duration: KaraokeAnimation.duration),
+                        value: progress
+                    )
+
+                bucketListSpeechArea
+
+                if showsBucketListSpeechPlaceholder {
+                    // 발화를 시작하기 전까지만 마지막 안내 문장을 흐리게 표시합니다.
+                    Text(bucketListSpeechPlaceholder)
+                        .taedamScriptTextStyle()
+                        .foregroundStyle(Color.textPrimary.opacity(0.2))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var bucketListSpeechArea: some View {
+        if showsBucketListSpeechPlaceholder {
+            // 발화문 한 줄이 들어갈 자리를 미리 확보해 안내 문장의 위치를 고정합니다.
+            Color.clear
+                .frame(height: 42)
+                .accessibilityHidden(true)
+        } else if isBucketListEditing {
+            TaedamBucketListEditor(
+                text: $editedBucketListText,
+                placeholder: "",
+                focus: bucketListEditorFocus
+            )
+        } else if !bucketListTranscript.isEmpty {
+            // STT가 전달한 사용자의 중간 문장만 강조색으로 실시간 표시합니다.
+            Text(bucketListTranscript)
+                .taedamScriptTextStyle()
+                .foregroundStyle(Color.brandPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(minHeight: 42, alignment: .topLeading)
+        } else {
+            // STT가 시작되고 첫 전사문이 오기 전에도 발화 영역의 높이를 유지합니다.
+            Color.clear
+                .frame(height: 42)
+                .accessibilityHidden(true)
         }
     }
 

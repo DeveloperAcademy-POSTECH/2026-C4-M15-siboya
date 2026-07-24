@@ -119,7 +119,7 @@ struct ScriptPreviewBody: View {
     ScrollView {
         ScriptPreviewBody(
             sentences: TaedamSessionInputDTO.mock.script.sentences,
-            bucketListPrompt: TaedamSessionInputDTO.mock.script.bucketListPrompt,
+            bucketListPrompt: TaedamSessionInputDTO.mock.script.bucketListPrompt.previewText,
             bucketListGuide: TaedamSessionInputDTO.mock.script.bucketListGuide
         )
         .padding(20)
@@ -132,7 +132,7 @@ struct ScriptPreviewBody: View {
     ScrollView {
         ScriptPreviewBody(
             sentences: TaedamSessionInputDTO.mock.script.sentences,
-            bucketListPrompt: TaedamSessionInputDTO.mock.script.bucketListPrompt,
+            bucketListPrompt: TaedamSessionInputDTO.mock.script.bucketListPrompt.previewText,
             bucketListGuide: TaedamSessionInputDTO.mock.script.bucketListGuide
         )
         .padding(20)

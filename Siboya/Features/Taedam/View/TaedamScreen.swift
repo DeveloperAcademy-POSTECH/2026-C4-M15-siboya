@@ -180,12 +180,20 @@ private extension TaedamScreen {
                                 currentLineIndex: model.currentLineIndex,
                                 progress: model.currentLineProgress,
                                 bucketListGuide: model.bucketListGuide,
-                                bucketListText: bucketListDisplayText(for: line),
+                                bucketListSpeechPlaceholder: model.bucketListSpeechPlaceholder,
+                                bucketListTranscript: line.kind == .bucketList
+                                    ? bucketListInputModel.liveTranscript.trimmingCharacters(
+                                        in: .whitespacesAndNewlines
+                                    )
+                                    : line.text,
+                                showsBucketListSpeechPlaceholder: line.kind == .bucketList &&
+                                    model.phase == .readingBucketListPrompt,
                                 editedBucketListText: Binding(
                                     get: { bucketListInputModel.editedText },
                                     set: { bucketListInputModel.editedText = $0 }
                                 ),
                                 isBucketListEditing: line.kind == .bucketList &&
+                                    model.phase == .bucketList &&
                                     bucketListInputModel.phase == .editing,
                                 bucketListEditorFocus: $isBucketListEditorFocused,
                                 isSelectable: model.isLineSelectable(at: line.index)
@@ -333,15 +341,6 @@ private extension TaedamScreen {
                 }
             }
         )
-    }
-
-    func bucketListDisplayText(for line: TaedamLineDTO) -> String {
-        guard line.kind == .bucketList else { return line.text }
-
-        let transcript = bucketListInputModel.liveTranscript.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        return transcript.isEmpty ? line.text : transcript
     }
 
     func closeScreen(action: @escaping () -> Void) {

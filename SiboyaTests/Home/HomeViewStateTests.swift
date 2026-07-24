@@ -301,7 +301,10 @@ struct HomeViewStateTests {
                 estimatedDurationSeconds: nil
             ),
             sentences: ["안녕"],
-            bucketListPrompt: "함께 하고 싶어.",
+            bucketListPrompt: BucketListPromptContent(
+                leadIn: "아빠는 너와 함께",
+                speechPlaceholder: "하고 싶어."
+            ),
             bucketListGuide: "함께 할 일을 이야기해 보세요."
         )
     }

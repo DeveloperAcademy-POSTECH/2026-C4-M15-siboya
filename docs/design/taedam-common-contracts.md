@@ -2,7 +2,7 @@
 
 - **상태**: review
 - **작성일**: 2026-07-19
-- **최종 수정일**: 2026-07-22
+- **최종 수정일**: 2026-07-24
 - **적용 범위**: 태담, 태담 종류, 태담 진행, 소원 탭이 공통으로 사용하는 데이터와 경계
 
 > 이 문서는 공통 스키마, DTO, 프로토콜과 전체 데이터 흐름의 단일 기준이다. 화면별 동작은 [태담 스펙 인덱스](./taedam-data-contracts.md)에서 해당 기능 문서를 참조한다.
@@ -36,7 +36,8 @@ flowchart LR
     Permission -->|granted + TaedamSessionInputDTO| Session[태담 진행<br/>3초 카운트다운]
     Mic[마이크 입력] -->|PCM 버퍼| Motion[음성 반응]
     Motion -->|VoiceMotionSampleDTO| Session
-    Session -->|마지막 대본 완료| STT[무음 자동 종료<br/>최대 20초 Speech STT]
+    Session -->|마지막 대본 완료| Prompt[버킷리스트 고정 앞 문장<br/>Karaoke 진행]
+    Prompt -->|고정 앞 문장 완료| STT[무음 자동 종료<br/>최대 20초 Speech STT]
     Mic -->|PCM 버퍼| STT
     STT -->|BucketListDraftDTO| Keyboard[키보드 텍스트 수정]
     Keyboard -->|SaveBucketListCommandDTO| Repository[TaedamRepository]
@@ -125,7 +126,7 @@ Siboya/Resources/Scripts/taedam-scripts.json
   "scripts": [
     {
       "id": "8E442B98-7A08-4C67-9A61-E865848F1880",
-      "version": 1,
+      "version": 2,
       "category": "집에서 소소하게",
       "title": "일요일 아침 냄새",
       "metadata": {
@@ -138,7 +139,10 @@ Siboya/Resources/Scripts/taedam-scripts.json
         "아빠야. 오늘 하루도 잘 보냈지?",
         "아빠는 오늘 문득 우리가 함께 맞이할 일요일 아침을 상상해 봤어."
       ],
-      "bucketListPrompt": "{{babyNickname}}아, 아빠는 너를 위해 […] 해주고 싶어.",
+      "bucketListPrompt": {
+        "leadIn": "{{babyNickname}}아, 아빠는 너를 위해",
+        "speechPlaceholder": "해주고 싶어."
+      },
       "bucketListGuide": "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
     }
   ]
@@ -158,15 +162,19 @@ Siboya/Resources/Scripts/taedam-scripts.json
 | `scripts[].metadata.artworkAssetName` | `String` | O | 우선 조회할 Assets 이미지 이름. 리소스가 없으면 공통 placeholder 사용 |
 | `scripts[].metadata.estimatedDurationSeconds` | `Int` | X | 대본 미리보기에 표시할 예상 소요 시간 |
 | `scripts[].sentences` | `[String]` | O | 자동 진행할 일반 대본 문장 |
-| `scripts[].bucketListPrompt` | `String` | O | 미리보기의 마지막 빈칸 문장이자 STT 전 플레이스홀더 |
-| `scripts[].bucketListGuide` | `String` | O | 미리보기 생각힌트이자 STT 플레이스홀더 직전의 발화 주제 안내 |
+| `scripts[].bucketListPrompt` | `Object` | O | 버킷리스트 발화 문장을 구성하는 고정 텍스트 |
+| `scripts[].bucketListPrompt.leadIn` | `String` | O | 발화 구간 앞에 고정 표시하고 일반 대본처럼 채우는 문장 |
+| `scripts[].bucketListPrompt.speechPlaceholder` | `String` | O | STT 시작 전 발화 위치 뒤에 표시하며 STT 시작과 동시에 숨기는 문장 |
+| `scripts[].bucketListGuide` | `String` | O | 미리보기 생각힌트이자 버킷리스트 발화 주제 안내 |
 
 - `category`는 여러 대본을 묶는 상위 분류다.
 - 일반 대본은 읽는 순서대로 `sentences`에 둔다.
 - `bucketListPrompt`는 `sentences`와 섞지 않고 정확히 하나만 둔다.
-- 미리보기에서는 `sentences`, `bucketListPrompt`, `bucketListGuide` 순서로 표시한다. `bucketListGuide`만 전구 아이콘을 사용하는 생각힌트 스타일로 표시한다.
-- 태담 진행에서는 `bucketListGuide`를 보조 안내 카드로, `bucketListPrompt`를 STT 전 플레이스홀더 문장으로 사용한다.
-- 첫 부분 전사문이 들어오면 `bucketListPrompt`를 화면에서 제거하고 전사문으로 대체한다. 두 값 모두 저장 문장에 자동으로 포함하지 않는다.
+- 미리보기에서는 `leadIn + " […] " + speechPlaceholder`를 마지막 빈칸 문장으로 조합하고, 그 뒤에 `bucketListGuide`를 생각힌트 스타일로 표시한다.
+- 태담 진행에서는 `bucketListGuide` 안내 카드 아래에서 `leadIn`을 일반 대본과 같은 Karaoke 애니메이션으로 채운다.
+- `speechPlaceholder`는 `leadIn` 아래에 흐린 안내 문장으로 표시하고, `leadIn` 진행이 끝나 STT가 시작되는 순간 숨긴다.
+- STT 부분 전사문과 키보드 편집문은 `leadIn` 아래의 발화 구간에만 표시한다. `leadIn`은 STT와 편집 중에도 유지한다.
+- 저장 대상은 사용자가 말하고 수정한 발화 구간의 `editedText`뿐이다. `leadIn`, `speechPlaceholder`, `bucketListGuide`는 저장 문장에 자동으로 포함하지 않는다.
 - `bucketListGuide`에는 예시 답변이나 태담 종료 인사를 넣지 않는다.
 - 플레이스홀더 문장 뒤에 이어지는 인사말은 앱 대본에 포함하지 않는다.
 - `{{babyNickname}}`은 `TaedamSessionInputDTO`를 만들 때 `BabyProfile.nickname`으로 한 번 치환한다. JSON 원본은 수정하지 않는다.
@@ -185,8 +193,13 @@ struct TaedamScriptContent: Decodable, Sendable {
     let title: String
     let metadata: ScriptMetadataContent
     let sentences: [String]
-    let bucketListPrompt: String
+    let bucketListPrompt: BucketListPromptContent
     let bucketListGuide: String
+}
+
+struct BucketListPromptContent: Decodable, Sendable {
+    let leadIn: String
+    let speechPlaceholder: String
 }
 
 struct ScriptMetadataContent: Decodable, Sendable {
@@ -201,13 +214,14 @@ struct ScriptMetadataContent: Decodable, Sendable {
 1. `script.id`는 유효한 UUID 문자열이어야 한다.
 2. `script.id + version` 조합은 중복될 수 없다.
 3. `sentences`에는 한 개 이상의 일반 대본 문장이 있어야 한다.
-4. 각 문장, `category`, `bucketListPrompt`와 `bucketListGuide`는 trim 후 비어 있을 수 없다.
-5. `bucketListPrompt`는 `sentences`에 중복해서 넣지 않는다.
-6. `bucketListGuide`에는 `예:` 또는 예시 답변을 포함하지 않는다.
-7. `artworkAssetName`은 trim 후 비어 있을 수 없다. 해당 Assets 리소스가 없으면 `script_artwork_placeholder`를 표시하며 JSON 로딩을 실패시키지 않는다.
-8. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
+4. 각 문장, `category`, `bucketListPrompt.leadIn`, `bucketListPrompt.speechPlaceholder`와 `bucketListGuide`는 trim 후 비어 있을 수 없다.
+5. `leadIn`과 `speechPlaceholder`에는 발화 위치 표시용 `[…]`을 넣지 않는다. 미리보기에서 앱이 두 값 사이에 삽입한다.
+6. `bucketListPrompt`의 두 문장은 `sentences`에 중복해서 넣지 않는다.
+7. `bucketListGuide`에는 `예:` 또는 예시 답변을 포함하지 않는다.
+8. `artworkAssetName`은 trim 후 비어 있을 수 없다. 해당 Assets 리소스가 없으면 `script_artwork_placeholder`를 표시하며 JSON 로딩을 실패시키지 않는다.
+9. `{{ }}` 형태의 템플릿 변수 중 지원 목록(현재 `babyNickname`)에 없는 값이 있으면 로딩을 실패시킨다. 번들 JSON 유닛 테스트에서도 같은 규칙을 검증한다.
 
-현재 `BundledTaedamScriptLoader`는 JSON 디코딩만 수행한다. 위 1~8 검증을 모두 강제하는 로직은 아직 구현되지 않았으므로 후속 통합 작업에서 보완해야 한다.
+현재 `BundledTaedamScriptLoader`는 JSON 디코딩만 수행한다. 위 1~9 검증을 모두 강제하는 로직은 아직 구현되지 않았으므로 후속 통합 작업에서 보완해야 한다.
 
 Home과 대본·생각힌트 미리보기는 같은 이미지 해석 규칙을 사용한다. `UIImage(named: artworkAssetName)`이 `nil`이면 `script_artwork_placeholder`를 표시한다. `Image(artworkAssetName)`은 리소스 존재 여부를 Optional로 반환하지 않으므로 `??`로 fallback하지 않는다.
 
@@ -232,6 +246,15 @@ struct ScriptSentenceDTO: Identifiable, Equatable, Sendable {
     var id: Int { index }
 }
 
+struct BucketListPromptDTO: Equatable, Sendable {
+    let leadIn: String
+    let speechPlaceholder: String
+
+    var previewText: String {
+        "\(leadIn) […] \(speechPlaceholder)"
+    }
+}
+
 struct ScriptPreviewDTO: Equatable, Sendable {
     let scriptID: UUID
     let scriptVersion: Int
@@ -241,7 +264,7 @@ struct ScriptPreviewDTO: Equatable, Sendable {
     let artworkAssetName: String
     let estimatedDurationSeconds: Int?
     let sentences: [ScriptSentenceDTO]
-    let bucketListPrompt: String
+    let bucketListPrompt: BucketListPromptDTO
     let bucketListGuide: String
 }
 
@@ -282,6 +305,7 @@ enum TaedamScreenPhase: Equatable, Sendable {
     case ready
     case countingDown(remainingSeconds: Int)
     case readingScript(index: Int)
+    case readingBucketListPrompt
     case bucketList
 }
 
@@ -293,9 +317,10 @@ enum TaedamBucketListInputPhase: Equatable, Sendable {
 }
 ```
 
-- `TaedamSessionInputDTO.lines`는 `sentences` 뒤에 `bucketListPrompt`를 사용하는 `.bucketList` 줄을 정확히 하나 추가하는 계산 프로퍼티다.
-- `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`와 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
-- `bucketListGuide`는 `.bucketList` 줄 앞의 안내 카드에 표시하고 `bucketListPrompt`는 해당 줄의 플레이스홀더로 표시한다.
+- `TaedamSessionInputDTO.lines`는 `sentences` 뒤에 `bucketListPrompt.leadIn`을 사용하는 `.bucketList` 줄을 정확히 하나 추가하는 계산 프로퍼티다.
+- `TaedamSessionInputDTO.script`의 문장, `bucketListPrompt`의 두 문장과 `bucketListGuide`는 `babyNickname`이 치환된 값이다.
+- `bucketListGuide`는 `.bucketList` 줄 앞의 안내 카드에 표시한다.
+- `.readingBucketListPrompt`에서 `leadIn`을 Karaoke로 채우고 `speechPlaceholder`를 함께 표시한다. `leadIn`이 끝나 `.bucketList`로 전환할 때 플레이스홀더를 숨기고 STT를 시작한다.
 - `currentLineProgress`는 `0...1` 범위의 휘발성 화면 값이다.
 - STT가 끝나면 `TaedamBucketListInputPhase.editing`으로 전환하며, 사용자가 대본문장을 다시 선택해도 작성 중인 `editedText`를 보존한다.
 
@@ -341,8 +366,8 @@ struct TaedamSessionStateDTO: Equatable, Sendable {
 }
 ```
 
-- `.bucketList` 줄의 STT 입력 텍스트는 처음에 빈 문자열이며, `bucketListPrompt`는 전사 결과가 생기기 전의 플레이스홀더로만 사용한다.
-- 부분 전사문이 들어오면 `bucketListPrompt`를 덮어쓰고 이후 화면에는 전사문만 표시한다.
+- `.bucketList` 줄의 STT 입력 텍스트는 처음에 빈 문자열이며, `bucketListPrompt.leadIn`은 고정 문장으로 계속 표시한다.
+- `bucketListPrompt.speechPlaceholder`는 STT 시작과 동시에 숨기고, 이후 그 자리에 부분 전사문 또는 편집문을 표시한다.
 - `currentLineProgress`와 `normalizedVoiceMotion`은 `0...1` 범위의 휘발성 화면 값이다.
 - 재발화 시도를 제공하지 않으므로 STT `attempt`는 상태에 포함하지 않는다.
 

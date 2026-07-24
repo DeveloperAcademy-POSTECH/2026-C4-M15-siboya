@@ -37,7 +37,10 @@ struct TaedamScriptDocumentTests {
         for script in scripts {
             let scriptText = script.sentences.joined(separator: " ")
 
-            #expect(script.bucketListPrompt.contains("[…]"))
+            #expect(!script.bucketListPrompt.leadIn.isEmpty)
+            #expect(!script.bucketListPrompt.speechPlaceholder.isEmpty)
+            #expect(!script.bucketListPrompt.leadIn.contains("[…]"))
+            #expect(!script.bucketListPrompt.speechPlaceholder.contains("[…]"))
             #expect(!script.bucketListGuide.contains("예:"))
             #expect(!script.bucketListGuide.contains("예시"))
             #expect(!scriptText.contains("[…]"))
@@ -49,12 +52,23 @@ struct TaedamScriptDocumentTests {
         let document = try BundledTaedamScriptLoader.load()
         let sessionInput = try #require(document.scripts.first)
             .makeSessionInput(babyNickname: "꼭꼭")
-        let displayedText = sessionInput.lines
-            .map(\.text)
-            .joined(separator: " ")
+        let displayedText = (
+            sessionInput.lines.map(\.text) + [
+                sessionInput.script.bucketListPrompt.speechPlaceholder,
+                sessionInput.script.bucketListGuide
+            ]
+        ).joined(separator: " ")
 
         #expect(displayedText.contains("꼭꼭"))
         #expect(!displayedText.contains("{{babyNickname}}"))
-        #expect(!sessionInput.script.bucketListGuide.contains("{{babyNickname}}"))
+    }
+
+    @Test func previewPromptComposesLeadInBlankAndSpeechPlaceholder() throws {
+        let script = try #require(BundledTaedamScriptLoader.load().scripts.first)
+        let prompt = script.makeSessionInput(babyNickname: "꼭꼭")
+            .script
+            .bucketListPrompt
+
+        #expect(prompt.previewText == "\(prompt.leadIn) […] \(prompt.speechPlaceholder)")
     }
 }
