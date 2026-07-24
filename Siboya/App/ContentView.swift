@@ -8,10 +8,20 @@
 import SwiftData
 import SwiftUI
 
+/// SwiftData 모델의 참조 자체가 아니라 Home 갱신에 필요한 값의 변화를 비교하기 위한 스냅샷입니다.
+private struct ObservedBabyProfile: Equatable {
+    let id: UUID
+    let nickname: String
+    let gestationalWeek: Int
+}
+
 /// 앱 환경의 SwiftData 저장소를 Home 화면 모델과 연결하는 최상위 조립 View입니다.
 struct ContentView: View {
     /// 앱의 공용 `ModelContext`로 최신 SCRUM-28 저장소 구현을 생성합니다.
     @Environment(\.modelContext) private var modelContext
+
+    /// 소원 탭에서 프로필을 수정하면 Home 표시 상태와 대본 치환값도 즉시 갱신하도록 관찰합니다.
+    @Query private var babyProfiles: [BabyProfile]
 
     /// 프로필과 번들 문서를 읽은 결과를 관찰해 순수 `HomeView`에 전달합니다.
     @State private var model = HomeScreenModel()
@@ -76,6 +86,20 @@ struct ContentView: View {
         .task {
             await prepareAndLoadHome()
         }
+        .onChange(of: observedBabyProfile) {
+            reloadHome()
+        }
+    }
+
+    /// `@Query`가 제공하는 참조 모델을 값으로 복사해 태명·주차 변경을 안정적으로 감지합니다.
+    private var observedBabyProfile: ObservedBabyProfile? {
+        guard let profile = babyProfiles.first else { return nil }
+
+        return ObservedBabyProfile(
+            id: profile.id,
+            nickname: profile.nickname,
+            gestationalWeek: profile.gestationalWeek
+        )
     }
 
     /// Home 컴포넌트의 분리된 UUID·버전 인자를 route 해석에 필요한 선택 DTO로 묶습니다.
@@ -140,6 +164,13 @@ struct ContentView: View {
         selectedTab = .wish
     }
 
+    /// 현재 SwiftData 프로필로 Home 표시 상태와 대본 이동용 내부 스냅샷을 함께 다시 만듭니다.
+    @MainActor
+    private func reloadHome() {
+        let repository = SwiftDataTaedamRepository(modelContext: modelContext)
+        model.load(repository: repository)
+    }
+
     /// 온보딩 전 MVP 기본 프로필을 멱등적으로 보장한 뒤 저장된 실제 값으로 Home 상태를 갱신합니다.
     /// - Result: 기존 프로필은 보존하고, 프로필이 없을 때만 `꾹꾹이` 22주 값을 한 번 생성합니다.
     @MainActor
@@ -151,7 +182,7 @@ struct ContentView: View {
             nickname: "꾹꾹이",
             gestationalWeek: 22
         )
-        model.load(repository: repository)
+        reloadHome()
     }
 }
 
