@@ -2,7 +2,7 @@
 
 - **상태**: approved
 - **작성일**: 2026-07-21
-- **최종 수정일**: 2026-07-22
+- **최종 수정일**: 2026-07-24
 - **적용 범위**: 대본·생각힌트 미리보기, 준비자세 모달, 권한 확인, 3초 카운트다운, 대본 자동 진행, 버킷리스트 STT, 키보드 수정·저장, 태담 요약
 - **공통 계약**: [태담 공통 데이터 계약](./taedam-common-contracts.md)
 - **디자인 기준**: [Figma 미리보기](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-11964), [Figma 준비자세](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-12106), [Figma 마이크 권한 허용](https://www.figma.com/design/20KajaVVEkuuENa1HdSXux/C4---%EC%B1%8C%EB%A6%B0%EC%A7%80-%EC%8B%AD%EC%98%A4%EC%95%BC?node-id=1009-12161)
@@ -18,7 +18,7 @@
 - 미리보기 View는 `ScriptPreviewDTO`의 표시와 `준비하기` callback만 담당한다. JSON 조회와 `BabyProfile` 조회·치환은 ViewModel 또는 상위 조정자가 담당한다.
 - 준비자세 View는 `babyNickname`, 시작 중 상태와 `닫기`·`시작하기` callback을 받는다. 마이크·Speech 권한 API를 View 내부에서 직접 호출하지 않는다.
 - 두 View는 `ModelContext`, `@Query`, `SwiftDataTaedamRepository`를 직접 알 필요가 없다. SwiftData는 Home에 표시할 프로필을 상위 계층이 읽거나, 세션 후 저장을 담당할 때만 연결된다.
-- 현재 구현된 범위는 JSON 로드·태명 치환·3초 카운트다운·대본 자동 진행·일반 문장 재선택·버킷리스트 도달 callback이다. 음성 반응, STT, 키보드 수정과 저장 연결은 아직 구현되지 않았다.
+- 현재 구현된 범위는 JSON 로드·태명 치환·3초 카운트다운·대본 자동 진행·일반 문장 재선택·버킷리스트 고정 문장 진행·음성 반응·STT·키보드 수정과 저장 연결이다.
 
 ## 2. 화면 구성과 책임
 
@@ -26,7 +26,7 @@
 |---|---|---|---|
 | 대본·생각힌트 미리보기 | `ScriptSelectionDTO` | 대본, 생각힌트와 소요 시간 표시 | 준비자세 모달 |
 | 준비자세 모달 | `TaedamSessionInputDTO` | 자세 안내, 마이크·Speech 권한 확인 | 카운트다운·대본 진행 |
-| 카운트다운·대본 진행 | `TaedamSessionInputDTO` | 3초 카운트다운, 문장 채우기, 음성 반응 모션 | 버킷리스트 STT 자동 전환 |
+| 카운트다운·대본 진행 | `TaedamSessionInputDTO` | 3초 카운트다운, 일반 문장과 버킷리스트 고정 앞 문장 채우기, 음성 반응 모션 | 버킷리스트 STT 자동 전환 |
 | 버킷리스트 STT | `.bucketList` 줄 | 발화 후 무음 자동 종료, 최대 20초 전사, 수동 정지 | `BucketListDraftDTO` |
 | 버킷리스트 텍스트 수정 | `BucketListDraftDTO` | 키보드 수정·확정 | `SaveBucketListCommandDTO` |
 | 태담 요약 | 선택한 태담 정보와 최종 `editedText` | 방금 만든 약속 하나 표시 | `onComplete: () -> Void` |
@@ -37,11 +37,11 @@
 
 - 목표 통합 흐름에서는 Home의 `ScriptSelectionDTO`로 선택한 대본을 조회한다. 다만 현재 `ScriptRepository`와 `ScriptSelectionDTO`는 구현 전이므로 미리보기 View가 직접 이 API를 호출하지 않는다.
 - 상위 ViewModel·Coordinator가 현재의 `TaedamScriptContent`를 `ScriptPreviewDTO` 또는 `TaedamSessionInputDTO`로 변환해 미리보기 View에 전달한다.
-- `BabyProfile.nickname`으로 `sentences`, `bucketListPrompt`와 `bucketListGuide`의 `{{babyNickname}}`을 한 번 치환해 `TaedamSessionInputDTO`를 만든다.
+- `BabyProfile.nickname`으로 `sentences`, `bucketListPrompt.leadIn`, `bucketListPrompt.speechPlaceholder`와 `bucketListGuide`의 `{{babyNickname}}`을 한 번 치환해 `TaedamSessionInputDTO`를 만든다.
 - 화면 상단에는 뒤로가기 버튼, 대본 대상 임신 주차, 제목, 대표 이미지와 예상 소요 시간을 표시한다.
 - 예상 소요 시간은 `estimatedDurationSeconds`를 분 단위로 올림해 `약 N분` 형식으로 표시한다. 값이 없으면 소요 시간 행을 숨긴다.
-- 본문 영역에는 `sentences`, `bucketListPrompt`, `bucketListGuide` 순서로 표시한다.
-- `bucketListPrompt`는 일반 본문 스타일의 마지막 빈칸 문장으로 표시한다.
+- 본문 영역에는 `sentences`, 조합한 `bucketListPrompt`, `bucketListGuide` 순서로 표시한다.
+- `bucketListPrompt`는 `leadIn + " […] " + speechPlaceholder`로 조합해 일반 본문 스타일의 마지막 빈칸 문장으로 표시한다.
 - `bucketListGuide`는 Figma처럼 `💡`로 구분한 생각힌트 스타일로 표시하며 별도 대본 문장으로 취급하지 않는다.
 - 본문은 세로로 스크롤하고 하단 `준비하기` 버튼은 화면 하단에 고정한다.
 
@@ -131,6 +131,8 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - `KaraokeText`의 채움 표현과 일반 대본문장의 흐림·투명도 표현은 서로 독립적으로 유지한다.
 - 텍스트 레이아웃은 진행 중 바뀌지 않는다.
 - 진행률이 `1`이 되면 다음 문장을 자동으로 시작한다.
+- 마지막 일반 문장이 끝나면 `.readingBucketListPrompt`로 전환해 `bucketListPrompt.leadIn`을 같은 Karaoke 규칙으로 채운다.
+- `leadIn` 진행률이 `1`이 된 뒤에만 `.bucketList`로 전환하고 STT를 시작한다.
 - 대본은 세로 `ScrollView`로 감싸 사용자가 이전·다음 문장을 둘러볼 수 있게 한다. 문장 단위 페이지 이동용 스와이프 제스처는 제공하지 않는다.
 - 대본 진행 중이거나 `.bucketList` 상태일 때 사용자가 이전·현재·다음 일반 대본 문장을 탭하면 현재 진행 Task를 취소하고, 선택한 문장의 진행률을 `0`으로 초기화한 뒤 그 문장부터 즉시 재개한다.
 - 문장을 다시 선택할 때 3초 카운트다운은 반복하지 않는다.
@@ -169,9 +171,12 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 
 ## 7. 버킷리스트 STT·텍스트 수정
 
-- 마지막 일반 문장의 진행률이 `1`이 되면 `bucketListGuide` 안내 카드와 `bucketListPrompt` STT 플레이스홀더로 자동 전환한다.
-- `bucketListGuide`는 플레이스홀더 직전에 보조 텍스트로 표시하며 예시 답변은 표시하지 않는다.
-- 음성 반응 모니터의 `stopMonitoring()`을 완료해 기존 input tap을 제거한 뒤 STT용 input tap을 설치한다.
+- 마지막 일반 문장의 진행률이 `1`이 되면 `bucketListGuide` 안내 카드, `bucketListPrompt.leadIn`과 `bucketListPrompt.speechPlaceholder`를 표시한다.
+- `bucketListGuide`는 고정 앞 문장 직전에 보조 텍스트로 표시하며 예시 답변은 표시하지 않는다.
+- `leadIn`은 일반 대본과 같은 Karaoke 애니메이션으로 끝까지 채운다.
+- `leadIn` 아래에는 42pt 높이의 한 줄 발화 영역을 미리 확보하고, 그 아래에 `speechPlaceholder`를 흐린 문장으로 표시한다.
+- STT를 시작하면 `speechPlaceholder`는 부분 전사문 유무와 관계없이 숨기고, 확보한 발화 영역에 부분 전사문을 표시한다.
+- `leadIn`의 진행이 끝나면 음성 반응 모니터의 `stopMonitoring()`을 완료해 기존 input tap을 제거한 뒤 STT용 input tap을 설치한다.
 - STT는 별도의 스와이프, 탭 또는 시작 버튼 없이 자동 시작한다.
 - 한 번의 STT 최대 입력 시간은 20초다.
 - STT 진행 중 정지 버튼을 항상 표시한다. 정지 버튼은 `finish()`로 현재 전사 결과를 확정한다.
@@ -179,20 +184,22 @@ durationSeconds = clamp(characterCount / 4.0, 2.5, 10.0)
 - 최초 발화를 감지하지 못한 상태에서는 무음으로 자동 종료하지 않는다.
 - 무음 자동 종료 여부와 관계없이 20초가 경과하면 자동으로 `finish()`한다.
 - 부분 전사문은 화면 표시용으로만 사용하고 저장하지 않는다.
- - 첫 부분 전사문이 들어오면 `bucketListPrompt` 플레이스홀더를 제거하고 전사문으로 대체한다.
-  - STT 진행 중 일반 대본문장을 선택하면 진행 중인 STT를 중단하고 선택한 문장부터 대본을 재개한다.
-  - 편집 상태에서 일반 대본문장을 선택하면 작성 중인 문장을 보존한 채 선택한 문장부터 대본을 재개한다.
-  - 재개한 대본이 다시 `.bucketList`에 도달하면 `onBucketListReached` 이벤트를 다시 전달한다.
-  - STT가 중단된 상태라면 STT를 다시 시작한다.
-  - `.editing` 상태라면 STT를 시작하지 않고 기존 텍스트필드와 작성 중인 문장을 복원한다.
-  - 최종 전사문을 `BucketListDraftDTO`로 만든 뒤 키보드로 수정 가능한 `.editing` 상태로 전환한다.
+- 부분 전사문은 고정 `leadIn` 아래의 발화 구간에 실시간으로 표시한다. `leadIn`은 사라지지 않는다.
+- STT 진행 중 일반 대본문장을 선택하면 진행 중인 STT를 중단하고 선택한 문장부터 대본을 재개한다.
+- 편집 상태에서 일반 대본문장을 선택하면 작성 중인 문장을 보존한 채 선택한 문장부터 대본을 재개한다.
+- 재개한 대본이 다시 `.readingBucketListPrompt`에 도달하면 `leadIn` Karaoke를 다시 진행한다.
+- `.readingBucketListPrompt`로 돌아올 때 `speechPlaceholder`를 다시 표시한다. 기존 편집문은 숨기기만 하고 삭제하지 않는다.
+- 재개한 `leadIn`이 끝나 `.bucketList`에 도달하면 `onBucketListReached` 이벤트를 다시 전달한다.
+- STT가 중단된 상태라면 STT를 다시 시작한다.
+- `.editing` 상태라면 STT를 시작하지 않고 기존 텍스트필드와 작성 중인 문장을 복원한다.
+- 최종 전사문을 `BucketListDraftDTO`로 만든 뒤 키보드로 수정 가능한 `.editing` 상태로 전환한다.
 - 전사 결과 수정 수단은 **키보드 텍스트 수정 하나만** 제공한다.
 - 수정 상태의 입력 영역은 일반 대본과 구분되는 라운드 카드 컨테이너로 표시하고 자동으로 키보드 포커스를 준다.
 - 수정 중 다른 대본문장, 안내 카드, 화면의 빈 영역을 선택하거나 스크롤하면 입력 포커스를 해제한다.
 - 입력 포커스 해제는 `.editingBucketList` 상태와 작성 중인 문장을 변경하지 않으며, 사용자가 텍스트필드를 다시 선택해 계속 수정할 수 있어야 한다.
 - **다시 말하기, STT 재시도, 재발화 버튼은 제공하지 않는다.**
 - 전사문이 비어 있거나 인식에 실패해도 빈 편집 화면에서 키보드로 직접 입력할 수 있다.
-- 키보드 편집 화면은 `rawTranscript`를 초기 `editedText`로 사용하고, 사용자가 최종 확정한 `editedText`만 저장 명령에 넣는다.
+- 키보드 편집 화면은 `rawTranscript`를 초기 `editedText`로 사용하고, 사용자가 최종 확정한 발화 구간의 `editedText`만 저장 명령에 넣는다. `leadIn`, `speechPlaceholder`와 `bucketListGuide`는 저장하지 않는다.
 - STT가 끝나면 마이크 입력과 인식 Task를 모두 종료한다.
 
 ### 무음 기반 자동 종료
@@ -265,10 +272,13 @@ sequenceDiagram
                 Screen->>Progress: 현재 Task 취소 후 선택 문장부터 재개
             end
         end
-        Progress-->>Screen: 마지막 문장 완료 + bucketListGuide + STT placeholder
+        Progress-->>Screen: 마지막 일반 문장 완료
+        Progress-->>Screen: bucketListGuide + leadIn + speechPlaceholder
+        Progress-->>Screen: leadIn Karaoke 진행 완료
+        Screen-->>Screen: speechPlaceholder 숨김
         Screen->>Motion: stopMonitoring()
         Screen->>Speech: 20초 STT 자동 시작
-        Speech-->>Screen: 부분 전사문
+        Speech-->>Screen: leadIn 아래 발화 구간에 부분 전사문 표시
         alt 사용자가 정지
             User->>Screen: 정지
             Screen->>Speech: finish()
@@ -299,9 +309,10 @@ sequenceDiagram
 2. 준비자세 모달을 닫으면 미리보기 상태를 유지하고 권한 요청, 오디오 입력과 진행 Task를 시작하지 않는다.
 3. 권한이 모두 허용되고 준비자세 모달이 닫힌 뒤에만 3초 카운트다운을 한 번 시작한다.
 4. 중복 탭이나 화면 전환으로 모달, 세션 또는 카운트다운을 중복 생성하지 않는다.
-5. `bucketListPrompt`와 `bucketListGuide`의 역할을 구분한다.
+5. `bucketListPrompt.leadIn`, `bucketListPrompt.speechPlaceholder`와 `bucketListGuide`의 역할을 구분한다.
 6. STT는 동시에 하나만 실행하며 다시 말하기나 재발화 수정 경로를 제공하지 않는다.
-7. `.editing` 상태에서 사용자가 최종 확정한 `editedText`만 저장한다.
-8. 하나의 세션은 `BucketListItem`을 하나만 생성한다.
-9. 태담 요약 화면에는 해당 세션에서 확정한 약속 하나만 표시한다.
-10. 녹음 파일, 전사 이력, 모션 샘플과 태담 평가 데이터는 저장하지 않는다.
+7. STT는 `leadIn` 진행이 끝난 뒤 시작하며 `speechPlaceholder`는 STT 시작과 동시에 숨긴다.
+8. `.editing` 상태에서 사용자가 최종 확정한 발화 구간의 `editedText`만 저장한다.
+9. 하나의 세션은 `BucketListItem`을 하나만 생성한다.
+10. 태담 요약 화면에는 해당 세션에서 확정한 약속 하나만 표시한다.
+11. 녹음 파일, 전사 이력, 모션 샘플과 태담 평가 데이터는 저장하지 않는다.

@@ -16,7 +16,40 @@ struct TaedamScreenModelTests {
 
         #expect(lines.count == TaedamSessionInputDTO.mock.script.sentences.count + 1)
         #expect(lines.last?.kind == .bucketList)
+        #expect(lines.last?.text == TaedamSessionInputDTO.mock.script.bucketListPrompt.leadIn)
         #expect(lines.filter { $0.kind == .bucketList }.count == 1)
+    }
+
+    @Test func bucketListLeadInIsReadBeforeTranscriptionPhase() async {
+        let source = TaedamSessionInputDTO.mock
+        let input = TaedamSessionInputDTO(
+            script: ScriptPreviewDTO(
+                scriptID: source.script.scriptID,
+                scriptVersion: source.script.scriptVersion,
+                category: source.script.category,
+                title: source.script.title,
+                targetGestationalWeek: source.script.targetGestationalWeek,
+                artworkAssetName: source.script.artworkAssetName,
+                estimatedDurationSeconds: source.script.estimatedDurationSeconds,
+                sentences: [],
+                bucketListPrompt: source.script.bucketListPrompt,
+                bucketListGuide: source.script.bucketListGuide
+            ),
+            babyNickname: source.babyNickname
+        )
+        let model = TaedamScreenModel(
+            input: input,
+            timingPolicy: TaedamTimingPolicy(countdownSeconds: 0),
+            sleeper: HoldingTaedamSleeper()
+        )
+
+        model.start()
+        await waitUntil { model.phase == .readingBucketListPrompt }
+
+        #expect(model.currentLineIndex == model.bucketListIndex)
+        #expect(model.currentLineProgress == 0)
+
+        model.cancel()
     }
 
     @Test func flowAutomaticallyReachesBucketList() async {

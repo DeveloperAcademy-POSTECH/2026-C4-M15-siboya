@@ -17,6 +17,7 @@ final class TaedamScreenModel {
 
     let lines: [TaedamLineDTO]
     let bucketListGuide: String
+    let bucketListSpeechPlaceholder: String
 
     private let timingPolicy: TaedamTimingPolicy
     private let sleeper: any TaedamSleeping
@@ -30,6 +31,7 @@ final class TaedamScreenModel {
     ) {
         lines = input.lines
         bucketListGuide = input.script.bucketListGuide
+        bucketListSpeechPlaceholder = input.script.bucketListPrompt.speechPlaceholder
         self.timingPolicy = timingPolicy ?? TaedamTimingPolicy()
         self.sleeper = sleeper ?? ContinuousTaedamSleeper()
     }
@@ -78,7 +80,7 @@ final class TaedamScreenModel {
 
     private var allowsScriptSelection: Bool {
         switch phase {
-        case .readingScript, .bucketList:
+        case .readingScript, .readingBucketListPrompt, .bucketList:
             return true
         case .ready, .countingDown:
             return false
@@ -139,16 +141,28 @@ final class TaedamScreenModel {
 
         for index in startIndex..<bucketListIndex {
             try ensureActiveFlow(id: id)
-            try await runLine(id: id, index: index)
+            try await runLine(
+                id: id,
+                index: index,
+                phase: .readingScript(index: index)
+            )
         }
 
         try ensureActiveFlow(id: id)
-        currentLineIndex = bucketListIndex
-        currentLineProgress = 1
+        try await runLine(
+            id: id,
+            index: bucketListIndex,
+            phase: .readingBucketListPrompt
+        )
+        try ensureActiveFlow(id: id)
         phase = .bucketList
     }
 
-    private func runLine(id: UUID, index: Int) async throws {
+    private func runLine(
+        id: UUID,
+        index: Int,
+        phase: TaedamScreenPhase
+    ) async throws {
         let line = lines[index]
         let stepCount = timingPolicy.progressStepCount(for: line.text)
         let duration = timingPolicy.durationSeconds(for: line.text)
@@ -156,7 +170,7 @@ final class TaedamScreenModel {
 
         currentLineIndex = index
         currentLineProgress = 0
-        phase = .readingScript(index: index)
+        self.phase = phase
 
         for step in 1...stepCount {
             try await sleeper.sleep(for: .seconds(stepDuration))

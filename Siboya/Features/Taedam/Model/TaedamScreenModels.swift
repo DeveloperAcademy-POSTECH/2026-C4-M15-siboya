@@ -23,8 +23,22 @@ struct ScriptPreviewDTO: Equatable, Sendable {
     let artworkAssetName: String
     let estimatedDurationSeconds: Int?
     let sentences: [ScriptSentenceDTO]
-    let bucketListPrompt: String
+    let bucketListPrompt: BucketListPromptDTO
     let bucketListGuide: String
+}
+
+/// 버킷리스트 화면에 고정할 도입문과 STT 시작 전까지만 보여줄 안내 문구입니다.
+struct BucketListPromptDTO: Equatable, Sendable {
+    /// 일반 대본과 같은 Karaoke 애니메이션으로 채운 뒤 화면에 계속 남기는 문장입니다.
+    let leadIn: String
+
+    /// 사용자가 말할 위치를 안내하고 STT가 시작되면 사라지는 마지막 문장입니다.
+    let speechPlaceholder: String
+
+    /// 대본 미리보기에서 사용자가 채울 위치까지 포함해 한 문장으로 보여줄 텍스트입니다.
+    var previewText: String {
+        "\(leadIn) […] \(speechPlaceholder)"
+    }
 }
 
 struct TaedamSessionInputDTO: Equatable, Sendable {
@@ -44,7 +58,7 @@ struct TaedamSessionInputDTO: Equatable, Sendable {
             TaedamLineDTO(
                 index: scriptLines.count,
                 kind: .bucketList,
-                text: script.bucketListPrompt
+                text: script.bucketListPrompt.leadIn
             )
         ]
     }
@@ -67,6 +81,7 @@ enum TaedamScreenPhase: Equatable, Sendable {
     case ready
     case countingDown(remainingSeconds: Int)
     case readingScript(index: Int)
+    case readingBucketListPrompt
     case bucketList
 }
 
@@ -83,7 +98,7 @@ extension TaedamSessionInputDTO {
     private static let fallbackMock = TaedamSessionInputDTO(
         script: ScriptPreviewDTO(
             scriptID: UUID(),
-            scriptVersion: 1,
+            scriptVersion: 2,
             category: "아기사랑",
             title: "평화로운 일요일 아침",
             targetGestationalWeek: 22,
@@ -105,7 +120,10 @@ extension TaedamSessionInputDTO {
                     text: "셋이 머리도 안 감고 식탁에 둘러앉아 갓 구운 식빵에 잼을 발라 먹으면 참 평화롭겠다는 생각이 들었어."
                 )
             ],
-            bucketListPrompt: "꼭꼭아, 네가 태어나서 우리랑 집에서 같이 밥을 먹게 되면, 아빠는 주방에서 너를 위해 […] 해주고 싶어.",
+            bucketListPrompt: BucketListPromptDTO(
+                leadIn: "꼭꼭아, 네가 태어나서 우리랑 집에서 같이 밥을 먹게 되면, 아빠는 주방에서 너를 위해",
+                speechPlaceholder: "해주고 싶어."
+            ),
             bucketListGuide: "집에서 아이에게 해주고 싶은 사소한 요리나 식사 시간의 모습을 말해보세요."
         ),
         babyNickname: "꼭꼭"

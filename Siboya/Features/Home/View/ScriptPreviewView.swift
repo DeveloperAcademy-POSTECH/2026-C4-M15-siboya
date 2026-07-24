@@ -87,7 +87,7 @@ struct ScriptPreviewView: View {
                 // 번들 데이터 순서를 유지한 대본과 빈칸·생각힌트를 읽기 영역에 표시합니다.
                 ScriptPreviewBody(
                     sentences: route.sessionInput.script.sentences,
-                    bucketListPrompt: route.sessionInput.script.bucketListPrompt,
+                    bucketListPrompt: route.sessionInput.script.bucketListPrompt.previewText,
                     bucketListGuide: route.sessionInput.script.bucketListGuide
                 )
                 .padding(.horizontal, 20)
